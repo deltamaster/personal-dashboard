@@ -97,12 +97,12 @@ jobs:
           ALIBABA_CLOUD_SECURITY_TOKEN: ${{ steps.sts.outputs.security_token }}
         run: |
           ossutil config -e "$OSS_ENDPOINT" -i "$ALIBABA_CLOUD_ACCESS_KEY_ID" -k "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" -t "$ALIBABA_CLOUD_SECURITY_TOKEN" -L CH
-          # Remove empty directory-marker objects that shadow index.html on OSS static sites.
+          ossutil cp -r out/ "oss://${OSS_WEB_BUCKET}/" --update --force
+          # ossutil recreates empty directory-marker objects that shadow index.html on OSS static sites.
           find out -type d ! -path out | while read -r d; do
             rel="${d#out/}"
             ossutil rm "oss://${OSS_WEB_BUCKET}/${rel}/" -f 2>/dev/null || true
           done
-          ossutil cp -r out/ "oss://${OSS_WEB_BUCKET}/" --update --force
           find out -name '*.html' | while read -r f; do
             rel="${f#out/}"
             ossutil cp "$f" "oss://${OSS_WEB_BUCKET}/${rel}" --update --meta "Cache-Control:public, max-age=0, must-revalidate"
