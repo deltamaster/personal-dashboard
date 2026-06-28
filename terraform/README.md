@@ -25,7 +25,7 @@ Repository secrets also work, but environment secrets are preferred.
 
 Also set deploy secrets (`OSS_ENDPOINT`, `OSS_WEB_BUCKET`, `FC_REGION`, `FC_FUNCTION`) — see [SETUP.md](../docs/SETUP.md).
 
-Your RAM user also needs permission to create/write the Terraform state bucket (`personal-dashboard-tfstate`), or create that bucket once in the OSS console.
+Your RAM user also needs permission to create/write the Terraform state bucket (`personal-dashboard-tfstate`), or create that bucket once in the OSS console (cn-shanghai, private).
 
 ## 2. One-time: ACR instance
 

@@ -101,18 +101,35 @@ jobs:
         run: curl -fsSL https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
 
       - name: Ensure Terraform state bucket
+        env:
+          OSS_ENDPOINT: oss-cn-shanghai.aliyuncs.com
         run: |
-          ossutil config -e oss-cn-shanghai.aliyuncs.com \
-            -i "$ALICLOUD_ACCESS_KEY" -k "$ALICLOUD_SECRET_KEY" -L CH
-          ossutil mb "oss://${TF_STATE_BUCKET}/" 2>/dev/null || true
+          set -euo pipefail
+          CONFIG="$HOME/.ossutilconfig"
+
+          ossutil config -e "$OSS_ENDPOINT" \
+            -i "$ALICLOUD_ACCESS_KEY" -k "$ALICLOUD_SECRET_KEY" -L CH -c "$CONFIG"
+
+          if ossutil stat "oss://${TF_STATE_BUCKET}/" -c "$CONFIG" >/dev/null 2>&1; then
+            echo "Terraform state bucket already exists: ${TF_STATE_BUCKET}"
+          else
+            echo "Creating Terraform state bucket: ${TF_STATE_BUCKET}"
+            ossutil mb "oss://${TF_STATE_BUCKET}" -c "$CONFIG" -e "$OSS_ENDPOINT" \
+              -i "$ALICLOUD_ACCESS_KEY" -k "$ALICLOUD_SECRET_KEY"
+          fi
+
+          ossutil stat "oss://${TF_STATE_BUCKET}/" -c "$CONFIG"
 
       - name: Terraform init
+        env:
+          OSS_ENDPOINT: oss-cn-shanghai.aliyuncs.com
         run: |
           terraform init -input=false \
             -backend-config="bucket=${TF_STATE_BUCKET}" \
             -backend-config="prefix=${TF_STATE_PREFIX}" \
             -backend-config="key=terraform.tfstate" \
             -backend-config="region=cn-shanghai" \
+            -backend-config="endpoint=${OSS_ENDPOINT}" \
             -backend-config="access_key=${ALICLOUD_ACCESS_KEY}" \
             -backend-config="secret_key=${ALICLOUD_SECRET_KEY}"
 
