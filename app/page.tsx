@@ -12,7 +12,7 @@ export default function HomePage() {
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {[
             { href: "/movies/", label: "Movies", desc: "Watch log & director stats" },
-            { href: "/portfolio/", label: "Portfolio", desc: "Coming soon" },
+            { href: "/portfolio/", label: "Portfolio", desc: "Holdings, risk & NAV" },
             { href: "/travel/", label: "Travel", desc: "Visits, photos & journey stats" },
           ].map(({ href, label, desc }) => (
             <Link

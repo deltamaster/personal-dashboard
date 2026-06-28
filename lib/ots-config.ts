@@ -1,4 +1,5 @@
 import type { MovieStats } from "@/lib/types/movie";
+import type { PortfolioStats } from "@/lib/types/portfolio";
 import type { TravelStats } from "@/lib/types/travel";
 
 export function isOtsConfigured(): boolean {
@@ -15,6 +16,23 @@ export const emptyMovieStats: MovieStats = {
   byYear: [],
   directors: [],
   fiveStar: [],
+};
+
+export const emptyPortfolioStats: PortfolioStats = {
+  totalValue: 0,
+  totalPnl: 0,
+  totalDividend: 0,
+  totalReturn: 0,
+  holdingCount: 0,
+  defensiveRatio: 0,
+  byRiskLevel: Array.from({ length: 5 }, (_, i) => ({
+    level: i + 1,
+    value: 0,
+    count: 0,
+  })),
+  byBank: [],
+  byAssetType: [],
+  staleHoldingIds: [],
 };
 
 export const emptyTravelStats: TravelStats = {
