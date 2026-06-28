@@ -48,7 +48,7 @@ Add these in **GitHub → Settings → Secrets and variables → Actions**:
 |---|---|
 | `ALIBABA_CLOUD_ACCESS_KEY_ID` | RAM user access key |
 | `ALIBABA_CLOUD_ACCESS_KEY_SECRET` | RAM user secret |
-| `ALIBABA_CLOUD_ROLE_ARN` | `acs:ram::…:role/…` (AssumeRole for Terraform) |
+| `ALIBABA_CLOUD_ROLE_ARN` | `acs:ram::…:role/…` (AssumeRole for Terraform and deploy workflows) |
 | `ACR_REGISTRY` | `crpi-xxxxx.cn-shanghai.personal.cr.aliyuncs.com` |
 | `ACR_USERNAME` | ACR login username |
 | `ACR_PASSWORD` | ACR login password |

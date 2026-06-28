@@ -26,10 +26,12 @@ jobs:
         env:
           ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          ALIBABA_CLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
         run: |
           missing=()
           [ -z "$ALIBABA_CLOUD_ACCESS_KEY_ID" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_ID")
           [ -z "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
+          [ -z "$ALIBABA_CLOUD_ROLE_ARN" ] && missing+=("ALIBABA_CLOUD_ROLE_ARN")
           if [ ${#missing[@]} -gt 0 ]; then
             echo "::error::Missing environment secrets (Settings → Environments → personal-dashboard):"
             printf '  - %s\n' "${missing[@]}"
@@ -44,15 +46,45 @@ jobs:
       - run: npm ci
       - run: npm run build
 
+      - name: Install aliyun CLI
+        run: |
+          wget -q https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
+          tar -xzf aliyun-cli-linux-latest-amd64.tgz
+          sudo mv aliyun /usr/local/bin/
+
       - name: Install ossutil
         run: curl -fsSL https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
 
-      - name: Ensure OSS web bucket exists
+      - name: Assume provision role
+        id: sts
         env:
           ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          ALIBABA_CLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
         run: |
-          ossutil config -e "$OSS_ENDPOINT" -i "$ALIBABA_CLOUD_ACCESS_KEY_ID" -k "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" -L CH
+          aliyun configure set \
+            --profile default \
+            --mode AK \
+            --access-key-id "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
+            --access-key-secret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
+            --region cn-shanghai
+
+          CREDS=$(aliyun sts AssumeRole \
+            --RoleArn "$ALIBABA_CLOUD_ROLE_ARN" \
+            --RoleSessionName github-deploy-web \
+            --DurationSeconds 3600)
+
+          echo "access_key_id=$(echo "$CREDS" | jq -r '.Credentials.AccessKeyId')" >> "$GITHUB_OUTPUT"
+          echo "access_key_secret=$(echo "$CREDS" | jq -r '.Credentials.AccessKeySecret')" >> "$GITHUB_OUTPUT"
+          echo "security_token=$(echo "$CREDS" | jq -r '.Credentials.SecurityToken')" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure OSS web bucket exists
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ steps.sts.outputs.access_key_id }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ steps.sts.outputs.access_key_secret }}
+          ALIBABA_CLOUD_SECURITY_TOKEN: ${{ steps.sts.outputs.security_token }}
+        run: |
+          ossutil config -e "$OSS_ENDPOINT" -i "$ALIBABA_CLOUD_ACCESS_KEY_ID" -k "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" -t "$ALIBABA_CLOUD_SECURITY_TOKEN" -L CH
           if ossutil ls "oss://${OSS_WEB_BUCKET}/" >/dev/null 2>&1; then
             echo "Bucket ${OSS_WEB_BUCKET} exists"
           elif ossutil mb "oss://${OSS_WEB_BUCKET}" -e "$OSS_ENDPOINT" --storage-class Standard; then
@@ -61,14 +93,15 @@ jobs:
               --index-document index.html --error-document 404.html
             ossutil set-acl "oss://${OSS_WEB_BUCKET}" public-read
           else
-            echo "::error::Bucket ${OSS_WEB_BUCKET} does not exist and could not be created (OSS UserDisable?). Create it manually in the OSS console (cn-shanghai): public-read, static website index index.html / error 404.html"
+            echo "::error::Bucket ${OSS_WEB_BUCKET} does not exist and could not be created. Create it manually in the OSS console (cn-shanghai): public-read, static website index index.html / error 404.html"
             exit 1
           fi
 
       - name: Upload static site to OSS
         env:
-          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
-          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ steps.sts.outputs.access_key_id }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ steps.sts.outputs.access_key_secret }}
+          ALIBABA_CLOUD_SECURITY_TOKEN: ${{ steps.sts.outputs.security_token }}
         run: |
-          ossutil config -e "$OSS_ENDPOINT" -i "$ALIBABA_CLOUD_ACCESS_KEY_ID" -k "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" -L CH
+          ossutil config -e "$OSS_ENDPOINT" -i "$ALIBABA_CLOUD_ACCESS_KEY_ID" -k "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" -t "$ALIBABA_CLOUD_SECURITY_TOKEN" -L CH
           ossutil cp -r out/ "oss://${OSS_WEB_BUCKET}/" --update --force

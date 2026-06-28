@@ -26,6 +26,7 @@ jobs:
         env:
           ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          ALIBABA_CLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
           ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
           ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
           ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
@@ -33,6 +34,7 @@ jobs:
           missing=()
           [ -z "$ALIBABA_CLOUD_ACCESS_KEY_ID" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_ID")
           [ -z "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
+          [ -z "$ALIBABA_CLOUD_ROLE_ARN" ] && missing+=("ALIBABA_CLOUD_ROLE_ARN")
           [ -z "$ACR_REGISTRY" ] && missing+=("ACR_REGISTRY")
           [ -z "$ACR_USERNAME" ] && missing+=("ACR_USERNAME")
           [ -z "$ACR_PASSWORD" ] && missing+=("ACR_PASSWORD")
@@ -67,6 +69,7 @@ jobs:
         env:
           ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          ALIBABA_CLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
           ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
         run: |
           aliyun configure set \
@@ -74,6 +77,23 @@ jobs:
             --mode AK \
             --access-key-id "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
             --access-key-secret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
+            --region "$FC_REGION"
+
+          CREDS=$(aliyun sts AssumeRole \
+            --RoleArn "$ALIBABA_CLOUD_ROLE_ARN" \
+            --RoleSessionName github-deploy-api \
+            --DurationSeconds 3600)
+
+          AK=$(echo "$CREDS" | jq -r '.Credentials.AccessKeyId')
+          SK=$(echo "$CREDS" | jq -r '.Credentials.AccessKeySecret')
+          ST=$(echo "$CREDS" | jq -r '.Credentials.SecurityToken')
+
+          aliyun configure set \
+            --profile default \
+            --mode StsToken \
+            --access-key-id "$AK" \
+            --access-key-secret "$SK" \
+            --sts-token "$ST" \
             --region "$FC_REGION"
 
           aliyun fc PUT "/2023-03-30/functions/${FC_FUNCTION}" \
