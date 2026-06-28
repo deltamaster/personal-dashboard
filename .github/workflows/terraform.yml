@@ -32,8 +32,6 @@ jobs:
     env:
       TF_WORKING_DIR: terraform
       TF_VERSION: "1.9.8"
-      TF_STATE_BUCKET: personal-dashboard-tfstate
-      TF_STATE_PREFIX: personal-dashboard
       TF_VAR_region: cn-shanghai
       ALICLOUD_ACCESS_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
       ALICLOUD_SECRET_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
@@ -93,72 +91,19 @@ jobs:
             exit 1
           fi
 
+      - name: Restore Terraform state
+        uses: actions/cache@v4
+        with:
+          path: terraform/terraform.tfstate
+          key: terraform-state-${{ github.ref_name }}
+          restore-keys: terraform-state-main
+
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      - name: Install Alibaba Cloud CLI
-        run: |
-          wget -q https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
-          tar -xzf aliyun-cli-linux-latest-amd64.tgz
-          sudo mv aliyun /usr/local/bin/
-
-      - name: Assume provision role (for OSS state bucket access)
-        run: |
-          set -euo pipefail
-          aliyun configure set \
-            --profile default \
-            --mode AK \
-            --access-key-id "$ALICLOUD_ACCESS_KEY" \
-            --access-key-secret "$ALICLOUD_SECRET_KEY" \
-            --region cn-shanghai
-
-          STS=$(aliyun sts AssumeRole \
-            --RoleArn "$ALICLOUD_ROLE_ARN" \
-            --RoleSessionName "github-terraform-${GITHUB_RUN_ID}" \
-            --DurationSeconds 3600)
-
-          echo "OSS_ACCESS_KEY_ID=$(echo "$STS" | jq -r '.Credentials.AccessKeyId')" >> "$GITHUB_ENV"
-          echo "OSS_SECRET_ACCESS_KEY=$(echo "$STS" | jq -r '.Credentials.AccessKeySecret')" >> "$GITHUB_ENV"
-          echo "OSS_SESSION_TOKEN=$(echo "$STS" | jq -r '.Credentials.SecurityToken')" >> "$GITHUB_ENV"
-
-      - name: Install ossutil
-        run: curl -fsSL https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
-
-      - name: Ensure Terraform state bucket
-        env:
-          OSS_ENDPOINT: oss-cn-shanghai.aliyuncs.com
-        run: |
-          set -euo pipefail
-          CONFIG="$HOME/.ossutilconfig"
-
-          ossutil config -e "$OSS_ENDPOINT" \
-            -i "$OSS_ACCESS_KEY_ID" -k "$OSS_SECRET_ACCESS_KEY" -t "$OSS_SESSION_TOKEN" \
-            -L CH -c "$CONFIG"
-
-          if ossutil stat "oss://${TF_STATE_BUCKET}/" -c "$CONFIG" >/dev/null 2>&1; then
-            echo "Terraform state bucket already exists: ${TF_STATE_BUCKET}"
-          else
-            echo "Creating Terraform state bucket: ${TF_STATE_BUCKET}"
-            ossutil mb "oss://${TF_STATE_BUCKET}" -c "$CONFIG" -e "$OSS_ENDPOINT" \
-              -i "$OSS_ACCESS_KEY_ID" -k "$OSS_SECRET_ACCESS_KEY" -t "$OSS_SESSION_TOKEN"
-          fi
-
-          ossutil stat "oss://${TF_STATE_BUCKET}/" -c "$CONFIG"
-
       - name: Terraform init
-        env:
-          OSS_ENDPOINT: oss-cn-shanghai.aliyuncs.com
-        run: |
-          terraform init -input=false \
-            -backend-config="bucket=${TF_STATE_BUCKET}" \
-            -backend-config="prefix=${TF_STATE_PREFIX}" \
-            -backend-config="key=terraform.tfstate" \
-            -backend-config="region=cn-shanghai" \
-            -backend-config="endpoint=${OSS_ENDPOINT}" \
-            -backend-config="access_key=${OSS_ACCESS_KEY_ID}" \
-            -backend-config="secret_key=${OSS_SECRET_ACCESS_KEY}" \
-            -backend-config="security_token=${OSS_SESSION_TOKEN}"
+        run: terraform init -input=false
 
       - name: Bootstrap ACR repo (for FC placeholder image)
         if: |
@@ -194,3 +139,15 @@ jobs:
           github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||
           github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: terraform apply -input=false -auto-approve
+
+      - name: Upload Terraform state backup
+        if: |
+          always() &&
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||
+           github.event_name == 'push' && github.ref == 'refs/heads/main')
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-state-${{ github.run_id }}
+          path: terraform/terraform.tfstate
+          retention-days: 90
+          if-no-files-found: ignore
