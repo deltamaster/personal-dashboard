@@ -105,6 +105,16 @@ jobs:
       - name: Terraform init
         run: terraform init -input=false
 
+      - name: Import existing OTS instance (if created outside state)
+        if: |
+          github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||
+          github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          if ! terraform state show alicloud_ots_instance.main >/dev/null 2>&1; then
+            terraform import -input=false alicloud_ots_instance.main pd-dashboard \
+              || echo "OTS import skipped (instance not found yet — apply will create it)"
+          fi
+
       - name: Push placeholder container image to ACR
         if: |
           github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||

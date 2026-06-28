@@ -1,7 +1,7 @@
 resource "alicloud_fcv3_function" "api" {
   function_name = var.fc_function_name
   description   = "${var.project} API (Next.js + Auth.js)"
-  runtime       = "custom.debian10"
+  runtime       = "custom-container"
   handler       = "index.handler"
   memory_size   = 512
   cpu           = 0.5
