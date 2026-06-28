@@ -145,7 +145,7 @@ Wide-column NoSQL. PK set at table creation; other columns schemaless. Use **Sea
 
 #### `pd_visits` — PK: `visit_id` (String, UUID)
 
-`date`, `province`, `city`, `attraction`, `attraction_en`, `type` (`景点`/`美食`/`酒店`/`博物馆`/`购物`/`其他`), `country` (default `中国`), `rating` (1–5), `cost`, `cost_currency` (default `CNY`), `thoughts`, `highlights`, `tips`, `revisit` (0/1), `created_at`, `updated_at`
+`date`, `province`, `city`, `attraction`, `attraction_en`, `type` (`景点`/`美食`/`酒店`/`玩乐`/`交通`/`其他`), `country` (default `中国`), `rating` (1–5), `cost`, `cost_currency` (default `CNY`), `thoughts`, `highlights`, `tips`, `revisit` (0/1), `created_at`, `updated_at`
 
 #### `pd_visit_images` — PK: `image_id` (String, UUID)
 
