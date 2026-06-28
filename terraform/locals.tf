@@ -117,5 +117,6 @@ locals {
     OSS_VAULT_ENDPOINT               = local.oss_endpoint
     PORT                             = "9000"
     HOSTNAME                         = "0.0.0.0"
+    PATH                             = "/var/fc/lang/nodejs20/bin:/usr/local/bin:/usr/bin:/bin"
   }
 }

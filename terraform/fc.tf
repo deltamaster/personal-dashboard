@@ -1,7 +1,7 @@
 resource "alicloud_fcv3_function" "api" {
   function_name = var.fc_function_name
   description   = "${var.project} API (Next.js + Auth.js)"
-  runtime       = "custom.debian12"
+  runtime       = "custom.debian10"
   handler       = "bootstrap"
   memory_size   = 1024
   cpu           = 0.5
@@ -13,8 +13,8 @@ resource "alicloud_fcv3_function" "api" {
   role = var.fc_execution_role_arn != "" ? var.fc_execution_role_arn : null
 
   custom_runtime_config {
-    command = ["/bin/sh"]
-    args    = ["bootstrap"]
+    command = ["/var/fc/lang/nodejs20/bin/node"]
+    args    = ["server.js"]
     port    = 9000
   }
 

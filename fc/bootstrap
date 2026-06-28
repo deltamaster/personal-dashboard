@@ -1,6 +1,7 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")"
+export PATH="/var/fc/lang/nodejs20/bin:${PATH:-/usr/local/bin:/usr/bin:/bin}"
 export PORT="${PORT:-9000}"
 export HOSTNAME="${HOSTNAME:-0.0.0.0}"
 exec node server.js
