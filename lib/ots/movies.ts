@@ -16,7 +16,7 @@ function parseDirectors(director?: string): string[] {
 function normalizeMovie(raw: Record<string, unknown>): Movie {
   const rating = coerceOtsNumber(raw.user_rating);
   return {
-    ...(raw as Movie),
+    ...(raw as unknown as Movie),
     user_rating: rating != null ? Math.min(5, Math.max(1, Math.round(rating))) : 0,
     release_year: coerceOtsNumber(raw.release_year),
     duration_minutes: coerceOtsNumber(raw.duration_minutes),
