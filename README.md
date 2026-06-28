@@ -101,9 +101,8 @@ Create a `.env.local` file in the root directory and configure the variables:
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your-nextauth-secret-key-change-in-prod
 
-# Microsoft Entra ID (Azure AD) Authentication
+# Microsoft Entra ID (Azure AD) Authentication (Implicit Flow via JWKS Verification)
 AZURE_AD_CLIENT_ID=your-azure-ad-client-id
-AZURE_AD_CLIENT_SECRET=your-azure-ad-client-secret
 AZURE_AD_TENANT_ID=your-azure-ad-tenant-id
 
 # Alibaba Cloud Credentials

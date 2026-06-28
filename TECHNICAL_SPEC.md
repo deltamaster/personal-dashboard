@@ -49,16 +49,45 @@ Authentication uses OIDC (OpenID Connect) protocol powered by **NextAuth.js (Aut
 ### 2.1 NextAuth Setup (`lib/auth.ts`)
 ```typescript
 import NextAuth from "next-auth";
-import AzureADProvider from "next-auth/providers/azure-ad";
+import CredentialsProvider from "next-auth/providers/credentials";
+import * as jose from "jose"; // For JWKS Public Key signature validation
 
+// Microsoft Entra ID (Azure AD) OIDC Implicit Flow with Public Key Validation (JWKS)
+// Since this is a serverless-friendly public flow, we do NOT require any clientSecret.
+// Instead, Microsoft redirects back with an `id_token` (JWT) via browser form_post.
+// Our backend validates Microsoft's cryptographic signature against Microsoft's public keys.
 export const authOptions = {
   providers: [
-    AzureADProvider({
-      clientId: process.env.AZURE_AD_CLIENT_ID!,
-      clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
-      tenantId: process.env.AZURE_AD_TENANT_ID!,
-      authorization: {
-        params: { scope: "openid profile email" }
+    CredentialsProvider({
+      id: "azure-ad-implicit",
+      name: "Microsoft Entra ID",
+      credentials: {
+        id_token: { label: "ID Token", type: "text" }
+      },
+      async authorize(credentials) {
+        if (!credentials?.id_token) return null;
+        
+        try {
+          // 1. Fetch Microsoft's public keys (JWKS endpoint)
+          const JWKS = jose.createRemoteJWKSet(
+            new URL("https://login.microsoftonline.com/common/discovery/v2.0/keys")
+          );
+          
+          // 2. Cryptographically verify the signature, audience (Client ID), and issuer of the id_token
+          const { payload } = await jose.jwtVerify(credentials.id_token, JWKS, {
+            audience: process.env.AZURE_AD_CLIENT_ID!,
+            issuer: `https://login.microsoftonline.com/common/v2.0`
+          });
+          
+          // 3. Extract and return verified user profile data
+          const email = (payload.email || payload.preferred_username) as string;
+          const name = payload.name as string;
+          
+          return { id: payload.sub!, email, name };
+        } catch (error) {
+          console.error("Cryptographic validation of Microsoft ID Token failed:", error);
+          return null;
+        }
       }
     })
   ],
