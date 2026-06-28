@@ -13,7 +13,7 @@ export default function HomePage() {
           {[
             { href: "/movies/", label: "Movies", desc: "Watch log & director stats" },
             { href: "/portfolio/", label: "Portfolio", desc: "Coming soon" },
-            { href: "/travel/", label: "Travel", desc: "Coming soon" },
+            { href: "/travel/", label: "Travel", desc: "Visits, photos & journey stats" },
           ].map(({ href, label, desc }) => (
             <Link
               key={href}

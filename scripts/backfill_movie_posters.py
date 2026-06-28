@@ -1,77 +1,47 @@
 #!/usr/bin/env python3
 """
-Backfill movie poster_url (and optionally actors) from Douban into OTS pd_movies.
+Backfill movie posters: Douban → download → OSS → OTS poster_url (CDN path).
 
-Uses Douban mobile rexxar API (no API key). Requires tablestore:
-  pip install tablestore
-
-Credentials (first match wins):
-  - ALIBABA_CLOUD_ACCESS_KEY_ID + ALIBABA_CLOUD_ACCESS_KEY_SECRET (+ optional STS token)
-  - Aliyun CLI ~/.aliyun/config.json default profile (same as migrate_movies.py)
+Also optionally fills missing actors from Douban.
 
 Examples:
-  python scripts/backfill_movie_posters.py --dry-run --limit 5
-  python scripts/backfill_movie_posters.py --refresh-broken --with-actors
-  python scripts/backfill_movie_posters.py --all
+  python scripts/backfill_movie_posters.py --stack sg --dry-run --limit 5
+  python scripts/backfill_movie_posters.py --stack sg --migrate-douban
+  python scripts/backfill_movie_posters.py --stack sg --all
 """
 
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import sys
 import time
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
 from typing import Any
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from poster_oss_lib import (
+    DEFAULT_PUBLIC_BASE,
+    OTS_TABLE,
+    USER_AGENT,
+    apply_stack_preset,
+    download_poster_bytes,
+    extract_poster_url,
+    fetch_douban_movie,
+    is_douban_poster_url,
+    is_self_hosted_poster_url,
+    load_dotenv_local,
+    ots_client,
+    poster_oss_key,
+    poster_public_url,
+    put_movie_row,
+    resolve_credentials,
+    upload_to_oss,
+    utc_now_iso,
+)
 from tablestore import Direction, INF_MAX, INF_MIN, OTSClient, Row
-
-OTS_ENDPOINT = os.environ.get(
-    "OTS_ENDPOINT", "https://pd-dash-sg.ap-southeast-1.ots.aliyuncs.com"
-)
-OTS_INSTANCE = os.environ.get("OTS_INSTANCE_NAME", "pd-dash-sg")
-OTS_TABLE = "pd_movies"
-
-DOUBAN_API = "https://m.douban.com/rexxar/api/v2/movie/{subject_id}?for_mobile=1"
-USER_AGENT = (
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) "
-    "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1"
-)
-
-
-def utc_now_iso() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def get_aliyun_credentials() -> tuple[str | None, str | None, str | None]:
-    ak = os.environ.get("ALIBABA_CLOUD_ACCESS_KEY_ID")
-    sk = os.environ.get("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
-    token = os.environ.get("ALIBABA_CLOUD_SECURITY_TOKEN")
-    if ak and sk:
-        return ak, sk, token
-
-    config_path = os.path.expanduser("~/.aliyun/config.json")
-    if not os.path.exists(config_path):
-        return None, None, None
-
-    with open(config_path, encoding="utf-8") as f:
-        config = json.load(f)
-
-    profile = next(
-        (p for p in config.get("profiles", []) if p.get("name") == "default"),
-        None,
-    )
-    if not profile:
-        return None, None, None
-
-    return (
-        profile.get("access_key_id"),
-        profile.get("access_key_secret"),
-        profile.get("sts_token"),
-    )
 
 
 def row_to_dict(row: Row) -> dict[str, Any]:
@@ -105,47 +75,6 @@ def list_all_movies(client: OTSClient) -> list[dict[str, Any]]:
     return movies
 
 
-def put_movie_row(client: OTSClient, row_dict: dict[str, Any]) -> None:
-    douban_id = str(row_dict["douban_subject_id"])
-    primary_key = [("douban_subject_id", douban_id)]
-    attribute_columns: list[tuple[str, Any]] = []
-
-    for name, value in row_dict.items():
-        if name in ("douban_subject_id", "id"):
-            continue
-        if value is None:
-            continue
-        attribute_columns.append((name, value))
-
-    client.put_row(OTS_TABLE, Row(primary_key, attribute_columns))
-
-
-def fetch_douban_movie(subject_id: str) -> dict[str, Any]:
-    url = DOUBAN_API.format(subject_id=subject_id)
-    req = urllib.request.Request(
-        url,
-        headers={
-            "User-Agent": USER_AGENT,
-            "Referer": f"https://m.douban.com/movie/subject/{subject_id}/",
-            "Accept": "application/json",
-        },
-    )
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        return json.loads(resp.read().decode("utf-8"))
-
-
-def extract_poster_url(data: dict[str, Any]) -> str | None:
-    pic = data.get("pic") or {}
-    for key in ("large", "normal"):
-        url = pic.get(key)
-        if isinstance(url, str) and url.startswith("http"):
-            return url
-    cover = data.get("cover_url")
-    if isinstance(cover, str) and cover.startswith("http"):
-        return cover
-    return None
-
-
 def extract_actors(data: dict[str, Any]) -> str | None:
     actors = data.get("actors") or []
     names = [a.get("name") for a in actors if isinstance(a, dict) and a.get("name")]
@@ -156,7 +85,7 @@ def poster_url_ok(url: str) -> bool:
     req = urllib.request.Request(
         url,
         method="HEAD",
-        headers={"User-Agent": USER_AGENT, "Referer": "https://movie.douban.com/"},
+        headers={"User-Agent": USER_AGENT},
     )
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
@@ -167,55 +96,125 @@ def poster_url_ok(url: str) -> bool:
         return False
 
 
+def existing_douban_poster_url(row: dict[str, Any]) -> str | None:
+    url = str(row.get("poster_url") or "").strip()
+    if is_douban_poster_url(url):
+        return url
+    return None
+
+
+def upgrade_poster_url(url: str) -> str:
+    """Prefer a larger Douban CDN variant when the stored URL is thumbnail-sized."""
+    return (
+        url.replace("/s_ratio_poster/", "/m_ratio_poster/")
+        .replace("/square/", "/m_ratio_poster/")
+    )
+
+
 def should_update_poster(
-    row: dict[str, Any], *, force_all: bool, refresh_broken: bool
+    row: dict[str, Any],
+    *,
+    force_all: bool,
+    refresh_broken: bool,
+    migrate_douban: bool,
+    public_base: str,
 ) -> bool:
     if force_all:
         return True
-    url = row.get("poster_url")
-    if not url or not str(url).strip():
+    url = str(row.get("poster_url") or "").strip()
+    if not url:
         return True
-    if refresh_broken and not poster_url_ok(str(url)):
+    if migrate_douban and is_douban_poster_url(url):
+        return True
+    if migrate_douban and not is_self_hosted_poster_url(url, public_base):
+        return True
+    if refresh_broken and not poster_url_ok(url):
         return True
     return False
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Backfill Douban posters into OTS")
-    parser.add_argument("--dry-run", action="store_true", help="Do not write to OTS")
+    load_dotenv_local()
+
+    parser = argparse.ArgumentParser(
+        description="Backfill Douban posters → OSS → OTS CDN URLs"
+    )
+    parser.add_argument("--dry-run", action="store_true", help="Do not write OSS/OTS")
+    parser.add_argument(
+        "--stack",
+        choices=("sg", "cn-shanghai"),
+        default="sg",
+        help="Target stack (default: sg)",
+    )
     parser.add_argument(
         "--all",
         action="store_true",
-        help="Refresh poster_url for every movie from Douban",
+        help="Re-upload every poster from Douban",
     )
     parser.add_argument(
         "--refresh-broken",
         action="store_true",
-        help="Re-fetch when poster_url exists but image HEAD fails",
+        help="Re-fetch when poster_url HEAD fails",
+    )
+    parser.add_argument(
+        "--migrate-douban",
+        action="store_true",
+        default=True,
+        help="Re-upload when poster_url is still a Douban CDN link (default: on)",
+    )
+    parser.add_argument(
+        "--no-migrate-douban",
+        action="store_false",
+        dest="migrate_douban",
+        help="Skip rows that still point at doubanio.com",
     )
     parser.add_argument(
         "--with-actors",
         action="store_true",
         help="Also fill missing actors from Douban",
     )
-    parser.add_argument("--limit", type=int, default=0, help="Max movies to process (0=all)")
+    parser.add_argument("--limit", type=int, default=0, help="Max movies (0=all)")
+    parser.add_argument(
+        "--from-ots-url",
+        action="store_true",
+        default=True,
+        help="When poster_url is already a Douban CDN link, download it directly (skip rexxar API)",
+    )
+    parser.add_argument(
+        "--no-from-ots-url",
+        action="store_false",
+        dest="from_ots_url",
+        help="Always fetch poster URL from Douban rexxar API",
+    )
     parser.add_argument(
         "--delay",
         type=float,
         default=1.2,
         help="Seconds between Douban requests (default 1.2)",
     )
+    parser.add_argument(
+        "--public-base",
+        default=DEFAULT_PUBLIC_BASE,
+        help=f"Public CDN base URL (default: {DEFAULT_PUBLIC_BASE})",
+    )
     args = parser.parse_args()
 
-    ak, sk, token = get_aliyun_credentials()
+    ots_endpoint, ots_instance, oss_bucket, oss_endpoint = apply_stack_preset(args.stack)
+    public_base = args.public_base
+    if args.stack == "cn-shanghai" and args.public_base == DEFAULT_PUBLIC_BASE:
+        public_base = "https://huhansen.com"
+
+    ak, sk, token = resolve_credentials()
     if not ak or not sk:
         print("[-] Missing Alibaba credentials (env or ~/.aliyun/config.json)", file=sys.stderr)
         return 1
 
-    client = OTSClient(OTS_ENDPOINT, ak, sk, OTS_INSTANCE, sts_token=token)
-    print(f"[*] Loading movies from {OTS_TABLE} @ {OTS_INSTANCE}...")
+    client = ots_client(endpoint=ots_endpoint, instance=ots_instance)
+    print(f"[*] Loading movies from {OTS_TABLE} @ {ots_instance}...")
     movies = list_all_movies(client)
-    print(f"[+] Found {len(movies)} movies in OTS")
+    print(f"[+] Found {len(movies)} movies")
+    print(f"[*] OSS: oss://{oss_bucket}/movies/posters/{{id}}.jpg")
+    print(f"[*] CDN: {public_base}/movies/posters/{{id}}.jpg")
 
     updated = 0
     skipped = 0
@@ -233,7 +232,11 @@ def main() -> int:
             continue
 
         need_poster = should_update_poster(
-            row, force_all=args.all, refresh_broken=args.refresh_broken
+            row,
+            force_all=args.all,
+            refresh_broken=args.refresh_broken,
+            migrate_douban=args.migrate_douban,
+            public_base=public_base,
         )
         need_actors = args.with_actors and not (row.get("actors") or "").strip()
 
@@ -244,31 +247,96 @@ def main() -> int:
         processed += 1
         print(f"[*] ({processed}) {title} [{douban_id}]")
 
-        try:
-            data = fetch_douban_movie(douban_id)
-        except Exception as e:
-            print(f"    [-] Douban fetch failed: {e}")
-            failed += 1
-            time.sleep(args.delay)
-            continue
+        data: dict[str, Any] | None = None
+        need_api = need_actors or (
+            need_poster
+            and (not args.from_ots_url or not existing_douban_poster_url(row) or args.all)
+        )
+
+        if need_api:
+            try:
+                data = fetch_douban_movie(douban_id)
+            except Exception as e:
+                if need_poster and args.from_ots_url and existing_douban_poster_url(row):
+                    print(f"    [!] Douban API failed ({e}), using OTS poster URL")
+                elif need_poster:
+                    print(f"    [-] Douban fetch failed: {e}")
+                    failed += 1
+                    time.sleep(args.delay)
+                    continue
+                else:
+                    print(f"    [-] Douban fetch failed: {e}")
+                    failed += 1
+                    time.sleep(args.delay)
+                    continue
 
         changes: list[str] = []
         if need_poster:
-            poster = extract_poster_url(data)
-            if poster:
-                row["poster_url"] = poster
-                changes.append(f"poster={poster}")
+            douban_poster: str | None = None
+            stored = existing_douban_poster_url(row)
+            if args.from_ots_url and stored and not args.all:
+                douban_poster = upgrade_poster_url(stored)
+                print(f"    from OTS: {douban_poster}")
             else:
-                print("    [!] No poster in Douban response")
+                assert data is not None
+                douban_poster = extract_poster_url(data)
+
+            if not douban_poster:
+                print("    [!] No poster URL available")
                 failed += 1
                 time.sleep(args.delay)
                 continue
 
+            try:
+                image_bytes, content_type = download_poster_bytes(douban_id, douban_poster)
+            except Exception as e:
+                print(f"    [-] Poster download failed: {e}")
+                failed += 1
+                time.sleep(args.delay)
+                continue
+
+            oss_key = poster_oss_key(douban_id, content_type)
+            public_url = poster_public_url(public_base, douban_id, content_type)
+
+            if args.dry_run:
+                changes.append(f"oss={oss_key}")
+                changes.append(f"poster={public_url}")
+            else:
+                try:
+                    upload_to_oss(
+                        bucket_name=oss_bucket,
+                        endpoint=oss_endpoint,
+                        object_key=oss_key,
+                        data=image_bytes,
+                        content_type=content_type,
+                        ak=ak,
+                        sk=sk,
+                        token=token,
+                    )
+                except Exception as e:
+                    print(f"    [-] OSS upload failed: {e}")
+                    failed += 1
+                    time.sleep(args.delay)
+                    continue
+
+                row["poster_url"] = public_url
+                changes.append(f"poster={public_url}")
+
         if need_actors:
-            actors = extract_actors(data)
-            if actors:
-                row["actors"] = actors
-                changes.append(f"actors ({len(actors.split(' / '))} names)")
+            if data is None:
+                try:
+                    data = fetch_douban_movie(douban_id)
+                except Exception as e:
+                    print(f"    [-] Douban fetch failed (actors): {e}")
+                    if not changes:
+                        failed += 1
+                        time.sleep(args.delay)
+                        continue
+            if data is not None:
+                actors = extract_actors(data)
+                if actors:
+                    row["actors"] = actors
+                    changes.append(f"actors ({len(actors.split(' / '))} names)")
 
         if not changes:
             skipped += 1
@@ -280,7 +348,13 @@ def main() -> int:
         if args.dry_run:
             print(f"    [dry-run] Would update: {', '.join(changes)}")
         else:
-            put_movie_row(client, row)
+            try:
+                put_movie_row(client, row)
+            except Exception as e:
+                print(f"    [-] OTS write failed: {e}")
+                failed += 1
+                time.sleep(args.delay)
+                continue
             print(f"    [+] Updated: {', '.join(changes)}")
             updated += 1
 
@@ -292,7 +366,7 @@ def main() -> int:
     print(f"Failed:  {failed}")
     print(f"Processed (attempted): {processed}")
     if args.dry_run:
-        print("(dry-run — no OTS writes)")
+        print("(dry-run — no OSS/OTS writes)")
     return 0 if failed == 0 else 2
 
 

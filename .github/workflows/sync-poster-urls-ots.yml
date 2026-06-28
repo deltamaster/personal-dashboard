@@ -1,4 +1,4 @@
-name: Backfill movie posters
+name: Sync poster URLs in OTS
 
 on:
   workflow_dispatch:
@@ -8,42 +8,24 @@ on:
         required: false
         default: false
         type: boolean
-      refresh_all:
-        description: "Refresh every poster from Douban"
+      douban_id:
+        description: "Single douban subject id (empty = all with OSS object)"
         required: false
-        default: false
-        type: boolean
-      refresh_broken:
-        description: "Re-fetch broken poster URLs"
-        required: false
-        default: true
-        type: boolean
-      with_actors:
-        description: "Fill missing actors from Douban"
-        required: false
-        default: true
-        type: boolean
-      limit:
-        description: "Max movies (0 = all)"
-        required: false
-        default: "0"
+        default: ""
         type: string
 
 concurrency:
-  group: backfill-movie-posters
+  group: sync-poster-urls-ots
   cancel-in-progress: false
 
 jobs:
-  backfill:
+  sync:
     runs-on: ubuntu-latest
     environment: personal-dashboard
-    timeout-minutes: 120
+    timeout-minutes: 30
     env:
       OTS_ENDPOINT: https://pd-dash-sg.ap-southeast-1.ots.aliyuncs.com
       OTS_INSTANCE_NAME: pd-dash-sg
-      POSTER_PUBLIC_BASE: https://pd.huhansen.com
-      OSS_WEB_BUCKET: pd-web-sg
-      OSS_ENDPOINT: oss-ap-southeast-1.aliyuncs.com
     steps:
       - uses: actions/checkout@v4
 
@@ -73,23 +55,20 @@ jobs:
             --region ap-southeast-1
           CREDS=$(aliyun sts AssumeRole \
             --RoleArn "$ALIBABA_CLOUD_ROLE_ARN" \
-            --RoleSessionName "github-backfill-posters" \
+            --RoleSessionName "github-sync-poster-ots" \
             --DurationSeconds 3600)
           echo "access_key_id=$(echo "$CREDS" | jq -r '.Credentials.AccessKeyId')" >> "$GITHUB_OUTPUT"
           echo "access_key_secret=$(echo "$CREDS" | jq -r '.Credentials.AccessKeySecret')" >> "$GITHUB_OUTPUT"
           echo "security_token=$(echo "$CREDS" | jq -r '.Credentials.SecurityToken')" >> "$GITHUB_OUTPUT"
 
-      - name: Backfill posters
+      - name: Sync OTS poster_url from OSS
         env:
           ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ steps.sts.outputs.access_key_id }}
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ steps.sts.outputs.access_key_secret }}
           ALIBABA_CLOUD_SECURITY_TOKEN: ${{ steps.sts.outputs.security_token }}
         run: |
-          ARGS=()
+          ARGS=(--stack sg)
           [ "${{ inputs.dry_run }}" = "true" ] && ARGS+=(--dry-run)
-          [ "${{ inputs.refresh_all }}" = "true" ] && ARGS+=(--all)
-          [ "${{ inputs.refresh_broken }}" = "true" ] && ARGS+=(--refresh-broken)
-          [ "${{ inputs.with_actors }}" = "true" ] && ARGS+=(--with-actors)
-          LIMIT="${{ inputs.limit }}"
-          [ -n "$LIMIT" ] && [ "$LIMIT" != "0" ] && ARGS+=(--limit "$LIMIT")
-          python scripts/backfill_movie_posters.py --stack sg "${ARGS[@]}"
+          ID="${{ inputs.douban_id }}"
+          [ -n "$ID" ] && ARGS+=(--douban-id "$ID")
+          python scripts/sync_poster_urls_ots.py "${ARGS[@]}"

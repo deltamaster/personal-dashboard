@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/dev.mjs",
     "build": "node scripts/build-static.mjs",
     "build:api": "node scripts/build-api.mjs",
     "package:api": "node scripts/package-api.mjs",
