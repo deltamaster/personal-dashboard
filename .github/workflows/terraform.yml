@@ -97,6 +97,31 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
+      - name: Install Alibaba Cloud CLI
+        run: |
+          wget -q https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
+          tar -xzf aliyun-cli-linux-latest-amd64.tgz
+          sudo mv aliyun /usr/local/bin/
+
+      - name: Assume provision role (for OSS state bucket access)
+        run: |
+          set -euo pipefail
+          aliyun configure set \
+            --profile default \
+            --mode AK \
+            --access-key-id "$ALICLOUD_ACCESS_KEY" \
+            --access-key-secret "$ALICLOUD_SECRET_KEY" \
+            --region cn-shanghai
+
+          STS=$(aliyun sts AssumeRole \
+            --RoleArn "$ALICLOUD_ROLE_ARN" \
+            --RoleSessionName "github-terraform-${GITHUB_RUN_ID}" \
+            --DurationSeconds 3600)
+
+          echo "OSS_ACCESS_KEY_ID=$(echo "$STS" | jq -r '.Credentials.AccessKeyId')" >> "$GITHUB_ENV"
+          echo "OSS_SECRET_ACCESS_KEY=$(echo "$STS" | jq -r '.Credentials.AccessKeySecret')" >> "$GITHUB_ENV"
+          echo "OSS_SESSION_TOKEN=$(echo "$STS" | jq -r '.Credentials.SecurityToken')" >> "$GITHUB_ENV"
+
       - name: Install ossutil
         run: curl -fsSL https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
 
@@ -108,14 +133,15 @@ jobs:
           CONFIG="$HOME/.ossutilconfig"
 
           ossutil config -e "$OSS_ENDPOINT" \
-            -i "$ALICLOUD_ACCESS_KEY" -k "$ALICLOUD_SECRET_KEY" -L CH -c "$CONFIG"
+            -i "$OSS_ACCESS_KEY_ID" -k "$OSS_SECRET_ACCESS_KEY" -t "$OSS_SESSION_TOKEN" \
+            -L CH -c "$CONFIG"
 
           if ossutil stat "oss://${TF_STATE_BUCKET}/" -c "$CONFIG" >/dev/null 2>&1; then
             echo "Terraform state bucket already exists: ${TF_STATE_BUCKET}"
           else
             echo "Creating Terraform state bucket: ${TF_STATE_BUCKET}"
             ossutil mb "oss://${TF_STATE_BUCKET}" -c "$CONFIG" -e "$OSS_ENDPOINT" \
-              -i "$ALICLOUD_ACCESS_KEY" -k "$ALICLOUD_SECRET_KEY"
+              -i "$OSS_ACCESS_KEY_ID" -k "$OSS_SECRET_ACCESS_KEY" -t "$OSS_SESSION_TOKEN"
           fi
 
           ossutil stat "oss://${TF_STATE_BUCKET}/" -c "$CONFIG"
@@ -130,8 +156,9 @@ jobs:
             -backend-config="key=terraform.tfstate" \
             -backend-config="region=cn-shanghai" \
             -backend-config="endpoint=${OSS_ENDPOINT}" \
-            -backend-config="access_key=${ALICLOUD_ACCESS_KEY}" \
-            -backend-config="secret_key=${ALICLOUD_SECRET_KEY}"
+            -backend-config="access_key=${OSS_ACCESS_KEY_ID}" \
+            -backend-config="secret_key=${OSS_SECRET_ACCESS_KEY}" \
+            -backend-config="security_token=${OSS_SESSION_TOKEN}"
 
       - name: Bootstrap ACR repo (for FC placeholder image)
         if: |

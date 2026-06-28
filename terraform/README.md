@@ -25,7 +25,11 @@ Repository secrets also work, but environment secrets are preferred.
 
 Also set deploy secrets (`OSS_ENDPOINT`, `OSS_WEB_BUCKET`, `FC_REGION`, `FC_FUNCTION`) — see [SETUP.md](../docs/SETUP.md).
 
-Your RAM user also needs permission to create/write the Terraform state bucket (`personal-dashboard-tfstate`), or create that bucket once in the OSS console (cn-shanghai, private).
+Your RAM user needs `sts:AssumeRole` on the provision role. The **role** needs OSS permissions for the state bucket (`personal-dashboard-tfstate`). The workflow assumes the role before any OSS operations — the RAM user AK is not used directly for OSS.
+
+If you see `UserDisable`, check in **RAM console** that the user is **Enabled** (not disabled), and that the role trust policy allows this user to assume it.
+
+Alternatively create `personal-dashboard-tfstate` manually in OSS (cn-shanghai, private).
 
 ## 2. One-time: ACR instance
 
