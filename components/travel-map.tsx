@@ -16,6 +16,7 @@ import {
   buildFlightRoutes,
   buildTrainRoutes,
   collectRouteEndpoints,
+  routeArcArrow,
   type MapEndpoint,
 } from "@/lib/travel-geo";
 import type { Flight, ProvinceStat, Train } from "@/lib/types/travel";
@@ -167,36 +168,66 @@ export function TravelMap({
 
           <g clipPath="url(#travel-map-clip)">
             {showTrains &&
-              trainRoutes.map((route) => (
-                <path
-                  key={`train-${route.id}`}
-                  d={route.path}
-                  fill="none"
-                  stroke="rgba(251, 191, 36, 0.7)"
-                  strokeWidth={1}
-                  strokeLinecap="round"
-                >
-                  <title>
-                    {route.label} · {route.count} trip{route.count === 1 ? "" : "s"}
-                  </title>
-                </path>
-              ))}
+              trainRoutes.map((route) => {
+                const arrow = routeArcArrow(route.from, route.to, route.bulge);
+                return (
+                  <g key={`train-${route.id}`}>
+                    <path
+                      d={route.path}
+                      fill="none"
+                      stroke="rgba(251, 191, 36, 0.7)"
+                      strokeWidth={1}
+                      strokeLinecap="round"
+                    >
+                      <title>
+                        {route.fromKey} → {route.toKey} · {route.label} · {route.count}{" "}
+                        trip{route.count === 1 ? "" : "s"}
+                      </title>
+                    </path>
+                    <g
+                      transform={`translate(${arrow.x}, ${arrow.y}) rotate(${arrow.angle})`}
+                      pointerEvents="none"
+                      aria-hidden
+                    >
+                      <path
+                        d="M -4 -2.5 L 4 0 L -4 2.5 Z"
+                        fill="rgba(251, 191, 36, 0.85)"
+                      />
+                    </g>
+                  </g>
+                );
+              })}
 
             {showFlights &&
-              flightRoutes.map((route) => (
-                <path
-                  key={`flight-${route.id}`}
-                  d={route.path}
-                  fill="none"
-                  stroke="rgba(56, 189, 248, 0.75)"
-                  strokeWidth={1}
-                  strokeLinecap="round"
-                >
-                  <title>
-                    {route.label} · {route.count} flight{route.count === 1 ? "" : "s"}
-                  </title>
-                </path>
-              ))}
+              flightRoutes.map((route) => {
+                const arrow = routeArcArrow(route.from, route.to, route.bulge);
+                return (
+                  <g key={`flight-${route.id}`}>
+                    <path
+                      d={route.path}
+                      fill="none"
+                      stroke="rgba(56, 189, 248, 0.75)"
+                      strokeWidth={1}
+                      strokeLinecap="round"
+                    >
+                      <title>
+                        {route.fromKey} → {route.toKey} · {route.label} · {route.count}{" "}
+                        flight{route.count === 1 ? "" : "s"}
+                      </title>
+                    </path>
+                    <g
+                      transform={`translate(${arrow.x}, ${arrow.y}) rotate(${arrow.angle})`}
+                      pointerEvents="none"
+                      aria-hidden
+                    >
+                      <path
+                        d="M -6 -3.75 L 6 0 L -6 3.75 Z"
+                        fill="rgba(56, 189, 248, 0.9)"
+                      />
+                    </g>
+                  </g>
+                );
+              })}
 
             {endpoints.map((endpoint) => {
               const [x, y] = endpoint.point;
@@ -243,11 +274,23 @@ export function TravelMap({
 
       <div className="mt-3 flex flex-wrap gap-4 text-xs text-[var(--muted)]">
         <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block h-0.5 w-5 rounded bg-sky-400/80" />
+          <span className="inline-flex items-center">
+            <span className="inline-block h-0.5 w-4 rounded bg-sky-400/80" />
+            <span
+              className="inline-block h-0 w-0 border-y-[4px] border-l-[7px] border-y-transparent border-l-sky-400/95"
+              aria-hidden
+            />
+          </span>
           Flight routes
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block h-0.5 w-5 rounded bg-amber-400/75" />
+          <span className="inline-flex items-center">
+            <span className="inline-block h-0.5 w-4 rounded bg-amber-400/75" />
+            <span
+              className="inline-block h-0 w-0 border-y-[3px] border-l-[5px] border-y-transparent border-l-amber-400/85"
+              aria-hidden
+            />
+          </span>
           Train routes
         </span>
         <span>{visited.length} provinces visited</span>

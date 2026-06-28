@@ -320,7 +320,11 @@ export function resolveProjectedPoint(name: string): [number, number] | null {
   return projectLngLat(COORDS[key]);
 }
 
-export function routeArcPath(from: [number, number], to: [number, number], bulge = 0.18): string {
+function routeArcControl(
+  from: [number, number],
+  to: [number, number],
+  bulge: number
+) {
   const [x1, y1] = from;
   const [x2, y2] = to;
   const mx = (x1 + x2) / 2;
@@ -329,9 +333,29 @@ export function routeArcPath(from: [number, number], to: [number, number], bulge
   const dy = y2 - y1;
   const len = Math.hypot(dx, dy) || 1;
   const lift = Math.min(len * bulge, 55);
-  const cx = mx + (-dy / len) * lift;
-  const cy = my + (dx / len) * lift;
-  return `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`;
+  const control: [number, number] = [mx + (-dy / len) * lift, my + (dx / len) * lift];
+  return { from, control, to };
+}
+
+export function routeArcPath(from: [number, number], to: [number, number], bulge = 0.18): string {
+  const { from: p0, control, to: p2 } = routeArcControl(from, to, bulge);
+  return `M ${p0[0]} ${p0[1]} Q ${control[0]} ${control[1]} ${p2[0]} ${p2[1]}`;
+}
+
+/** Mid-arc position and tangent angle (degrees) for a direction arrow. */
+export function routeArcArrow(
+  from: [number, number],
+  to: [number, number],
+  bulge = 0.18,
+  t = 0.5
+): { x: number; y: number; angle: number } {
+  const { from: p0, control: p1, to: p2 } = routeArcControl(from, to, bulge);
+  const u = 1 - t;
+  const x = u * u * p0[0] + 2 * u * t * p1[0] + t * t * p2[0];
+  const y = u * u * p0[1] + 2 * u * t * p1[1] + t * t * p2[1];
+  const tx = 2 * u * (p1[0] - p0[0]) + 2 * t * (p2[0] - p1[0]);
+  const ty = 2 * u * (p1[1] - p0[1]) + 2 * t * (p2[1] - p1[1]);
+  return { x, y, angle: (Math.atan2(ty, tx) * 180) / Math.PI };
 }
 
 export interface MapRoute {
@@ -339,6 +363,7 @@ export interface MapRoute {
   path: string;
   label: string;
   count: number;
+  bulge: number;
   from: [number, number];
   to: [number, number];
   fromKey: string;
@@ -352,7 +377,8 @@ export interface MapEndpoint {
 
 function aggregateRoutes(
   segments: { from: string; to: string; label: string; id: string }[],
-  bulge: number
+  bulge: number,
+  directed = false
 ): MapRoute[] {
   const groups = new Map<
     string,
@@ -374,7 +400,9 @@ function aggregateRoutes(
     const p2 = resolveProjectedPoint(seg.to);
     if (!fromKey || !toKey || !p1 || !p2) continue;
 
-    const key = [seg.from, seg.to].sort().join("↔");
+    const key = directed
+      ? `${fromKey}→${toKey}`
+      : [seg.from, seg.to].sort().join("↔");
     const existing = groups.get(key);
     if (existing) {
       existing.labels.push(seg.label);
@@ -388,6 +416,7 @@ function aggregateRoutes(
     path: routeArcPath(group.from, group.to, bulge),
     label: group.labels.slice(0, 3).join(" · ") + (group.labels.length > 3 ? " …" : ""),
     count: group.labels.length,
+    bulge,
     from: group.from,
     to: group.to,
     fromKey: group.fromKey,
@@ -411,7 +440,8 @@ export function buildFlightRoutes(
       to: f.arrival_city,
       label: `${f.airline}${f.flight_number}`,
     })),
-    0.2
+    0.2,
+    true
   );
 }
 
@@ -431,7 +461,8 @@ export function buildTrainRoutes(
       to: t.arrival_station,
       label: `${t.train_type ?? "列车"} ${t.train_number}`,
     })),
-    0.08
+    0.08,
+    true
   );
 }
 
