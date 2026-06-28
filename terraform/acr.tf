@@ -1,4 +1,5 @@
-# Personal Edition ACR (classic namespace/repo API).
+# Personal Edition ACR — classic API (deprecated but correct for crpi-*.personal.cr.aliyuncs.com).
+# Provider warns to use cr_ee_* which requires Enterprise Edition instances.
 resource "alicloud_cr_namespace" "main" {
   name               = var.acr_namespace
   auto_create        = false

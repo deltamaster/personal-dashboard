@@ -9,9 +9,15 @@ resource "alicloud_oss_bucket_acl" "web" {
 }
 
 resource "alicloud_oss_bucket_website" "web" {
-  bucket         = alicloud_oss_bucket.web.id
-  index_document = "index.html"
-  error_document = "404.html"
+  bucket = alicloud_oss_bucket.web.id
+
+  index_document {
+    suffix = "index.html"
+  }
+
+  error_document {
+    key = "404.html"
+  }
 }
 
 resource "alicloud_oss_bucket" "vault" {
@@ -31,7 +37,6 @@ resource "alicloud_oss_bucket_cors" "vault" {
     allowed_origins = ["https://${var.domain}"]
     allowed_methods = ["PUT", "GET", "HEAD"]
     allowed_headers = ["*"]
-    expose_headers  = ["ETag"]
     max_age_seconds = 3600
   }
 }
