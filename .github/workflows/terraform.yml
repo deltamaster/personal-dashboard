@@ -103,10 +103,21 @@ jobs:
       - name: Terraform init
         run: terraform init -input=false
 
+      - name: Install aliyun CLI
+        if: |
+          github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||
+          github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          wget -q https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
+          tar -xzf aliyun-cli-linux-latest-amd64.tgz
+          sudo mv aliyun /usr/local/bin/
+
       - name: Import existing resources (if created outside state)
         if: |
           github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||
           github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          ALICLOUD_REGION: ap-southeast-1
         run: bash scripts/import-existing.sh
 
       - name: Terraform plan

@@ -121,4 +121,9 @@ if [ -n "${CDN_DOMAIN:-}" ]; then
       echo "CDN import skipped (domain may not exist yet — Terraform will create it)"
     fi
   fi
+
+  # Reconcile api-path rule-engine children (fixes ConfigParentExceedLimit on partial applies).
+  if [ -f scripts/cdn-sync-api-origin.sh ]; then
+    bash scripts/cdn-sync-api-origin.sh
+  fi
 fi
