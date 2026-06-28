@@ -52,7 +52,7 @@ Or push changes under `terraform/` to `main` (auto-applies).
 
 On first run the workflow will:
 
-1. Import the OTS instance if it already exists but is missing from state
+1. Import existing OTS instance/tables/indexes if they were created outside state
 2. Push a placeholder `nginx:alpine` image to ACR (namespace/repo must exist — see step 2)
 3. Apply OTS tables/indexes, FC v3, and related resources
 4. Save Terraform state to GitHub Actions cache
