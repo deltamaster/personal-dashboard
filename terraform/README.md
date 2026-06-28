@@ -11,16 +11,23 @@ Does **not** create RAM users/roles. Uses your existing RAM user + AssumeRole.
 | **Singapore (active)** | `ap-southeast-1` | `personal-dashboard` | `terraform-state-ap-southeast-1` | yes |
 | **Shanghai (paused)** | `cn-shanghai` | `personal-dashboard` | `terraform-state-cn-shanghai` | manual only |
 
-Both stacks use the **same** GitHub environment secrets. Singapore `auth_url` comes from `env/ap-southeast-1.tfvars`; Shanghai uses the `AUTH_URL` secret (`https://huhansen.cn`).
+Both stacks use the **same** GitHub environment secrets. `auth_url` / `domain` come from per-stack tfvars (`pd.huhansen.com` / `pd.huhansen.cn`).
+
+| Stack | Subdomain | CDN scope |
+|---|---|---|
+| Singapore | `pd.huhansen.com` | `overseas` (no ICP) |
+| Shanghai | `pd.huhansen.cn` | `domestic` (ICP required) |
 
 ## FC deployment model
 
-API runs as **FC Custom Runtime** — no ACR or Docker required:
+API runs as **FC Custom Runtime** — no ACR or Docker required. **CDN** (when `create_cdn_domain = true`) is managed in Terraform:
 
-1. **Deploy API** builds Next.js standalone → zips → uploads to private OSS (`fc/api.zip` in vault bucket)
-2. FC pulls code from OSS and runs `node server.js` on port 9000
+| Path | Origin |
+|---|---|
+| `/*` (default) | OSS web bucket |
+| `/api/*` | FC HTTP trigger (`advanced_origin`) |
 
-This avoids the Personal Edition ACR limit (one instance per account) and works identically in both regions.
+Singapore: `create_cdn_domain = true` in `env/ap-southeast-1.tfvars`. If you already created the domain in the console, the import script adopts it before apply.
 
 ## 1. GitHub secrets
 
@@ -30,7 +37,7 @@ Add these to the **`personal-dashboard`** environment:
 |---|---|
 | `ALIBABA_CLOUD_*`, `ALIBABA_CLOUD_ROLE_ARN` | RAM user + provision role |
 | `AUTH_*` | Auth.js + Azure OAuth |
-| `AUTH_URL` | Shanghai only — `https://huhansen.cn` (cn-shanghai Terraform apply) |
+| `AUTH_URL` | Shanghai only — `https://pd.huhansen.cn` (overrides tfvars on cn-shanghai apply) |
 
 ## 2. Run provisioning
 
@@ -46,9 +53,26 @@ After first apply:
 3. Re-run Terraform apply if auth env changed
 4. Run **Deploy API** then **Deploy Web**
 
-## 3. CDN (Shanghai only, after ICP)
+## 3. CDN + DNS
 
-When `huhansen.cn` is ready: CDN console → origin OSS web bucket, path `/api/*` → FC trigger, HTTPS + CNAME.
+Terraform manages CDN when `create_cdn_domain = true` (Singapore: enabled). After apply, copy output `cdn_cname` to Cloudflare.
+
+### Singapore — `pd.huhansen.com` (Cloudflare)
+
+1. **Terraform apply** creates/updates CDN + OSS/FC routing (or imports existing domain)
+2. Cloudflare DNS (**灰云 / DNS only**):
+
+| 类型 | 名称 | 目标 |
+|---|---|---|
+| CNAME | `pd` | Terraform output `cdn_cname` |
+
+3. Azure redirect URI: `https://pd.huhansen.com/api/auth/callback/microsoft-entra-id`
+
+If the domain already exists in the CDN console, the import step adopts it — no need to delete first.
+
+### Shanghai — `pd.huhansen.cn` (after ICP)
+
+Same pattern with scope **仅中国内地**, origin `huhansen-web.oss-cn-shanghai.aliyuncs.com`, DNS CNAME `pd` → CDN CNAME.
 
 ## What gets created
 

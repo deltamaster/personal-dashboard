@@ -50,6 +50,7 @@ jobs:
       OTS_INSTANCE: pd-dash-sg
       OSS_WEB_BUCKET: pd-web-sg
       OSS_VAULT_BUCKET: pd-vault-sg
+      CDN_DOMAIN: pd.huhansen.com
       ALICLOUD_ACCESS_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
       ALICLOUD_SECRET_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
       ALICLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}

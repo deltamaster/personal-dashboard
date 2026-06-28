@@ -30,6 +30,10 @@ output "fc_http_trigger_url" {
   value = local.fc_http_url
 }
 
+output "cdn_cname" {
+  value = var.create_cdn_domain ? alicloud_cdn_domain_new.main[0].cname : null
+}
+
 output "cdn_domain" {
   value = var.create_cdn_domain ? alicloud_cdn_domain_new.main[0].domain_name : var.domain
 }

@@ -1,9 +1,10 @@
-# Shanghai stack — keep for production after ICP filing. Apply via workflow_dispatch only.
+# Shanghai stack — pd.huhansen.cn after ICP. Apply via workflow_dispatch only.
 
 region            = "cn-shanghai"
 ots_instance_name = "pd-dashboard"
 oss_web_bucket    = "huhansen-web"
 oss_vault_bucket  = "personal-dashboard-vault"
-domain            = "huhansen.cn"
-auth_url          = "https://huhansen.cn"
+domain            = "pd.huhansen.cn"
+auth_url          = "https://pd.huhansen.cn"
+cdn_scope         = "domestic"
 create_cdn_domain = false

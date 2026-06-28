@@ -9,7 +9,8 @@ Complete these **before** the app works in production or locally with real data.
 3. Account type: **Personal Microsoft accounts only**
 4. Redirect URIs (Web):
    - `http://localhost:3000/api/auth/callback/microsoft-entra-id` (local dev)
-   - `https://huhansen.cn/api/auth/callback/microsoft-entra-id` (production)
+   - `https://pd.huhansen.com/api/auth/callback/microsoft-entra-id` (Singapore)
+   - `https://pd.huhansen.cn/api/auth/callback/microsoft-entra-id` (Shanghai, after ICP)
 5. **Certificates & secrets** → New client secret → copy value
 6. **Authentication** → enable ID tokens
 7. Copy **Application (client) ID**
@@ -64,13 +65,13 @@ Shanghai stack is kept for production after ICP — apply/deploy manually via wo
 1. Push to `main` on GitHub
 2. **Deploy Web** workflow uploads `out/` → `huhansen-web`
 3. **Deploy API** workflow builds Next.js → zip → OSS → updates FC
-4. Verify: https://huhansen.cn/auth/signin/
+4. Verify: https://pd.huhansen.com/auth/signin/ (Singapore) or https://pd.huhansen.cn/auth/signin/ (Shanghai)
 
 ## 6. Troubleshooting
 
 | Symptom | Likely cause |
 |---|---|
-| Sign-in redirects to wrong URL | `AUTH_URL` on FC must be `https://huhansen.cn` |
+| Sign-in redirects to wrong URL | `AUTH_URL` on FC must match the stack subdomain (`https://pd.huhansen.com` or `https://pd.huhansen.cn`) |
 | 401 on `/api/movies` | Not signed in, or session cookie blocked (check CDN forwards `/api/*`) |
 | 500 on `/api/movies` | OTS not provisioned, wrong credentials, or `pd_movies` table missing |
 | Static page loads but API fails | CDN path rule for `/api/*` not pointing to FC |

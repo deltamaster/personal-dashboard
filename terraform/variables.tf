@@ -36,9 +36,9 @@ variable "project" {
 }
 
 variable "domain" {
-  description = "Production domain (CDN) or OSS website hostname for this stack."
+  description = "CDN accelerated subdomain for this stack, e.g. pd.huhansen.com or pd.huhansen.cn."
   type        = string
-  default     = "huhansen.cn"
+  default     = "pd.huhansen.cn"
 }
 
 variable "ots_instance_name" {
@@ -67,8 +67,20 @@ variable "fc_execution_role_arn" {
   default     = ""
 }
 
+variable "cdn_scope" {
+  description = "CDN acceleration region: domestic (cn, needs ICP), overseas (global excl. mainland), or global."
+  type        = string
+  default     = "domestic"
+}
+
+variable "fc_api_origin" {
+  description = "FC HTTP trigger hostname for CDN /api/* origin (no scheme). Defaults to FC trigger URL from state."
+  type        = string
+  default     = ""
+}
+
 variable "create_cdn_domain" {
-  description = "Create CDN domain via Terraform. Set false until huhansen.cn is registered/verified in Alibaba CDN console."
+  description = "Create CDN domain via Terraform. Set false until the subdomain is verified in Alibaba CDN console."
   type        = bool
   default     = false
 }
@@ -76,9 +88,9 @@ variable "create_cdn_domain" {
 # --- FC runtime secrets (Auth.js + data access) ---
 
 variable "auth_url" {
-  description = "Public app URL for Auth.js (FC trigger URL for SG, huhansen.cn for Shanghai)."
+  description = "Public app URL for Auth.js, e.g. https://pd.huhansen.com (must match CDN subdomain)."
   type        = string
-  default     = "https://huhansen.cn"
+  default     = "https://pd.huhansen.cn"
 }
 
 variable "auth_secret" {

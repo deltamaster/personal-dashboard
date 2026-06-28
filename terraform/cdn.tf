@@ -3,7 +3,7 @@ resource "alicloud_cdn_domain_new" "main" {
 
   domain_name = var.domain
   cdn_type    = "web"
-  scope       = "domestic"
+  scope       = var.cdn_scope
 
   sources {
     type     = "oss"
@@ -16,4 +16,5 @@ resource "alicloud_cdn_domain_new" "main" {
 
 locals {
   fc_http_url = try(alicloud_fcv3_trigger.http.http_trigger[0].url_internet, "")
+  fc_origin_host = var.fc_api_origin != "" ? var.fc_api_origin : replace(replace(local.fc_http_url, "https://", ""), "http://", "")
 }

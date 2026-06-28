@@ -96,3 +96,16 @@ import_if_missing alicloud_oss_bucket_acl.web "$OSS_WEB_BUCKET"
 import_if_missing alicloud_oss_bucket_acl.vault "$OSS_VAULT_BUCKET"
 import_if_missing alicloud_oss_bucket_website.web "$OSS_WEB_BUCKET"
 import_if_missing alicloud_oss_bucket_cors.vault "$OSS_VAULT_BUCKET"
+
+if [ -n "${CDN_DOMAIN:-}" ]; then
+  if terraform state show 'alicloud_cdn_domain_new.main[0]' >/dev/null 2>&1; then
+    echo "Already in state: alicloud_cdn_domain_new.main[0]"
+  else
+    echo "Importing alicloud_cdn_domain_new.main[0] ($CDN_DOMAIN)..."
+    if terraform import -input=false 'alicloud_cdn_domain_new.main[0]' "$CDN_DOMAIN"; then
+      echo "Imported CDN domain: $CDN_DOMAIN"
+    else
+      echo "CDN import skipped (domain may not exist yet — Terraform will create it)"
+    fi
+  fi
+fi
