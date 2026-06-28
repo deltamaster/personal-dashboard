@@ -122,6 +122,7 @@ export function AddMovieForm({ onAdded }: { onAdded: () => void }) {
       watched_date: String(form.get("watched_date")),
       release_year: Number(form.get("release_year")) || undefined,
       director: String(form.get("director") || "") || undefined,
+      actors: String(form.get("actors") || "") || undefined,
       poster_url: String(form.get("poster_url") || "") || undefined,
       genres: String(form.get("genres") || "") || undefined,
     };
@@ -195,6 +196,10 @@ export function AddMovieForm({ onAdded }: { onAdded: () => void }) {
         <label className="block text-sm sm:col-span-2">
           Director(s) — separate with &quot; / &quot;
           <input name="director" className="mt-1 w-full rounded border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm" />
+        </label>
+        <label className="block text-sm sm:col-span-2">
+          Actor(s) — separate with &quot; / &quot;
+          <input name="actors" className="mt-1 w-full rounded border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm" />
         </label>
         <label className="block text-sm sm:col-span-2">
           Poster URL

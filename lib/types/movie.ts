@@ -10,6 +10,7 @@ export interface Movie {
   comment_id?: string;
   release_year?: number;
   director?: string;
+  actors?: string;
   country?: string;
   language?: string;
   duration_minutes?: number;

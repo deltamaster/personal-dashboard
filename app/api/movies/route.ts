@@ -68,6 +68,7 @@ export async function POST(request: Request) {
       comment_id: body.comment_id,
       release_year: body.release_year,
       director: body.director,
+      actors: body.actors?.trim(),
       country: body.country,
       language: body.language,
       duration_minutes: body.duration_minutes,
