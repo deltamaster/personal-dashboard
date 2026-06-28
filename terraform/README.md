@@ -8,34 +8,23 @@ Does **not** create RAM users/roles. Uses your existing RAM user + AssumeRole.
 
 | Stack | Region | GitHub environment | State cache key | Auto on push |
 |---|---|---|---|---|
-| **Singapore (active)** | `ap-southeast-1` | `personal-dashboard-sg` | `terraform-state-ap-southeast-1` | yes |
+| **Singapore (active)** | `ap-southeast-1` | `personal-dashboard` | `terraform-state-ap-southeast-1` | yes |
 | **Shanghai (paused)** | `cn-shanghai` | `personal-dashboard` | `terraform-state-cn-shanghai` | manual only |
 
-Per-stack settings live in `env/ap-southeast-1.tfvars` and `env/cn-shanghai.tfvars`.
-
-Shanghai stays provisioned for production (`huhansen.cn`) once ICP filing completes. Until then, use Singapore.
+Both stacks use the **same** GitHub environment secrets. Singapore `auth_url` comes from `env/ap-southeast-1.tfvars` (update after first FC apply); Shanghai uses the `AUTH_URL` secret (`https://huhansen.cn`).
 
 ## 1. GitHub secrets
 
-Create **two** environments and copy the same secrets into each, except where noted:
+Add these to the **`personal-dashboard`** environment (shared by both stacks):
 
-### `personal-dashboard-sg` (Singapore — active)
-
-| Secret | Value |
+| Secret | Description |
 |---|---|
-| `ALIBABA_CLOUD_*`, `ALIBABA_CLOUD_ROLE_ARN` | Same RAM user + role (must allow `ap-southeast-1`) |
-| `ACR_REGISTRY` | Singapore Personal Edition login server, e.g. `crpi-xxxxx.ap-southeast-1.personal.cr.aliyuncs.com` |
-| `ACR_USERNAME` / `ACR_PASSWORD` | Singapore ACR credentials |
-| `AUTH_*` | Same Azure / Auth.js secrets |
-| `AUTH_URL` | FC HTTP trigger URL after first apply, e.g. `https://api-xxxxx.ap-southeast-1.fcapp.run` |
+| `ALIBABA_CLOUD_*`, `ALIBABA_CLOUD_ROLE_ARN` | RAM user + provision role |
+| `ACR_REGISTRY` / `ACR_USERNAME` / `ACR_PASSWORD` | ACR (same registry for both stacks if cross-region pull works) |
+| `AUTH_*` | Auth.js + Azure OAuth |
+| `AUTH_URL` | Shanghai only — `https://huhansen.cn` (used when applying cn-shanghai stack) |
 
-### `personal-dashboard` (Shanghai — manual apply only)
-
-Same secrets as above, but Shanghai `ACR_REGISTRY` and `AUTH_URL=https://huhansen.cn`.
-
-**Terraform state** is stored in GitHub Actions cache (separate key per stack). Each apply also uploads a state backup artifact.
-
-## 2. One-time: ACR (Personal Edition)
+Singapore FC `auth_url` is set in `env/ap-southeast-1.tfvars` — update it to the FC trigger URL after the first Singapore apply.
 
 Terraform **does not** create ACR. In **Container Registry console** for each region:
 

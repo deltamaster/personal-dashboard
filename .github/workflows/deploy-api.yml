@@ -24,7 +24,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.stack == 'cn-shanghai' && 'personal-dashboard' || 'personal-dashboard-sg' }}
+    environment: personal-dashboard
     env:
       STACK: ${{ github.event.inputs.stack || 'ap-southeast-1' }}
       FC_REGION: ${{ github.event.inputs.stack == 'cn-shanghai' && 'cn-shanghai' || 'ap-southeast-1' }}

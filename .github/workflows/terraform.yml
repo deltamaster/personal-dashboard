@@ -39,7 +39,7 @@ jobs:
       github.event_name != 'workflow_dispatch' ||
       github.event.inputs.stack == 'ap-southeast-1'
     runs-on: ubuntu-latest
-    environment: personal-dashboard-sg
+    environment: personal-dashboard
     env:
       TF_STACK: ap-southeast-1
       TF_WORKING_DIR: terraform
@@ -86,7 +86,7 @@ jobs:
           [ -z "$AUTH_MICROSOFT_ENTRA_ID_ID" ] && missing+=("AUTH_MICROSOFT_ENTRA_ID_ID")
           [ -z "$AUTH_MICROSOFT_ENTRA_ID_SECRET" ] && missing+=("AUTH_MICROSOFT_ENTRA_ID_SECRET")
           if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::Missing environment secrets (Settings → Environments → personal-dashboard-sg):"
+            echo "::error::Missing environment secrets (Settings → Environments → personal-dashboard):"
             printf '  - %s\n' "${missing[@]}"
             exit 1
           fi
@@ -152,23 +152,13 @@ jobs:
         if: |
           github.event_name == 'pull_request' ||
           github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan'
-        env:
-          AUTH_URL: ${{ secrets.AUTH_URL }}
-        run: |
-          EXTRA=(-var-file="$TFVARS_FILE")
-          if [ -n "$AUTH_URL" ]; then EXTRA+=(-var="auth_url=$AUTH_URL"); fi
-          terraform plan "${EXTRA[@]}" -input=false -no-color
+        run: terraform plan -var-file="$TFVARS_FILE" -input=false -no-color
 
       - name: Terraform apply
         if: |
           github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||
           github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          AUTH_URL: ${{ secrets.AUTH_URL }}
-        run: |
-          EXTRA=(-var-file="$TFVARS_FILE")
-          if [ -n "$AUTH_URL" ]; then EXTRA+=(-var="auth_url=$AUTH_URL"); fi
-          terraform apply "${EXTRA[@]}" -input=false -auto-approve
+        run: terraform apply -var-file="$TFVARS_FILE" -input=false -auto-approve
 
       - name: Upload Terraform state backup
         if: |

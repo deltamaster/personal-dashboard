@@ -24,7 +24,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.stack == 'cn-shanghai' && 'personal-dashboard' || 'personal-dashboard-sg' }}
+    environment: personal-dashboard
     env:
       STACK: ${{ github.event.inputs.stack || 'ap-southeast-1' }}
       OSS_ENDPOINT: ${{ github.event.inputs.stack == 'cn-shanghai' && 'oss-cn-shanghai.aliyuncs.com' || 'oss-ap-southeast-1.aliyuncs.com' }}

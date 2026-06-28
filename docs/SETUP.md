@@ -60,7 +60,7 @@ Deploy workflows use fixed values for `OSS_ENDPOINT`, `OSS_WEB_BUCKET`, `FC_REGI
 
 Run **Terraform** for Singapore first (`personal-dashboard-sg` environment), then **Deploy Web** / **Deploy API**.
 
-Shanghai stack (`personal-dashboard`) is kept for production after ICP — apply/deploy manually via workflow **stack = cn-shanghai**.
+Shanghai stack is kept for production after ICP — apply/deploy manually via workflow **stack = cn-shanghai**.
 
 ## 5. First deploy
 
