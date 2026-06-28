@@ -2,13 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AuthGuard } from "@/components/auth-guard";
-import { ChinaProvinceMap } from "@/components/china-province-map";
+import { TravelMap } from "@/components/travel-map";
 import { TravelStatsPanel } from "@/components/travel-stats-panel";
 import { VisitTimeline } from "@/components/visit-timeline";
-import type { TravelStats, VisitWithImages } from "@/lib/types/travel";
+import type { Flight, Train, TravelStats, VisitWithImages } from "@/lib/types/travel";
 
 export default function TravelPage() {
   const [visits, setVisits] = useState<VisitWithImages[]>([]);
+  const [flights, setFlights] = useState<Flight[]>([]);
+  const [trains, setTrains] = useState<Train[]>([]);
   const [stats, setStats] = useState<TravelStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +26,8 @@ export default function TravelPage() {
       }
       const data = await res.json();
       setVisits(Array.isArray(data.visits) ? data.visits : []);
+      setFlights(Array.isArray(data.flights) ? data.flights : []);
+      setTrains(Array.isArray(data.trains) ? data.trains : []);
       setStats(data.stats ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load travel data");
@@ -56,7 +60,11 @@ export default function TravelPage() {
         {stats && (
           <>
             <TravelStatsPanel stats={stats} />
-            <ChinaProvinceMap byProvince={stats.visits.byProvince} />
+            <TravelMap
+              byProvince={stats.visits.byProvince}
+              flights={flights}
+              trains={trains}
+            />
           </>
         )}
 

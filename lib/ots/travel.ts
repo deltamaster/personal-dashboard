@@ -1,4 +1,8 @@
-import { normalizeProvince } from "@/lib/china-provinces";
+import {
+  CHINA_PROVINCE_NAMES,
+  normalizeProvince,
+  visitCountry,
+} from "@/lib/china-provinces";
 import {
   coerceOtsNumber,
   getOtsClient,
@@ -139,11 +143,14 @@ export function computeTravelStats(
   const countries = new Set<string>();
 
   for (const visit of visits) {
-    if (visit.country) countries.add(visit.country);
-    if (visit.city) cities.add(`${visit.country}:${visit.city}`);
+    const country = visitCountry(visit);
+    countries.add(country);
+    if (visit.city) cities.add(`${country}:${visit.city}`);
     if (visit.province) {
       const province = normalizeProvince(visit.province);
-      provinceMap.set(province, (provinceMap.get(province) ?? 0) + 1);
+      if (CHINA_PROVINCE_NAMES.has(province)) {
+        provinceMap.set(province, (provinceMap.get(province) ?? 0) + 1);
+      }
     }
     const type = visit.type || "其他";
     typeMap.set(type, (typeMap.get(type) ?? 0) + 1);

@@ -39,6 +39,20 @@ export const SVG_NAME_TO_PROVINCE: Record<string, string> = {
 
 export const CHINA_PROVINCE_NAMES = new Set(Object.values(SVG_NAME_TO_PROVINCE));
 
+const CHINA_COUNTRY_ALIASES = new Set([
+  "中国",
+  "China",
+  "CN",
+  "PRC",
+  "中华人民共和国",
+]);
+
+export function visitCountry(visit: { country?: string }): string {
+  const country = visit.country?.trim();
+  if (country && !CHINA_COUNTRY_ALIASES.has(country)) return country;
+  return country || "中国";
+}
+
 const PROVINCE_ALIASES: Record<string, string> = {
   内蒙古自治区: "内蒙古",
   广西壮族自治区: "广西",

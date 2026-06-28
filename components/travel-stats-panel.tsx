@@ -30,7 +30,8 @@ export function TravelStatsPanel({ stats }: { stats: TravelStats }) {
         <p className="mt-1 text-3xl font-bold">{stats.visits.total}</p>
         <p className="mt-2 text-sm text-[var(--muted)]">
           {stats.visits.provinces} provinces · {stats.visits.cities} cities ·{" "}
-          {stats.visits.countries} countries
+          {stats.visits.countries}{" "}
+          {stats.visits.countries === 1 ? "country" : "countries"}
         </p>
       </div>
 
