@@ -29,24 +29,7 @@ resource "alicloud_cdn_domain_config" "api_path_rule" {
   }
 }
 
-resource "alicloud_cdn_domain_config" "api_conditional_origin" {
-  count = var.create_cdn_domain ? 1 : 0
-
-  domain_name   = alicloud_cdn_domain_new.main[0].domain_name
-  function_name = "origin_dns_host"
-  parent_id     = alicloud_cdn_domain_config.api_path_rule[0].config_id
-
-  function_args {
-    arg_name  = "ali_origin_dns_host"
-    arg_value = local.fc_origin_dns
-  }
-
-  depends_on = [
-    alicloud_cdn_domain_config.api_path_rule,
-    alicloud_fcv3_custom_domain.api,
-  ]
-}
-
+# One child per condition rule (ConfigParentExceedLimit): origin DNS + Host header via origin_host only.
 resource "alicloud_cdn_domain_config" "api_origin_host" {
   count = var.create_cdn_domain ? 1 : 0
 

@@ -73,6 +73,7 @@ Shanghai stack is kept for production after ICP — apply/deploy manually via wo
 |---|---|
 | Sign-in redirects to wrong URL | `AUTH_URL` on FC must match the stack subdomain (`https://pd.huhansen.com` or `https://pd.huhansen.cn`) |
 | `ExternalRedirectForbidden` on Microsoft sign-in | FC blocks OAuth redirects on `*.fcapp.run`. Add DNS-only CNAME `api.pd` → `{account_id}.ap-southeast-1.fc.aliyuncs.com`, then re-run Terraform to bind `api.pd.huhansen.com` as FC custom domain. |
+| Terraform `ConfigParentExceedLimit` on CDN | Each rule-engine condition allows one child config. Delete extra children under **api-path** in CDN console (e.g. duplicate `origin_dns_host` or `/api/` cache rule), then re-run Terraform. |
 | 401 on `/api/movies` | Not signed in, or session cookie blocked (check CDN forwards `/api/*`) |
 | 500 on `/api/movies` | OTS not provisioned, wrong credentials, or `pd_movies` table missing |
 | Static page loads but API fails | CDN path rule for `/api/*` not pointing to FC |
