@@ -50,9 +50,44 @@ function extractEmail(input: {
 
 const { clientId, clientSecret } = getOAuthCredentials();
 
+const useSecureCookies = process.env.AUTH_URL?.startsWith("https://") ?? false;
+
+/** OAuth redirect cookies — SameSite=None helps embedded browsers (e.g. Cursor Simple Browser). */
+const oauthFlowCookieOptions = useSecureCookies
+  ? ({
+      httpOnly: true,
+      sameSite: "none" as const,
+      path: "/",
+      secure: true,
+      maxAge: 60 * 15,
+    } as const)
+  : undefined;
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
-  providers: [MicrosoftConsumerProvider({ clientId, clientSecret })],
+  debug: process.env.AUTH_DEBUG === "true",
+  logger: {
+    error(code, ...message) {
+      console.error(`[auth][${code}]`, ...message);
+    },
+    warn(code, ...message) {
+      console.warn(`[auth][${code}]`, ...message);
+    },
+  },
+  providers: [
+    MicrosoftConsumerProvider({ clientId, clientSecret, loginHint: ALLOWED_EMAIL }),
+  ],
+  ...(oauthFlowCookieOptions
+    ? {
+        cookies: {
+          pkceCodeVerifier: { options: oauthFlowCookieOptions },
+          state: { options: oauthFlowCookieOptions },
+          csrfToken: {
+            options: { ...oauthFlowCookieOptions, maxAge: 60 * 60 },
+          },
+        },
+      }
+    : {}),
   callbacks: {
     async signIn({ user, profile }) {
       const email = extractEmail({
@@ -60,11 +95,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         profile: profile as Record<string, unknown> | null,
       });
 
-      if (process.env.NODE_ENV === "development") {
-        console.log("[auth] signIn:", { email, allowed: ALLOWED_EMAIL });
+      const allowed = !!email && email === ALLOWED_EMAIL;
+      if (!allowed) {
+        console.warn("[auth] signIn rejected:", {
+          email,
+          allowedEmail: ALLOWED_EMAIL,
+          profileKeys: profile ? Object.keys(profile) : [],
+        });
       }
 
-      return !!email && email === ALLOWED_EMAIL;
+      return allowed;
     },
     async jwt({ token, user, profile }) {
       const email =

@@ -75,7 +75,7 @@ resource "alicloud_cdn_domain_config" "api_no_cache" {
 
   function_args {
     arg_name  = "path"
-    arg_value = "/api/"
+    arg_value = "/api"
   }
   function_args {
     arg_name  = "ttl"
@@ -88,6 +88,27 @@ resource "alicloud_cdn_domain_config" "api_no_cache" {
   function_args {
     arg_name  = "swift_no_cache_low"
     arg_value = "on"
+  }
+  function_args {
+    arg_name  = "swift_origin_cache_high"
+    arg_value = "off"
+  }
+  function_args {
+    arg_name  = "swift_follow_cachetime"
+    arg_value = "off"
+  }
+}
+
+# OAuth and other redirects must not be cached (308 with query string poisoned other sessions).
+resource "alicloud_cdn_domain_config" "no_cache_redirect_status" {
+  count = var.create_cdn_domain ? 1 : 0
+
+  domain_name   = alicloud_cdn_domain_new.main[0].domain_name
+  function_name = "default_ttl_code"
+
+  function_args {
+    arg_name  = "default_ttl_code"
+    arg_value = "301=0,302=0,307=0,308=0"
   }
 }
 

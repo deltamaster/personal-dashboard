@@ -17,6 +17,7 @@ type MicrosoftProfile = {
 export function MicrosoftConsumerProvider(options: {
   clientId: string;
   clientSecret: string;
+  loginHint?: string;
 }): OIDCConfig<MicrosoftProfile> {
   return {
     id: "microsoft-entra-id",
@@ -28,8 +29,11 @@ export function MicrosoftConsumerProvider(options: {
     issuer: CONSUMER_ISSUER,
     authorization: {
       params: {
+        // login_hint helps embedded browsers (e.g. Cursor Simple Browser) pre-select
+        // the allowed account; they do not share Chrome's Microsoft session cookies.
         prompt: "select_account",
         scope: "openid profile email",
+        ...(options.loginHint ? { login_hint: options.loginHint } : {}),
       },
     },
     profile(profile) {
