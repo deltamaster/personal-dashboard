@@ -29,10 +29,12 @@ Block all public access. Prefixes: `travel_images/`, `portfolio_statements/`. CO
 
 Domain already registered with Alibaba.
 
-| Path | Origin |
-|---|---|
-| `/api/*` | FC HTTP trigger |
-| `/*` | `huhansen-web.oss-cn-shanghai.aliyuncs.com` |
+
+| Path     | Origin                                      |
+| -------- | ------------------------------------------- |
+| `/api/*` | FC HTTP trigger                             |
+| `/*`     | `huhansen-web.oss-cn-shanghai.aliyuncs.com` |
+
 
 Cache: long TTL on hashed static assets; no cache on `/api/*`; short/no cache on HTML. Enable HTTPS. Point DNS to CDN CNAME.
 
@@ -77,16 +79,18 @@ GitHub secrets: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
 
 ## 3. Verify
 
-| Check | Expected |
-|---|---|
-| `https://huhansen.cn/` | Static shell loads |
-| `/auth/signin` | Microsoft button |
-| Sign in as allowlisted email | Dashboard + session cookie on `huhansen.cn` |
-| Sign in as other account | `/auth/error` |
-| `GET /api/portfolio/holdings` without cookie | 401 |
-| Same with session | 200 JSON |
-| Vault object URL without signature | 403 |
-| Web bucket JS/CSS URL | 200 public |
+
+| Check                                        | Expected                                    |
+| -------------------------------------------- | ------------------------------------------- |
+| `https://huhansen.cn/`                       | Static shell loads                          |
+| `/auth/signin`                               | Microsoft button                            |
+| Sign in as allowlisted email                 | Dashboard + session cookie on `huhansen.cn` |
+| Sign in as other account                     | `/auth/error`                               |
+| `GET /api/portfolio/holdings` without cookie | 401                                         |
+| Same with session                            | 200 JSON                                    |
+| Vault object URL without signature           | 403                                         |
+| Web bucket JS/CSS URL                        | 200 public                                  |
+
 
 ---
 
