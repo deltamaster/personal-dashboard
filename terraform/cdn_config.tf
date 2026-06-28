@@ -1,33 +1,69 @@
 # CDN path rules: /api/* → FC, default /* → OSS (via alicloud_cdn_domain_new sources).
+# advanced_origin only supports exact URI match; use rules engine + conditional origin for /api/*.
 
-resource "alicloud_cdn_domain_config" "api_advanced_origin" {
+locals {
+  api_path_rule = jsonencode({
+    match = {
+      logic = "and"
+      criteria = [{
+        matchType     = "uri"
+        matchOperator = "contains"
+        matchValue    = "/api/*"
+        negate        = false
+      }]
+    }
+    name   = "api-path"
+    status = "enable"
+  })
+}
+
+resource "alicloud_cdn_domain_config" "api_path_rule" {
+  count = var.create_cdn_domain ? 1 : 0
+
+  domain_name   = alicloud_cdn_domain_new.main[0].domain_name
+  function_name = "condition"
+
+  function_args {
+    arg_name  = "rule"
+    arg_value = local.api_path_rule
+  }
+}
+
+resource "alicloud_cdn_domain_config" "api_conditional_origin" {
   count = var.create_cdn_domain && local.fc_origin_host != "" ? 1 : 0
 
   domain_name   = alicloud_cdn_domain_new.main[0].domain_name
-  function_name = "advanced_origin"
+  function_name = "origin_dns_host"
+  parent_id     = alicloud_cdn_domain_config.api_path_rule[0].config_id
 
   function_args {
-    arg_name  = "variable_type"
-    arg_value = "uri"
+    arg_name  = "ali_origin_dns_host"
+    arg_value = local.fc_origin_host
   }
-  function_args {
-    arg_name  = "variable"
-    arg_value = "uri"
-  }
-  function_args {
-    arg_name  = "conditions"
-    arg_value = "=="
-  }
-  function_args {
-    arg_name  = "value"
-    arg_value = "/api"
-  }
+
+  depends_on = [
+    alicloud_cdn_domain_config.api_path_rule,
+    alicloud_fcv3_trigger.http,
+  ]
+}
+
+resource "alicloud_cdn_domain_config" "api_origin_host" {
+  count = var.create_cdn_domain && local.fc_origin_host != "" ? 1 : 0
+
+  domain_name   = alicloud_cdn_domain_new.main[0].domain_name
+  function_name = "origin_host"
+  parent_id     = alicloud_cdn_domain_config.api_path_rule[0].config_id
+
   function_args {
     arg_name  = "origin"
     arg_value = local.fc_origin_host
   }
+  function_args {
+    arg_name  = "host"
+    arg_value = local.fc_origin_host
+  }
 
-  depends_on = [alicloud_fcv3_trigger.http]
+  depends_on = [alicloud_cdn_domain_config.api_path_rule]
 }
 
 resource "alicloud_cdn_domain_config" "api_no_cache" {
