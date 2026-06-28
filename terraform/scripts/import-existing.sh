@@ -57,3 +57,13 @@ done
 import_if_missing alicloud_fcv3_function.api "$FC_FUNCTION"
 import_if_missing alicloud_fcv3_trigger.http "${FC_FUNCTION}:${FC_HTTP_TRIGGER}"
 import_if_missing alicloud_fcv3_provision_config.api "$FC_FUNCTION"
+
+OSS_WEB_BUCKET="${OSS_WEB_BUCKET:-huhansen-web}"
+OSS_VAULT_BUCKET="${OSS_VAULT_BUCKET:-personal-dashboard-vault}"
+
+import_if_missing alicloud_oss_bucket.web "$OSS_WEB_BUCKET"
+import_if_missing alicloud_oss_bucket.vault "$OSS_VAULT_BUCKET"
+import_if_missing alicloud_oss_bucket_acl.web "$OSS_WEB_BUCKET"
+import_if_missing alicloud_oss_bucket_acl.vault "$OSS_VAULT_BUCKET"
+import_if_missing alicloud_oss_bucket_website.web "$OSS_WEB_BUCKET"
+import_if_missing alicloud_oss_bucket_cors.vault "$OSS_VAULT_BUCKET"

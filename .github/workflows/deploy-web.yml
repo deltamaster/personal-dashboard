@@ -78,20 +78,6 @@ jobs:
           echo "access_key_secret=$(echo "$CREDS" | jq -r '.Credentials.AccessKeySecret')" >> "$GITHUB_OUTPUT"
           echo "security_token=$(echo "$CREDS" | jq -r '.Credentials.SecurityToken')" >> "$GITHUB_OUTPUT"
 
-      - name: Ensure OSS web bucket exists
-        env:
-          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ steps.sts.outputs.access_key_id }}
-          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ steps.sts.outputs.access_key_secret }}
-          ALIBABA_CLOUD_SECURITY_TOKEN: ${{ steps.sts.outputs.security_token }}
-        run: |
-          ossutil config -e "$OSS_ENDPOINT" -i "$ALIBABA_CLOUD_ACCESS_KEY_ID" -k "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" -t "$ALIBABA_CLOUD_SECURITY_TOKEN" -L CH
-          if ossutil ls "oss://${OSS_WEB_BUCKET}/" >/dev/null 2>&1; then
-            echo "Bucket ${OSS_WEB_BUCKET} exists"
-          else
-            echo "::error::Bucket ${OSS_WEB_BUCKET} not found. Create it in the OSS console (cn-shanghai): public-read, static website index index.html / error 404.html. Then re-run Deploy Web."
-            exit 1
-          fi
-
       - name: Upload static site to OSS
         env:
           ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ steps.sts.outputs.access_key_id }}
@@ -100,12 +86,3 @@ jobs:
         run: |
           ossutil config -e "$OSS_ENDPOINT" -i "$ALIBABA_CLOUD_ACCESS_KEY_ID" -k "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" -t "$ALIBABA_CLOUD_SECURITY_TOKEN" -L CH
           ossutil cp -r out/ "oss://${OSS_WEB_BUCKET}/" --update --force
-
-      - name: Upload static build artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: static-site-out
-          path: out/
-          retention-days: 7
-          if-no-files-found: ignore

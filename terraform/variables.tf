@@ -88,12 +88,6 @@ variable "initial_fc_image" {
   default     = ""
 }
 
-variable "create_oss_buckets" {
-  description = "Create OSS buckets via Terraform. Set false if the account returns OSS UserDisable (create buckets in console instead)."
-  type        = bool
-  default     = false
-}
-
 variable "create_cdn_domain" {
   description = "Create CDN domain via Terraform. Set false until huhansen.cn is registered/verified in Alibaba CDN console."
   type        = bool

@@ -54,23 +54,12 @@ On first run the workflow will:
 
 1. Import existing OTS/FC resources if they were created outside state
 2. Push a placeholder `nginx:alpine` image to ACR (namespace/repo must exist — see step 2)
-3. Apply OTS tables/indexes, FC v3, and related resources
+3. Apply OTS, OSS buckets, FC v3, and related resources
 4. Save Terraform state to GitHub Actions cache
 
-**OSS buckets** and **CDN domain** are **not** created by Terraform by default (this account returns `UserDisable` on OSS API and CDN requires domain registration). Create them manually — see sections 4 and 5 below.
+**CDN domain** is not created by Terraform by default (requires domain registration in Alibaba CDN). See §4 below.
 
-## 4. One-time: OSS buckets (console)
-
-Create in **OSS console** (cn-shanghai):
-
-| Bucket | ACL | Settings |
-|---|---|---|
-| `huhansen-web` | Public read | Static website: index `index.html`, error `404.html` |
-| `personal-dashboard-vault` | Private | CORS: allow `PUT`/`GET`/`HEAD` from `https://huhansen.cn` |
-
-To let Terraform manage buckets instead (if your account allows OSS API), set `create_oss_buckets = true` in a `.tfvars` file or `TF_VAR_create_oss_buckets=true`.
-
-## 5. One-time: CDN (console)
+## 4. One-time: CDN (console)
 
 Before adding `huhansen.cn` to CDN, the domain must be **registered with Alibaba CDN** (domain verification / ICP as required).
 
@@ -82,13 +71,12 @@ In **CDN console**:
 
 To let Terraform create the CDN domain after registration succeeds, set `create_cdn_domain = true`.
 
-## 6. After Terraform succeeds
+## 5. After Terraform succeeds
 
-1. **CDN console** — if not already done (see §5 above): path rule `/api/*` → FC HTTP trigger origin. Enable HTTPS; CNAME `huhansen.cn` to CDN.
-2. **OSS console** — if not already done (see §4 above): create `huhansen-web` and `personal-dashboard-vault`.
-3. Run **Deploy Web** and **Deploy API** workflows to publish the app.
+1. **CDN console** — if not already done (see §4 above): path rule `/api/*` → FC HTTP trigger origin. Enable HTTPS; CNAME `huhansen.cn` to CDN.
+2. Run **Deploy Web** and **Deploy API** workflows to publish the app.
 
-## 7. Re-run Terraform
+## 6. Re-run Terraform
 
 Re-run when you change `terraform/` or when FC auth env vars change.
 
@@ -98,10 +86,10 @@ Re-run when you change `terraform/` or when FC auth env vars change.
 |---|---|
 | OTS instance | `pd-dashboard` (max 16 chars) |
 | OTS tables | 7 × `pd_*` + 6 search indexes |
-| OSS | `huhansen-web`, `personal-dashboard-vault` (manual — see §4) |
+| OSS | `huhansen-web` (public), `personal-dashboard-vault` (private) |
 | ACR | namespace `personal-dashboard`, repo `api` (manual — see §2) |
 | FC v3 | function `api`, HTTP trigger, min instances 0 |
-| CDN | `huhansen.cn` → OSS (manual — see §5) |
+| CDN | `huhansen.cn` → OSS (manual — see §4) |
 
 ## Local Terraform (optional)
 

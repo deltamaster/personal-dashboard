@@ -11,11 +11,11 @@ output "ots_endpoint" {
 }
 
 output "oss_web_bucket" {
-  value = var.oss_web_bucket
+  value = alicloud_oss_bucket.web.bucket
 }
 
 output "oss_vault_bucket" {
-  value = var.oss_vault_bucket
+  value = alicloud_oss_bucket.vault.bucket
 }
 
 output "acr_registry" {

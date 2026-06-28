@@ -58,7 +58,7 @@ Add these in **GitHub → Settings → Secrets and variables → Actions**:
 
 Deploy workflows use fixed values for `OSS_ENDPOINT`, `OSS_WEB_BUCKET`, `FC_REGION`, and `FC_FUNCTION` (see workflow files). You do not need separate secrets for those unless you override them.
 
-Run **Terraform** workflow before **Deploy Web** / **Deploy API**.
+Run **Terraform** workflow first (creates OSS buckets and infrastructure), then **Deploy Web** / **Deploy API**.
 
 ## 5. First deploy
 
