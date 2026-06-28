@@ -29,6 +29,7 @@ jobs:
       STACK: ${{ github.event.inputs.stack || 'ap-southeast-1' }}
       OSS_ENDPOINT: ${{ github.event.inputs.stack == 'cn-shanghai' && 'oss-cn-shanghai.aliyuncs.com' || 'oss-ap-southeast-1.aliyuncs.com' }}
       OSS_WEB_BUCKET: ${{ github.event.inputs.stack == 'cn-shanghai' && 'huhansen-web' || 'pd-web-sg' }}
+      CDN_DOMAIN: ${{ github.event.inputs.stack == 'cn-shanghai' && 'pd.huhansen.cn' || 'pd.huhansen.com' }}
       ALICLOUD_REGION: ${{ github.event.inputs.stack == 'cn-shanghai' && 'cn-shanghai' || 'ap-southeast-1' }}
     steps:
       - uses: actions/checkout@v4
@@ -96,4 +97,22 @@ jobs:
           ALIBABA_CLOUD_SECURITY_TOKEN: ${{ steps.sts.outputs.security_token }}
         run: |
           ossutil config -e "$OSS_ENDPOINT" -i "$ALIBABA_CLOUD_ACCESS_KEY_ID" -k "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" -t "$ALIBABA_CLOUD_SECURITY_TOKEN" -L CH
-          ossutil cp -r out/ "oss://${OSS_WEB_BUCKET}/" --update --force
+          ossutil cp -r out/ "oss://${OSS_WEB_BUCKET}/" --update --force --exclude "*.html"
+          ossutil cp -r out/ "oss://${OSS_WEB_BUCKET}/" --update --force --include "*.html" --meta "Cache-Control:public, max-age=0, must-revalidate"
+
+      - name: Purge CDN cache
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ steps.sts.outputs.access_key_id }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ steps.sts.outputs.access_key_secret }}
+          ALIBABA_CLOUD_SECURITY_TOKEN: ${{ steps.sts.outputs.security_token }}
+        run: |
+          aliyun configure set \
+            --profile default \
+            --mode StsToken \
+            --access-key-id "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
+            --access-key-secret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
+            --sts-token "$ALIBABA_CLOUD_SECURITY_TOKEN" \
+            --region "$ALICLOUD_REGION"
+          aliyun cdn RefreshObjectCaches \
+            --ObjectPath "https://${CDN_DOMAIN}/" \
+            --ObjectType Directory

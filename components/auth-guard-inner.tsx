@@ -1,11 +1,13 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { SignInPrompt } from "@/components/sign-in-prompt";
 import { fetchSession } from "@/lib/session-client";
 
 export function AuthGuardInner({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [state, setState] = useState<"loading" | "authed" | "guest">("loading");
 
   useEffect(() => {
@@ -13,10 +15,12 @@ export function AuthGuardInner({ children }: { children: React.ReactNode }) {
       if (session?.user) setState("authed");
       else {
         setState("guest");
-        router.replace("/auth/signin/");
+        if (!pathname?.startsWith("/auth")) {
+          router.replace("/auth/signin/");
+        }
       }
     });
-  }, [router]);
+  }, [pathname, router]);
 
   if (state === "loading") {
     return (
@@ -26,7 +30,7 @@ export function AuthGuardInner({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (state === "guest") return null;
+  if (state === "guest") return <SignInPrompt />;
 
   return <>{children}</>;
 }
