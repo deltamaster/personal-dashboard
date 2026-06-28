@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# Adopt OTS resources created outside Terraform state (e.g. partial CI applies).
+# Adopt resources created outside Terraform state (e.g. partial CI applies).
 set -euo pipefail
 
 OTS_INSTANCE="${OTS_INSTANCE:-pd-dashboard}"
 SEARCH_INDEX_TYPE="${SEARCH_INDEX_TYPE:-Search}"
+FC_FUNCTION="${FC_FUNCTION:-api}"
+FC_HTTP_TRIGGER="${FC_HTTP_TRIGGER:-http}"
 
 import_if_missing() {
   local addr="$1"
@@ -51,3 +53,7 @@ for table in "${!OTS_SEARCH_INDEXES[@]}"; do
     "alicloud_ots_search_index.indexes[\"$table\"]" \
     "${OTS_INSTANCE}:${table}:${index}:${SEARCH_INDEX_TYPE}"
 done
+
+import_if_missing alicloud_fcv3_function.api "$FC_FUNCTION"
+import_if_missing alicloud_fcv3_trigger.http "${FC_FUNCTION}:${FC_HTTP_TRIGGER}"
+import_if_missing alicloud_fcv3_provision_config.api "$FC_FUNCTION"
