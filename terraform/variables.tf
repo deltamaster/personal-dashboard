@@ -79,6 +79,12 @@ variable "fc_api_origin" {
   default     = ""
 }
 
+variable "fc_custom_domain" {
+  description = "FC custom domain for OAuth redirects (must CNAME to {account_id}.{region}.fc.aliyuncs.com). Defaults to api.{domain}."
+  type        = string
+  default     = ""
+}
+
 variable "create_cdn_domain" {
   description = "Create CDN domain via Terraform. Set false until the subdomain is verified in Alibaba CDN console."
   type        = bool

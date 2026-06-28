@@ -31,7 +31,12 @@ output "fc_http_trigger_url" {
 }
 
 output "fc_custom_domain" {
-  value = alicloud_fcv3_custom_domain.api.custom_domain_name
+  value = local.fc_custom_domain
+}
+
+output "fc_custom_domain_cname" {
+  description = "Add a DNS-only CNAME for fc_custom_domain pointing here before Terraform can bind the domain."
+  value       = local.fc_origin_dns
 }
 
 output "fc_origin_dns" {

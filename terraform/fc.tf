@@ -60,7 +60,7 @@ resource "alicloud_fcv3_provision_config" "api" {
 # OAuth sign-in returns 302 to Microsoft; FC blocks external redirects on *.fcapp.run.
 # Bind the public app domain so CDN can back-to-origin with Host: var.domain.
 resource "alicloud_fcv3_custom_domain" "api" {
-  custom_domain_name = var.domain
+  custom_domain_name = local.fc_custom_domain
   protocol           = "HTTP"
 
   route_config {

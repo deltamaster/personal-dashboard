@@ -7,6 +7,7 @@ locals {
   ots_endpoint = "https://${var.ots_instance_name}.${var.region}.ots.aliyuncs.com"
   oss_endpoint = "oss-${var.region}.aliyuncs.com"
   fc_code_key  = "fc/${var.fc_function_name}.zip"
+  fc_custom_domain = var.fc_custom_domain != "" ? var.fc_custom_domain : "api.${var.domain}"
 
   ots_tables = {
     pd_holdings = {
