@@ -19,7 +19,9 @@ resource "alicloud_oss_bucket_website" "web" {
   bucket = alicloud_oss_bucket.web.id
 
   index_document {
-    suffix = "index.html"
+    suffix          = "index.html"
+    support_sub_dir = true
+    type            = "0" # 302 → trailing slash when e.g. /auth/signin → /auth/signin/
   }
 
   error_document {
