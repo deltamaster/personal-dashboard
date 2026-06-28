@@ -6,7 +6,10 @@ Does **not** create RAM users/roles. Uses your existing RAM user + AssumeRole.
 
 ## 1. GitHub secrets
 
-Add these in **GitHub → Settings → Secrets and variables → Actions**:
+Add these as **environment secrets** on the `personal-dashboard` environment  
+(Settings → Environments → personal-dashboard → Environment secrets).
+
+Repository secrets also work, but environment secrets are preferred.
 
 | Secret | Required | Description |
 |---|---|---|

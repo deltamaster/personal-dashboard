@@ -25,26 +25,26 @@ concurrency:
   group: terraform-${{ github.ref }}
   cancel-in-progress: false
 
-env:
-  TF_WORKING_DIR: terraform
-  TF_VERSION: "1.9.8"
-  TF_STATE_BUCKET: personal-dashboard-tfstate
-  TF_STATE_PREFIX: personal-dashboard
-  TF_VAR_region: cn-shanghai
-  ALICLOUD_ACCESS_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
-  ALICLOUD_SECRET_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
-  ALICLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
-  TF_VAR_role_arn: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
-  TF_VAR_acr_registry: ${{ secrets.ACR_REGISTRY }}
-  TF_VAR_auth_secret: ${{ secrets.AUTH_SECRET }}
-  TF_VAR_auth_microsoft_entra_id_id: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_ID }}
-  TF_VAR_auth_microsoft_entra_id_secret: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_SECRET }}
-  TF_VAR_runtime_access_key: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
-  TF_VAR_runtime_secret_key: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
-
 jobs:
   terraform:
     runs-on: ubuntu-latest
+    environment: personal-dashboard
+    env:
+      TF_WORKING_DIR: terraform
+      TF_VERSION: "1.9.8"
+      TF_STATE_BUCKET: personal-dashboard-tfstate
+      TF_STATE_PREFIX: personal-dashboard
+      TF_VAR_region: cn-shanghai
+      ALICLOUD_ACCESS_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+      ALICLOUD_SECRET_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+      ALICLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
+      TF_VAR_role_arn: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
+      TF_VAR_acr_registry: ${{ secrets.ACR_REGISTRY }}
+      TF_VAR_auth_secret: ${{ secrets.AUTH_SECRET }}
+      TF_VAR_auth_microsoft_entra_id_id: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_ID }}
+      TF_VAR_auth_microsoft_entra_id_secret: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_SECRET }}
+      TF_VAR_runtime_access_key: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+      TF_VAR_runtime_secret_key: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
     defaults:
       run:
         working-directory: ${{ env.TF_WORKING_DIR }}
@@ -71,7 +71,7 @@ jobs:
           [ -z "$AUTH_MICROSOFT_ENTRA_ID_ID" ] && missing+=("AUTH_MICROSOFT_ENTRA_ID_ID")
           [ -z "$AUTH_MICROSOFT_ENTRA_ID_SECRET" ] && missing+=("AUTH_MICROSOFT_ENTRA_ID_SECRET")
           if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::Missing GitHub Actions secrets (Settings → Secrets and variables → Actions):"
+            echo "::error::Missing environment secrets (Settings → Environments → personal-dashboard):"
             printf '  - %s\n' "${missing[@]}"
             exit 1
           fi
