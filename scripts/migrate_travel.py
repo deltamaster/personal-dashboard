@@ -193,7 +193,7 @@ def migrate():
         image_id = str(uuid.uuid4())
         _, ext = os.path.splitext(local_path)
         oss_key = f"travel/images/{image_id}{ext}"
-        oss_url = f"https://{OSS_VAULT_BUCKET}.oss-ap-southeast-1.aliyuncs.com/{oss_key}"
+        oss_url = f"https://pd.huhansen.com/{oss_key}"
         
         # Upload physical file to OSS
         try:
