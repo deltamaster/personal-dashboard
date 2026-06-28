@@ -37,8 +37,10 @@ In **Container Registry console** (cn-shanghai):
 
 1. Create Personal Edition instance if needed → copy login server to `ACR_REGISTRY`
 2. Set a **registry login password** (ACR → instance → access credentials)
-3. Create namespace: `personal-dashboard`
-4. Create repository: `api` (private)
+3. Create namespace: **`personal-dashboard`** (exact name)
+4. Create repository: **`api`** (private) inside that namespace
+
+Push fails with `denied` if either is missing or names differ from the above.
 
 Then add `ACR_USERNAME` / `ACR_PASSWORD` to GitHub environment secrets.
 

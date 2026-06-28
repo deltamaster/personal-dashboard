@@ -113,11 +113,28 @@ jobs:
           ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
           ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
           ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+          ACR_NAMESPACE: personal-dashboard
+          ACR_REPO: api
         run: |
+          set -euo pipefail
+          IMAGE="${ACR_REGISTRY}/${ACR_NAMESPACE}/${ACR_REPO}:latest"
+
           echo "$ACR_PASSWORD" | docker login "$ACR_REGISTRY" -u "$ACR_USERNAME" --password-stdin
+
+          echo "Checking repository ${ACR_NAMESPACE}/${ACR_REPO} exists..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -u "${ACR_USERNAME}:${ACR_PASSWORD}" \
+            "https://${ACR_REGISTRY}/v2/${ACR_NAMESPACE}/${ACR_REPO}/tags/list")
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::ACR repository ${ACR_NAMESPACE}/${ACR_REPO} is not accessible (HTTP ${HTTP_CODE})."
+            echo "In ACR console (cn-shanghai): create namespace '${ACR_NAMESPACE}' and private repo '${ACR_REPO}', then re-run."
+            echo "If names differ, set ACR_NAMESPACE and ACR_REPO environment secrets."
+            exit 1
+          fi
+
           docker pull nginx:alpine
-          docker tag nginx:alpine "$ACR_REGISTRY/personal-dashboard/api:latest"
-          docker push "$ACR_REGISTRY/personal-dashboard/api:latest"
+          docker tag nginx:alpine "$IMAGE"
+          docker push "$IMAGE"
 
       - name: Terraform plan
         if: |
