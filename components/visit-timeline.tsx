@@ -62,16 +62,16 @@ function VisitCard({ visit }: { visit: VisitWithImages }) {
       {visit.images.length > 0 && (
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
           {visit.images.map((image) =>
-            image.display_url ? (
+            image.oss_url ? (
               <button
                 key={image.image_id}
                 type="button"
-                onClick={() => setExpandedPhoto(image.display_url ?? null)}
+                onClick={() => setExpandedPhoto(image.oss_url)}
                 className="group relative aspect-[4/3] overflow-hidden rounded-lg bg-[var(--border)]"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={image.display_url}
+                  src={image.oss_url}
                   alt={image.description ?? visit.attraction}
                   className="h-full w-full object-cover transition-transform group-hover:scale-105"
                 />

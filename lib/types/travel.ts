@@ -28,8 +28,6 @@ export interface VisitImage {
   height?: number;
   description?: string;
   created_at: string;
-  /** Presigned GET URL — set by API when OSS is configured */
-  display_url?: string;
 }
 
 export interface VisitWithImages extends Visit {

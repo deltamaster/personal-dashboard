@@ -1,5 +1,4 @@
-import { normalizeProvince } from "@/lib/china-province-tiles";
-import { getPresignedGetUrl, isOssConfigured } from "@/lib/oss";
+import { normalizeProvince } from "@/lib/china-provinces";
 import {
   coerceOtsNumber,
   getOtsClient,
@@ -92,18 +91,6 @@ async function scanTable<T>(
   return rows;
 }
 
-function withPresignedUrls(images: VisitImage[]): VisitImage[] {
-  if (!isOssConfigured()) return images;
-
-  return images.map((image) => {
-    try {
-      return { ...image, display_url: getPresignedGetUrl(image.oss_url) };
-    } catch {
-      return image;
-    }
-  });
-}
-
 export async function listVisits(): Promise<Visit[]> {
   const visits = await scanTable(VISITS_TABLE, "visit_id", normalizeVisit);
   return visits.sort((a, b) => b.date.localeCompare(a.date));
@@ -117,7 +104,7 @@ export async function listVisitsWithImages(): Promise<VisitWithImages[]> {
   const [visits, images] = await Promise.all([listVisits(), listVisitImages()]);
   const imagesByVisit = new Map<string, VisitImage[]>();
 
-  for (const image of withPresignedUrls(images)) {
+  for (const image of images) {
     const list = imagesByVisit.get(image.visit_id) ?? [];
     list.push(image);
     imagesByVisit.set(image.visit_id, list);
