@@ -69,7 +69,7 @@ Re-run when you change `terraform/` or when FC auth env vars change.
 
 | Resource | Name |
 |---|---|
-| OTS instance | `personal-dashboard` |
+| OTS instance | `pd-dashboard` (max 16 chars) |
 | OTS tables | 7 × `pd_*` + 6 search indexes |
 | OSS | `huhansen-web` (public), `personal-dashboard-vault` (private) |
 | ACR | namespace `personal-dashboard`, repo `api` (manual — see README) |

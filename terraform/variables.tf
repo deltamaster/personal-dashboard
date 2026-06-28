@@ -43,7 +43,7 @@ variable "domain" {
 
 variable "ots_instance_name" {
   type    = string
-  default = "personal-dashboard"
+  default = "pd-dashboard"
 }
 
 variable "oss_web_bucket" {

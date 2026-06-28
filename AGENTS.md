@@ -57,8 +57,8 @@ ALLOWED_USER_EMAIL= huhansen318@hotmail.com
 MICROSOFT_ISSUER= https://login.microsoftonline.com/consumers/v2.0
 MICROSOFT_CONSUMER_TENANT_ID= 9188040d-6ce5-4aae-b5-5e4b370a0ae8  # fixed, do not env-var
 
-OTS_INSTANCE= personal-dashboard
-OTS_ENDPOINT= https://personal-dashboard.cn-shanghai.ots.aliyuncs.com
+OTS_INSTANCE= pd-dashboard
+OTS_ENDPOINT= https://pd-dashboard.cn-shanghai.ots.aliyuncs.com
 
 OSS_WEB_BUCKET= huhansen-web          # public static site
 OSS_VAULT_BUCKET= personal-dashboard-vault  # private media
@@ -115,8 +115,8 @@ ALIBABA_CLOUD_ACCESS_KEY_ID=
 ALIBABA_CLOUD_ACCESS_KEY_SECRET=
 
 # OTS
-OTS_ENDPOINT=https://personal-dashboard.cn-shanghai.ots.aliyuncs.com
-OTS_INSTANCE_NAME=personal-dashboard
+OTS_ENDPOINT=https://pd-dashboard.cn-shanghai.ots.aliyuncs.com
+OTS_INSTANCE_NAME=pd-dashboard
 
 # OSS
 OSS_WEB_BUCKET=huhansen-web

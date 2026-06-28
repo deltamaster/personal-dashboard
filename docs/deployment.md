@@ -15,7 +15,7 @@ Manual checklist (if not using Terraform):
 
 ### OTS
 
-Instance `personal-dashboard` in cn-shanghai. Create 7 tables (PKs in spec). Create search indexes. Launch empty.
+Instance `pd-dashboard` in cn-shanghai. Create 7 tables (PKs in spec). Create search indexes. Launch empty.
 
 ### OSS `huhansen-web` (public)
 
