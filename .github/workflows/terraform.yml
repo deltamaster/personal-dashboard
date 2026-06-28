@@ -57,10 +57,7 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Install ossutil
-        run: |
-          curl -fsSL -o ossutil https://gosspublic.alicdn.com/ossutil/1.7.19/ossutil64
-          chmod +x ossutil
-          sudo mv ossutil /usr/local/bin/
+        run: curl -fsSL https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
 
       - name: Ensure Terraform state bucket
         run: |
