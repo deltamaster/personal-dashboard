@@ -1,0 +1,43 @@
+name: Deploy Web
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Install ossutil
+        run: |
+          curl -fsSL -o ossutil https://gosspublic.alicdn.com/ossutil/1.7.19/ossutil64
+          chmod +x ossutil
+          sudo mv ossutil /usr/local/bin/
+
+      - name: Upload static site to OSS
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          OSS_ENDPOINT: ${{ secrets.OSS_ENDPOINT }}
+          OSS_WEB_BUCKET: ${{ secrets.OSS_WEB_BUCKET }}
+        run: |
+          ossutil config -e "$OSS_ENDPOINT" -i "$ALIBABA_CLOUD_ACCESS_KEY_ID" -k "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" -L CH
+          ossutil cp -r out/ "oss://${OSS_WEB_BUCKET}/" --update --force

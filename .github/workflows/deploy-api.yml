@@ -1,0 +1,66 @@
+name: Deploy API
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-api
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to ACR
+        uses: aliyun/acr-login@v1
+        with:
+          login-server: ${{ secrets.ACR_REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push Docker image
+        env:
+          IMAGE: ${{ secrets.ACR_REGISTRY }}/personal-dashboard/api
+        run: |
+          docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" .
+          docker push "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:latest"
+
+      - name: Install aliyun CLI
+        run: |
+          wget -q https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
+          tar -xzf aliyun-cli-linux-latest-amd64.tgz
+          sudo mv aliyun /usr/local/bin/
+
+      - name: Update FC function
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          FC_REGION: ${{ secrets.FC_REGION }}
+          FC_SERVICE: ${{ secrets.FC_SERVICE }}
+          FC_FUNCTION: ${{ secrets.FC_FUNCTION }}
+          ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
+        run: |
+          aliyun configure set \
+            --profile default \
+            --mode AK \
+            --access-key-id "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
+            --access-key-secret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
+            --region "$FC_REGION"
+
+          aliyun fc PUT "/2023-03-30/services/${FC_SERVICE}/functions/${FC_FUNCTION}" \
+            --body "{
+              \"image\": \"${ACR_REGISTRY}/personal-dashboard/api:latest\",
+              \"port\": 3000,
+              \"memorySize\": 512,
+              \"cpu\": 0.5,
+              \"timeout\": 60,
+              \"instanceConcurrency\": 1
+            }"
