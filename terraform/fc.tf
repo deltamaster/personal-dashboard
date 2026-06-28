@@ -13,7 +13,8 @@ resource "alicloud_fcv3_function" "api" {
   role = var.fc_execution_role_arn != "" ? var.fc_execution_role_arn : null
 
   custom_runtime_config {
-    command = ["/bin/sh", "bootstrap"]
+    command = ["/bin/sh"]
+    args    = ["bootstrap"]
     port    = 9000
   }
 

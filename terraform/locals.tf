@@ -115,5 +115,7 @@ locals {
     OSS_VAULT_BUCKET                 = var.oss_vault_bucket
     OSS_VAULT_REGION                 = "oss-${var.region}"
     OSS_VAULT_ENDPOINT               = local.oss_endpoint
+    PORT                             = "9000"
+    HOSTNAME                         = "0.0.0.0"
   }
 }
