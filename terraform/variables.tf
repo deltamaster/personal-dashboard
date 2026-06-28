@@ -1,5 +1,5 @@
 variable "region" {
-  description = "Alibaba Cloud region (all resources in cn-shanghai)."
+  description = "Alibaba Cloud region, e.g. cn-shanghai or ap-southeast-1."
   type        = string
   default     = "cn-shanghai"
 }
@@ -36,7 +36,7 @@ variable "project" {
 }
 
 variable "domain" {
-  description = "Production domain served by CDN."
+  description = "Production domain (CDN) or OSS website hostname for this stack."
   type        = string
   default     = "huhansen.cn"
 }
@@ -97,8 +97,9 @@ variable "create_cdn_domain" {
 # --- FC runtime secrets (Auth.js + data access) ---
 
 variable "auth_url" {
-  type    = string
-  default = "https://huhansen.cn"
+  description = "Public app URL for Auth.js (FC trigger URL for SG, huhansen.cn for Shanghai)."
+  type        = string
+  default     = "https://huhansen.cn"
 }
 
 variable "auth_secret" {

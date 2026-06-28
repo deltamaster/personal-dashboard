@@ -7,17 +7,27 @@ on:
       - "**.md"
       - "docs/**"
   workflow_dispatch:
+    inputs:
+      stack:
+        description: "Region stack"
+        required: true
+        default: ap-southeast-1
+        type: choice
+        options:
+          - ap-southeast-1
+          - cn-shanghai
 
 concurrency:
-  group: deploy-api
+  group: deploy-api-${{ github.event.inputs.stack || 'ap-southeast-1' }}
   cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: personal-dashboard
+    environment: ${{ github.event.inputs.stack == 'cn-shanghai' && 'personal-dashboard' || 'personal-dashboard-sg' }}
     env:
-      FC_REGION: cn-shanghai
+      STACK: ${{ github.event.inputs.stack || 'ap-southeast-1' }}
+      FC_REGION: ${{ github.event.inputs.stack == 'cn-shanghai' && 'cn-shanghai' || 'ap-southeast-1' }}
       FC_FUNCTION: api
     steps:
       - uses: actions/checkout@v4
@@ -39,7 +49,7 @@ jobs:
           [ -z "$ACR_USERNAME" ] && missing+=("ACR_USERNAME")
           [ -z "$ACR_PASSWORD" ] && missing+=("ACR_PASSWORD")
           if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::Missing environment secrets (Settings → Environments → personal-dashboard):"
+            echo "::error::Missing environment secrets for stack $STACK"
             printf '  - %s\n' "${missing[@]}"
             exit 1
           fi
@@ -81,7 +91,7 @@ jobs:
 
           CREDS=$(aliyun sts AssumeRole \
             --RoleArn "$ALIBABA_CLOUD_ROLE_ARN" \
-            --RoleSessionName github-deploy-api \
+            --RoleSessionName "github-deploy-api-$STACK" \
             --DurationSeconds 3600)
 
           AK=$(echo "$CREDS" | jq -r '.Credentials.AccessKeyId')

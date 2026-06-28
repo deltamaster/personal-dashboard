@@ -42,7 +42,7 @@ resource "alicloud_oss_bucket_cors" "vault" {
   bucket = alicloud_oss_bucket.vault.id
 
   cors_rule {
-    allowed_origins = ["https://${var.domain}"]
+    allowed_origins = [var.auth_url]
     allowed_methods = ["PUT", "GET", "HEAD"]
     allowed_headers = ["*"]
     max_age_seconds = 3600

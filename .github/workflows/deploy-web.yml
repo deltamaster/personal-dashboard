@@ -7,18 +7,29 @@ on:
       - "**.md"
       - "docs/**"
   workflow_dispatch:
+    inputs:
+      stack:
+        description: "Region stack"
+        required: true
+        default: ap-southeast-1
+        type: choice
+        options:
+          - ap-southeast-1
+          - cn-shanghai
 
 concurrency:
-  group: deploy-web
+  group: deploy-web-${{ github.event.inputs.stack || 'ap-southeast-1' }}
   cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: personal-dashboard
+    environment: ${{ github.event.inputs.stack == 'cn-shanghai' && 'personal-dashboard' || 'personal-dashboard-sg' }}
     env:
-      OSS_ENDPOINT: oss-cn-shanghai.aliyuncs.com
-      OSS_WEB_BUCKET: huhansen-web
+      STACK: ${{ github.event.inputs.stack || 'ap-southeast-1' }}
+      OSS_ENDPOINT: ${{ github.event.inputs.stack == 'cn-shanghai' && 'oss-cn-shanghai.aliyuncs.com' || 'oss-ap-southeast-1.aliyuncs.com' }}
+      OSS_WEB_BUCKET: ${{ github.event.inputs.stack == 'cn-shanghai' && 'huhansen-web' || 'pd-web-sg' }}
+      ALICLOUD_REGION: ${{ github.event.inputs.stack == 'cn-shanghai' && 'cn-shanghai' || 'ap-southeast-1' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -33,7 +44,7 @@ jobs:
           [ -z "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
           [ -z "$ALIBABA_CLOUD_ROLE_ARN" ] && missing+=("ALIBABA_CLOUD_ROLE_ARN")
           if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::Missing environment secrets (Settings → Environments → personal-dashboard):"
+            echo "::error::Missing environment secrets for stack $STACK"
             printf '  - %s\n' "${missing[@]}"
             exit 1
           fi
@@ -67,11 +78,11 @@ jobs:
             --mode AK \
             --access-key-id "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
             --access-key-secret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
-            --region cn-shanghai
+            --region "$ALICLOUD_REGION"
 
           CREDS=$(aliyun sts AssumeRole \
             --RoleArn "$ALIBABA_CLOUD_ROLE_ARN" \
-            --RoleSessionName github-deploy-web \
+            --RoleSessionName "github-deploy-web-$STACK" \
             --DurationSeconds 3600)
 
           echo "access_key_id=$(echo "$CREDS" | jq -r '.Credentials.AccessKeyId')" >> "$GITHUB_OUTPUT"

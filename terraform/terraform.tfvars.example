@@ -1,12 +1,12 @@
 # Copy to terraform.tfvars (gitignored). Do not commit.
+# Or use env/*.tfvars per stack: terraform apply -var-file=env/ap-southeast-1.tfvars
 
-region     = "cn-shanghai"
-access_key = "LTAI..."          # RAM user AK (calls AssumeRole)
-secret_key = "..."              # RAM user secret
+region     = "ap-southeast-1"
+access_key = "LTAI..."
+secret_key = "..."
 role_arn   = "acs:ram::1234567890123456:role/your-provision-role"
 
-# From ACR console → instance → login server
-acr_registry = "crpi-xxxxx.cn-shanghai.personal.cr.aliyuncs.com"
+acr_registry = "crpi-xxxxx.ap-southeast-1.personal.cr.aliyuncs.com"
 
 # Optional: attach existing runtime role to FC (OTS/OSS). Leave empty to skip.
 # fc_execution_role_arn = "acs:ram::1234567890123456:role/your-runtime-role"

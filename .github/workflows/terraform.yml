@@ -12,6 +12,14 @@ on:
       - ".github/workflows/terraform.yml"
   workflow_dispatch:
     inputs:
+      stack:
+        description: "Region stack"
+        required: true
+        default: ap-southeast-1
+        type: choice
+        options:
+          - ap-southeast-1
+          - cn-shanghai
       action:
         description: "Terraform action"
         required: true
@@ -22,17 +30,43 @@ on:
           - apply
 
 concurrency:
-  group: terraform-${{ github.ref }}
+  group: terraform-${{ github.event.inputs.stack || 'ap-southeast-1' }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
-    environment: personal-dashboard
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - stack: ap-southeast-1
+            environment: personal-dashboard-sg
+            tfvars: env/ap-southeast-1.tfvars
+            state_key: terraform-state-ap-southeast-1
+            region: ap-southeast-1
+            ots_instance: pd-dash-sg
+            oss_web_bucket: pd-web-sg
+            oss_vault_bucket: pd-vault-sg
+            auto_on_push: true
+          - stack: cn-shanghai
+            environment: personal-dashboard
+            tfvars: env/cn-shanghai.tfvars
+            state_key: terraform-state-cn-shanghai
+            region: cn-shanghai
+            ots_instance: pd-dashboard
+            oss_web_bucket: huhansen-web
+            oss_vault_bucket: personal-dashboard-vault
+            auto_on_push: false
+    if: |
+      (github.event_name == 'push' && matrix.auto_on_push) ||
+      (github.event_name == 'pull_request' && matrix.stack == 'ap-southeast-1') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.stack == matrix.stack)
+    environment: ${{ matrix.environment }}
     env:
       TF_WORKING_DIR: terraform
       TF_VERSION: "1.9.8"
-      TF_VAR_region: cn-shanghai
+      TF_VAR_region: ${{ matrix.region }}
       ALICLOUD_ACCESS_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
       ALICLOUD_SECRET_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
       ALICLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
@@ -43,6 +77,9 @@ jobs:
       TF_VAR_auth_microsoft_entra_id_secret: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_SECRET }}
       TF_VAR_runtime_access_key: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
       TF_VAR_runtime_secret_key: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+      OTS_INSTANCE: ${{ matrix.ots_instance }}
+      OSS_WEB_BUCKET: ${{ matrix.oss_web_bucket }}
+      OSS_VAULT_BUCKET: ${{ matrix.oss_vault_bucket }}
     defaults:
       run:
         working-directory: ${{ env.TF_WORKING_DIR }}
@@ -69,7 +106,7 @@ jobs:
           [ -z "$AUTH_MICROSOFT_ENTRA_ID_ID" ] && missing+=("AUTH_MICROSOFT_ENTRA_ID_ID")
           [ -z "$AUTH_MICROSOFT_ENTRA_ID_SECRET" ] && missing+=("AUTH_MICROSOFT_ENTRA_ID_SECRET")
           if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::Missing environment secrets (Settings → Environments → personal-dashboard):"
+            echo "::error::Missing environment secrets (Settings → Environments → ${{ matrix.environment }}):"
             printf '  - %s\n' "${missing[@]}"
             exit 1
           fi
@@ -95,8 +132,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: terraform/terraform.tfstate
-          key: terraform-state-${{ github.ref_name }}
-          restore-keys: terraform-state-main
+          key: ${{ matrix.state_key }}-${{ github.ref_name }}
+          restore-keys: ${{ matrix.state_key }}-main
 
       - uses: hashicorp/setup-terraform@v3
         with:
@@ -135,13 +172,23 @@ jobs:
         if: |
           github.event_name == 'pull_request' ||
           github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan'
-        run: terraform plan -input=false -no-color
+        env:
+          AUTH_URL: ${{ secrets.AUTH_URL }}
+        run: |
+          EXTRA=(-var-file="${{ matrix.tfvars }}")
+          if [ -n "$AUTH_URL" ]; then EXTRA+=(-var="auth_url=$AUTH_URL"); fi
+          terraform plan "${EXTRA[@]}" -input=false -no-color
 
       - name: Terraform apply
         if: |
           github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||
           github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: terraform apply -input=false -auto-approve
+        env:
+          AUTH_URL: ${{ secrets.AUTH_URL }}
+        run: |
+          EXTRA=(-var-file="${{ matrix.tfvars }}")
+          if [ -n "$AUTH_URL" ]; then EXTRA+=(-var="auth_url=$AUTH_URL"); fi
+          terraform apply "${EXTRA[@]}" -input=false -auto-approve
 
       - name: Upload Terraform state backup
         if: |
@@ -150,7 +197,7 @@ jobs:
            github.event_name == 'push' && github.ref == 'refs/heads/main')
         uses: actions/upload-artifact@v4
         with:
-          name: terraform-state-${{ github.run_id }}
+          name: terraform-state-${{ matrix.stack }}-${{ github.run_id }}
           path: terraform/terraform.tfstate
           retention-days: 90
           if-no-files-found: ignore
