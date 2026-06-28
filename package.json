@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "node scripts/build-static.mjs",
-    "build:api": "cross-env BUILD_TARGET=api next build",
+    "build:api": "node scripts/build-api.mjs",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"

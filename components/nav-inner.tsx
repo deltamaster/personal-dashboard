@@ -17,12 +17,12 @@ export function NavInner() {
   const [session, setSession] = useState<ClientSession | null>(null);
 
   useEffect(() => {
-    if (!pathname.startsWith("/auth")) {
+    if (pathname && !pathname.startsWith("/auth")) {
       fetchSession().then(setSession);
     }
   }, [pathname]);
 
-  if (pathname.startsWith("/auth")) return null;
+  if (!pathname || pathname.startsWith("/auth")) return null;
 
   return (
     <header className="border-b border-[var(--border)] bg-[var(--card)]">

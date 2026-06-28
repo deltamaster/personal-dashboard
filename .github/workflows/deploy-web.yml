@@ -16,8 +16,25 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: personal-dashboard
+    env:
+      OSS_ENDPOINT: oss-cn-shanghai.aliyuncs.com
+      OSS_WEB_BUCKET: huhansen-web
     steps:
       - uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+        run: |
+          missing=()
+          [ -z "$ALIBABA_CLOUD_ACCESS_KEY_ID" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_ID")
+          [ -z "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing environment secrets (Settings → Environments → personal-dashboard):"
+            printf '  - %s\n' "${missing[@]}"
+            exit 1
+          fi
 
       - uses: actions/setup-node@v4
         with:
@@ -34,8 +51,6 @@ jobs:
         env:
           ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
-          OSS_ENDPOINT: ${{ secrets.OSS_ENDPOINT }}
-          OSS_WEB_BUCKET: ${{ secrets.OSS_WEB_BUCKET }}
         run: |
           ossutil config -e "$OSS_ENDPOINT" -i "$ALIBABA_CLOUD_ACCESS_KEY_ID" -k "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" -L CH
           ossutil cp -r out/ "oss://${OSS_WEB_BUCKET}/" --update --force

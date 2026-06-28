@@ -55,10 +55,8 @@ Add these in **GitHub → Settings → Secrets and variables → Actions**:
 | `AUTH_SECRET` | Auth.js secret (prod) |
 | `AUTH_MICROSOFT_ENTRA_ID_ID` | Azure client ID |
 | `AUTH_MICROSOFT_ENTRA_ID_SECRET` | Azure client secret |
-| `OSS_ENDPOINT` | `oss-cn-shanghai.aliyuncs.com` |
-| `OSS_WEB_BUCKET` | `huhansen-web` |
-| `FC_REGION` | `cn-shanghai` |
-| `FC_FUNCTION` | `api` |
+
+Deploy workflows use fixed values for `OSS_ENDPOINT`, `OSS_WEB_BUCKET`, `FC_REGION`, and `FC_FUNCTION` (see workflow files). You do not need separate secrets for those unless you override them.
 
 Run **Terraform** workflow before **Deploy Web** / **Deploy API**.
 

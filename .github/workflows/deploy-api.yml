@@ -16,8 +16,31 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: personal-dashboard
+    env:
+      FC_REGION: cn-shanghai
+      FC_FUNCTION: api
     steps:
       - uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
+          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+        run: |
+          missing=()
+          [ -z "$ALIBABA_CLOUD_ACCESS_KEY_ID" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_ID")
+          [ -z "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
+          [ -z "$ACR_REGISTRY" ] && missing+=("ACR_REGISTRY")
+          [ -z "$ACR_USERNAME" ] && missing+=("ACR_USERNAME")
+          [ -z "$ACR_PASSWORD" ] && missing+=("ACR_PASSWORD")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing environment secrets (Settings → Environments → personal-dashboard):"
+            printf '  - %s\n' "${missing[@]}"
+            exit 1
+          fi
 
       - name: Log in to ACR
         uses: aliyun/acr-login@v1
@@ -44,8 +67,6 @@ jobs:
         env:
           ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
-          FC_REGION: ${{ secrets.FC_REGION }}
-          FC_FUNCTION: ${{ secrets.FC_FUNCTION }}
           ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
         run: |
           aliyun configure set \

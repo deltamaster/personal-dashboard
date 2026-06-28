@@ -7,11 +7,13 @@ export const metadata: Metadata = {
   description: "Portfolio, travel, and movies",
 };
 
+const isApiBuild = process.env.BUILD_TARGET === "api";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <ClientProviders>{children}</ClientProviders>
+        {isApiBuild ? children : <ClientProviders>{children}</ClientProviders>}
       </body>
     </html>
   );

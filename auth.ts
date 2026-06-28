@@ -5,6 +5,27 @@ const ALLOWED_EMAIL = (
   process.env.ALLOWED_USER_EMAIL ?? "huhansen318@hotmail.com"
 ).toLowerCase();
 
+function isBuildTime(): boolean {
+  return process.env.NEXT_PHASE === "phase-production-build";
+}
+
+function getOAuthCredentials(): { clientId: string; clientSecret: string } {
+  const clientId = process.env.AUTH_MICROSOFT_ENTRA_ID_ID;
+  const clientSecret = process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET;
+  if (clientId && clientSecret) {
+    return { clientId, clientSecret };
+  }
+  if (isBuildTime()) {
+    return {
+      clientId: "build-placeholder",
+      clientSecret: "build-placeholder",
+    };
+  }
+  throw new Error(
+    "Missing AUTH_MICROSOFT_ENTRA_ID_ID or AUTH_MICROSOFT_ENTRA_ID_SECRET in environment"
+  );
+}
+
 function normalizeEmail(value: unknown): string | null {
   if (typeof value !== "string" || !value.includes("@")) return null;
   return value.trim().toLowerCase();
@@ -27,14 +48,7 @@ function extractEmail(input: {
   return null;
 }
 
-const clientId = process.env.AUTH_MICROSOFT_ENTRA_ID_ID;
-const clientSecret = process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET;
-
-if (!clientId || !clientSecret) {
-  throw new Error(
-    "Missing AUTH_MICROSOFT_ENTRA_ID_ID or AUTH_MICROSOFT_ENTRA_ID_SECRET in environment"
-  );
-}
+const { clientId, clientSecret } = getOAuthCredentials();
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
