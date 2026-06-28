@@ -93,6 +93,9 @@ if ! terraform state show alicloud_fcv3_function.api >/dev/null 2>&1; then
 else
   import_if_missing alicloud_fcv3_trigger.http "${FC_FUNCTION}:${FC_HTTP_TRIGGER}"
   import_if_missing alicloud_fcv3_provision_config.api "$FC_FUNCTION"
+  if [ -n "${CDN_DOMAIN:-}" ]; then
+    import_if_missing alicloud_fcv3_custom_domain.api "$CDN_DOMAIN"
+  fi
 fi
 
 OSS_WEB_BUCKET="${OSS_WEB_BUCKET:-huhansen-web}"

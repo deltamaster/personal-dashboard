@@ -56,3 +56,21 @@ resource "alicloud_fcv3_provision_config" "api" {
   qualifier     = "LATEST"
   target        = 0
 }
+
+# OAuth sign-in returns 302 to Microsoft; FC blocks external redirects on *.fcapp.run.
+# Bind the public app domain so CDN can back-to-origin with Host: var.domain.
+resource "alicloud_fcv3_custom_domain" "api" {
+  custom_domain_name = var.domain
+  protocol           = "HTTP"
+
+  route_config {
+    routes {
+      path          = "/api/*"
+      function_name = alicloud_fcv3_function.api.function_name
+      qualifier     = "LATEST"
+      methods       = ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH"]
+    }
+  }
+
+  depends_on = [alicloud_fcv3_trigger.http]
+}

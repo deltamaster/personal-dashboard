@@ -30,7 +30,7 @@ resource "alicloud_cdn_domain_config" "api_path_rule" {
 }
 
 resource "alicloud_cdn_domain_config" "api_conditional_origin" {
-  count = var.create_cdn_domain && local.fc_origin_host != "" ? 1 : 0
+  count = var.create_cdn_domain ? 1 : 0
 
   domain_name   = alicloud_cdn_domain_new.main[0].domain_name
   function_name = "origin_dns_host"
@@ -38,17 +38,17 @@ resource "alicloud_cdn_domain_config" "api_conditional_origin" {
 
   function_args {
     arg_name  = "ali_origin_dns_host"
-    arg_value = local.fc_origin_host
+    arg_value = local.fc_origin_dns
   }
 
   depends_on = [
     alicloud_cdn_domain_config.api_path_rule,
-    alicloud_fcv3_trigger.http,
+    alicloud_fcv3_custom_domain.api,
   ]
 }
 
 resource "alicloud_cdn_domain_config" "api_origin_host" {
-  count = var.create_cdn_domain && local.fc_origin_host != "" ? 1 : 0
+  count = var.create_cdn_domain ? 1 : 0
 
   domain_name   = alicloud_cdn_domain_new.main[0].domain_name
   function_name = "origin_host"
@@ -56,14 +56,17 @@ resource "alicloud_cdn_domain_config" "api_origin_host" {
 
   function_args {
     arg_name  = "origin"
-    arg_value = local.fc_origin_host
+    arg_value = local.fc_origin_dns
   }
   function_args {
     arg_name  = "host"
-    arg_value = local.fc_origin_host
+    arg_value = local.fc_origin_host_header
   }
 
-  depends_on = [alicloud_cdn_domain_config.api_path_rule]
+  depends_on = [
+    alicloud_cdn_domain_config.api_path_rule,
+    alicloud_fcv3_custom_domain.api,
+  ]
 }
 
 resource "alicloud_cdn_domain_config" "api_no_cache" {

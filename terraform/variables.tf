@@ -74,7 +74,7 @@ variable "cdn_scope" {
 }
 
 variable "fc_api_origin" {
-  description = "FC HTTP trigger hostname for CDN /api/* origin (no scheme). Defaults to FC trigger URL from state."
+  description = "FC custom-domain CNAME for CDN /api/* back-to-origin DNS (no scheme). Defaults to {account_id}.{region}.fc.aliyuncs.com."
   type        = string
   default     = ""
 }

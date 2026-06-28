@@ -30,6 +30,15 @@ output "fc_http_trigger_url" {
   value = local.fc_http_url
 }
 
+output "fc_custom_domain" {
+  value = alicloud_fcv3_custom_domain.api.custom_domain_name
+}
+
+output "fc_origin_dns" {
+  description = "CDN back-to-origin DNS for /api/* (FC custom-domain CNAME)."
+  value       = local.fc_origin_dns
+}
+
 output "cdn_cname" {
   value = var.create_cdn_domain ? alicloud_cdn_domain_new.main[0].cname : null
 }

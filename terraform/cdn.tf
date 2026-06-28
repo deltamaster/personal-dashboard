@@ -16,5 +16,8 @@ resource "alicloud_cdn_domain_new" "main" {
 
 locals {
   fc_http_url = try(alicloud_fcv3_trigger.http.http_trigger[0].url_internet, "")
-  fc_origin_host = var.fc_api_origin != "" ? var.fc_api_origin : replace(replace(local.fc_http_url, "https://", ""), "http://", "")
+  # Back-to-origin DNS: FC custom-domain CNAME (not *.fcapp.run — external redirects forbidden).
+  fc_origin_dns = var.fc_api_origin != "" ? var.fc_api_origin : "${data.alicloud_account.current.id}.${var.region}.fc.aliyuncs.com"
+  # Host header sent to FC so requests hit the custom domain binding, not the default endpoint.
+  fc_origin_host_header = var.domain
 }
