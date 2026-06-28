@@ -8,13 +8,10 @@ Constants and env vars: [AGENTS.md](../AGENTS.md). Table/index definitions: [TEC
 
 ## 1. Provision (one-time)
 
-### RAM user `personal-dashboard-app`
+**Preferred:** [terraform/README.md](../terraform/README.md) — OTS, OSS, ACR, FC, CDN via `terraform apply`.  
+RAM user + role are **not** created by Terraform (use existing credentials + AssumeRole).
 
-| Resource | Permissions |
-|---|---|
-| OTS `personal-dashboard` | `tablestore:*` (or table-scoped) |
-| `personal-dashboard-vault/*` | `PutObject`, `GetObject`, `DeleteObject` |
-| `huhansen-web/*` | `PutObject`, `GetObject`, `DeleteObject`, `ListObjects` |
+Manual checklist (if not using Terraform):
 
 ### OTS
 
@@ -42,7 +39,7 @@ Cache: long TTL on hashed static assets; no cache on `/api/*`; short/no cache on
 ### ACR + FC
 
 - ACR namespace `personal-dashboard`, image `api:latest`
-- FC service `personal-dashboard`, function `api`, custom container, port 3000, 512 MB
+- FC v3 function `api`, custom container, port 3000, 512 MB
 - **`minInstances: 0`** — required
 - HTTP trigger → CDN `/api/*` origin
 - FC env vars: see [AGENTS.md § Environment variables](../AGENTS.md#environment-variables). Set `AUTH_URL=https://huhansen.cn`.

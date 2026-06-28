@@ -34,5 +34,12 @@ build-log.txt
 # typescript
 *.tsbuildinfo
 
+# terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+.terraform.lock.hcl
+
 # IDE / OS
 Thumbs.db

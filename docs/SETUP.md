@@ -14,26 +14,19 @@ Complete these **before** the app works in production or locally with real data.
 6. **Authentication** → enable ID tokens
 7. Copy **Application (client) ID**
 
-## 2. Alibaba Cloud provisioning
+## 2. Alibaba Cloud provisioning (GitHub Actions)
 
-Follow [deployment.md](./deployment.md). Minimum for movies module:
+### One-time in Alibaba console
 
-| Resource | Name | Notes |
-|---|---|---|
-| OTS instance | `personal-dashboard` | cn-shanghai |
-| OTS table | `pd_movies` | PK: `douban_subject_id` (String) |
-| OSS bucket | `huhansen-web` | Public static site |
-| OSS bucket | `personal-dashboard-vault` | Private (not needed for movies yet) |
-| RAM user | `personal-dashboard-app` | AK with OTS + OSS permissions |
-| ACR | namespace `personal-dashboard` | For API Docker image |
-| FC | service `personal-dashboard`, function `api` | Custom container, **minInstances=0** |
-| CDN | `huhansen.cn` | `/api/*` → FC, `/*` → OSS |
+Create a **Container Registry Personal Edition** instance (cn-shanghai) and note the login server URL → `ACR_REGISTRY` secret.
 
-### Create `pd_movies` table (OTS console or CLI)
+### GitHub secrets
 
-- Table name: `pd_movies`
-- Primary key: `douban_subject_id` (String)
-- No predefined columns (schemaless attributes)
+Add secrets first (see [terraform/README.md](../terraform/README.md)), then run:
+
+**Actions → Terraform → Run workflow → apply**
+
+Pushes to `main` that touch `terraform/` also auto-apply.
 
 ## 3. Local development
 
@@ -55,31 +48,19 @@ Add these in **GitHub → Settings → Secrets and variables → Actions**:
 |---|---|
 | `ALIBABA_CLOUD_ACCESS_KEY_ID` | RAM user access key |
 | `ALIBABA_CLOUD_ACCESS_KEY_SECRET` | RAM user secret |
-| `OSS_ENDPOINT` | `oss-cn-shanghai.aliyuncs.com` |
-| `OSS_WEB_BUCKET` | `huhansen-web` |
+| `ALIBABA_CLOUD_ROLE_ARN` | `acs:ram::…:role/…` (AssumeRole for Terraform) |
 | `ACR_REGISTRY` | `crpi-xxxxx.cn-shanghai.personal.cr.aliyuncs.com` |
 | `ACR_USERNAME` | ACR login username |
 | `ACR_PASSWORD` | ACR login password |
+| `AUTH_SECRET` | Auth.js secret (prod) |
+| `AUTH_MICROSOFT_ENTRA_ID_ID` | Azure client ID |
+| `AUTH_MICROSOFT_ENTRA_ID_SECRET` | Azure client secret |
+| `OSS_ENDPOINT` | `oss-cn-shanghai.aliyuncs.com` |
+| `OSS_WEB_BUCKET` | `huhansen-web` |
 | `FC_REGION` | `cn-shanghai` |
-| `FC_SERVICE` | `personal-dashboard` |
 | `FC_FUNCTION` | `api` |
 
-FC environment variables (set in FC console, **not** GitHub):
-
-```
-AUTH_URL=https://huhansen.cn
-AUTH_SECRET=<same secret as local, or generate new for prod>
-AUTH_MICROSOFT_ENTRA_ID_ID=<from Azure>
-AUTH_MICROSOFT_ENTRA_ID_SECRET=<from Azure>
-ALLOWED_USER_EMAIL=huhansen318@hotmail.com
-ALIBABA_CLOUD_ACCESS_KEY_ID=<RAM key>
-ALIBABA_CLOUD_ACCESS_KEY_SECRET=<RAM secret>
-OTS_ENDPOINT=https://personal-dashboard.cn-shanghai.ots.aliyuncs.com
-OTS_INSTANCE_NAME=personal-dashboard
-OSS_VAULT_BUCKET=personal-dashboard-vault
-OSS_VAULT_REGION=oss-cn-shanghai
-OSS_VAULT_ENDPOINT=oss-cn-shanghai.aliyuncs.com
-```
+Run **Terraform** workflow before **Deploy Web** / **Deploy API**.
 
 ## 5. First deploy
 

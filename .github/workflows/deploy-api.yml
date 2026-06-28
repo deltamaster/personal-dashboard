@@ -44,7 +44,6 @@ jobs:
           ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
           FC_REGION: ${{ secrets.FC_REGION }}
-          FC_SERVICE: ${{ secrets.FC_SERVICE }}
           FC_FUNCTION: ${{ secrets.FC_FUNCTION }}
           ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
         run: |
@@ -55,10 +54,12 @@ jobs:
             --access-key-secret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
             --region "$FC_REGION"
 
-          aliyun fc PUT "/2023-03-30/services/${FC_SERVICE}/functions/${FC_FUNCTION}" \
+          aliyun fc PUT "/2023-03-30/functions/${FC_FUNCTION}" \
             --body "{
-              \"image\": \"${ACR_REGISTRY}/personal-dashboard/api:latest\",
-              \"port\": 3000,
+              \"customContainerConfig\": {
+                \"image\": \"${ACR_REGISTRY}/personal-dashboard/api:latest\",
+                \"port\": 3000
+              },
               \"memorySize\": 512,
               \"cpu\": 0.5,
               \"timeout\": 60,
