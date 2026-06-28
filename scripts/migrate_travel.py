@@ -21,7 +21,7 @@ OTS_ENDPOINT = "https://pd-dash-sg.ap-southeast-1.ots.aliyuncs.com"
 OTS_INSTANCE = "pd-dash-sg"
 OTS_VISITS_TABLE = "pd_visits"
 OTS_IMAGES_TABLE = "pd_visit_images"
-OSS_VAULT_BUCKET = "pd-vault-sg"
+OSS_VAULT_BUCKET = "pd-web-sg"
 
 def get_aliyun_credentials():
     config_path = os.path.expanduser("~/.aliyun/config.json")
