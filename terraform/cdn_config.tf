@@ -8,7 +8,7 @@ locals {
       criteria = [{
         matchType     = "uri"
         matchOperator = "contains"
-        matchValue    = ["/api/*"]
+        matchValue    = ["/api/"]
         negate        = false
       }]
     }
@@ -29,13 +29,31 @@ resource "alicloud_cdn_domain_config" "api_path_rule" {
   }
 }
 
-# One child per condition rule (ConfigParentExceedLimit): origin DNS + Host header via origin_host only.
-resource "alicloud_cdn_domain_config" "api_origin_host" {
+# One child on api-path (ConfigParentExceedLimit): conditional origin DNS only.
+resource "alicloud_cdn_domain_config" "api_origin_dns" {
+  count = var.create_cdn_domain ? 1 : 0
+
+  domain_name   = alicloud_cdn_domain_new.main[0].domain_name
+  function_name = "origin_dns_host"
+  parent_id     = alicloud_cdn_domain_config.api_path_rule[0].config_id
+
+  function_args {
+    arg_name  = "ali_origin_dns_host"
+    arg_value = local.fc_origin_dns
+  }
+
+  depends_on = [
+    alicloud_cdn_domain_config.api_path_rule,
+    alicloud_fcv3_custom_domain.api,
+  ]
+}
+
+# Per-origin Host header when CDN fetches from the FC CNAME (no parent_id — not a rule child).
+resource "alicloud_cdn_domain_config" "api_fc_origin_host" {
   count = var.create_cdn_domain ? 1 : 0
 
   domain_name   = alicloud_cdn_domain_new.main[0].domain_name
   function_name = "origin_host"
-  parent_id     = alicloud_cdn_domain_config.api_path_rule[0].config_id
 
   function_args {
     arg_name  = "origin"
@@ -46,10 +64,7 @@ resource "alicloud_cdn_domain_config" "api_origin_host" {
     arg_value = local.fc_origin_host_header
   }
 
-  depends_on = [
-    alicloud_cdn_domain_config.api_path_rule,
-    alicloud_fcv3_custom_domain.api,
-  ]
+  depends_on = [alicloud_cdn_domain_config.api_origin_dns]
 }
 
 resource "alicloud_cdn_domain_config" "api_no_cache" {
