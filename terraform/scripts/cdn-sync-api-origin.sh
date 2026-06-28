@@ -126,16 +126,23 @@ if [ "$PARENT_COUNT" -gt 1 ]; then
   echo "Warning: multiple api-path conditions found; using the first"
 fi
 
-PARENT_ID=$(echo "$API_PATH_PARENT_IDS" | head -n1)
+PARENT_ID=$(echo "$API_PATH_PARENT_IDS" | head -n1 | tr -d '\r\n')
 echo "api-path condition ConfigId: $PARENT_ID"
+
+# ParentId from the API may be a number; compare as strings.
+child_of_api_path() {
+  jq -c --arg pid "$PARENT_ID" '
+    [.[] | select(.ParentId != null and .ParentId != "" and (.ParentId | tostring) == $pid)
+      | {ConfigId: (.ConfigId | tostring), FunctionName}]
+  '
+}
 
 import_cdn_config \
   'alicloud_cdn_domain_config.api_path_rule[0]' \
   "${DOMAIN}:condition:${PARENT_ID}" || true
 
-CHILDREN=$(echo "$CONFIGS" | jq -c --arg pid "$PARENT_ID" '
-  [.[] | select(.ParentId == $pid) | {ConfigId, FunctionName}]
-')
+CHILDREN=$(echo "$CONFIGS" | child_of_api_path)
+echo "origin_host configs in domain: $(echo "$CONFIGS" | jq -c '[.[] | select(.FunctionName == "origin_host") | {ConfigId, ParentId}]')"
 
 CHILD_COUNT=$(echo "$CHILDREN" | jq 'length')
 echo "Children under api-path: $CHILD_COUNT"
@@ -169,9 +176,7 @@ CONFIGS=$(echo "$RESP" | jq -c '
   .DomainConfigs.DomainConfig // []
   | if type == "array" then . else [.] end
 ')
-ORIGIN_HOSTS=$(echo "$CONFIGS" | jq -c --arg pid "$PARENT_ID" '
-  [.[] | select(.ParentId == $pid and .FunctionName == "origin_host") | .ConfigId]
-')
+ORIGIN_HOSTS=$(echo "$CONFIGS" | child_of_api_path | jq -c '[.[] | select(.FunctionName == "origin_host") | .ConfigId]')
 ORIGIN_COUNT=$(echo "$ORIGIN_HOSTS" | jq 'length')
 
 if [ "$ORIGIN_COUNT" -eq 0 ]; then
