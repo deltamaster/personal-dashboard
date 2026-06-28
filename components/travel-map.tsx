@@ -72,9 +72,6 @@ export function TravelMap({
     [flightRoutes, trainRoutes, showFlights, showTrains]
   );
 
-  const maxFlightCount = Math.max(...flightRoutes.map((r) => r.count), 1);
-  const maxTrainCount = Math.max(...trainRoutes.map((r) => r.count), 1);
-
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
@@ -172,10 +169,9 @@ export function TravelMap({
                   key={`train-${route.id}`}
                   d={route.path}
                   fill="none"
-                  stroke="rgba(251, 191, 36, 0.75)"
-                  strokeWidth={1 + (route.count / maxTrainCount) * 1.5}
+                  stroke="rgba(251, 191, 36, 0.7)"
+                  strokeWidth={1}
                   strokeLinecap="round"
-                  vectorEffect="non-scaling-stroke"
                 >
                   <title>
                     {route.label} · {route.count} trip{route.count === 1 ? "" : "s"}
@@ -189,10 +185,9 @@ export function TravelMap({
                   key={`flight-${route.id}`}
                   d={route.path}
                   fill="none"
-                  stroke="rgba(56, 189, 248, 0.8)"
-                  strokeWidth={1 + (route.count / maxFlightCount) * 2}
+                  stroke="rgba(56, 189, 248, 0.75)"
+                  strokeWidth={1}
                   strokeLinecap="round"
-                  vectorEffect="non-scaling-stroke"
                 >
                   <title>
                     {route.label} · {route.count} flight{route.count === 1 ? "" : "s"}
@@ -205,11 +200,10 @@ export function TravelMap({
                 key={`${x}-${y}`}
                 cx={x}
                 cy={y}
-                r={2.2}
+                r={1.8}
                 fill="rgba(255, 255, 255, 0.95)"
                 stroke="rgba(15, 20, 25, 0.85)"
-                strokeWidth={0.6}
-                vectorEffect="non-scaling-stroke"
+                strokeWidth={0.5}
               />
             ))}
           </g>

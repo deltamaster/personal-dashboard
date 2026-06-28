@@ -4,6 +4,77 @@ const PROJECT_Y = [-0.6818097165976287, -16.127381668427304, 954.7500150620601] 
 
 export const MAP_VIEW_BOX = "0 0 774 569";
 
+/** Only show routes with both ends inside mainland China (+ HK/Macau/Taiwan). */
+const CHINA_DOMESTIC = new Set([
+  "三亚",
+  "上海",
+  "台北",
+  "澳门",
+  "丽江",
+  "乌鲁木齐",
+  "兰州",
+  "北京",
+  "北海",
+  "南京",
+  "南宁",
+  "厦门",
+  "海拉尔",
+  "大理",
+  "大连",
+  "天津",
+  "威海",
+  "广州",
+  "成都",
+  "拉萨",
+  "揭阳",
+  "敦煌",
+  "昆明",
+  "桂林",
+  "武汉",
+  "沈阳",
+  "泉州",
+  "深圳",
+  "湛江",
+  "甘南",
+  "福州",
+  "秦皇岛",
+  "西双版纳",
+  "西安",
+  "贵阳",
+  "重庆",
+  "银川",
+  "长春",
+  "长沙",
+  "青岛",
+  "香港",
+  "佛山",
+  "哈尔滨",
+  "杭州",
+  "林芝",
+  "海口",
+  "西宁",
+  "宁波",
+  "徐州",
+  "无锡",
+  "苏州",
+  "珠海",
+  "番禺",
+  "潮汕",
+  "松山湖",
+  "凤台",
+  "容桂",
+  "十字门",
+  "福田",
+  "连云港",
+]);
+
+/** Manual SVG fixes where the affine fit drifts (southern coast). */
+const MAP_POINT_OVERRIDES: Record<string, [number, number]> = {
+  北海: [434, 520],
+  湛江: [468, 533],
+  三亚: [456, 562],
+};
+
 /** [longitude, latitude] WGS84 */
 const COORDS: Record<string, [number, number]> = {
   三亚: [109.5119, 18.2528],
@@ -213,26 +284,34 @@ function normalizePlace(name: string): string {
   return s.trim();
 }
 
-export function resolvePlaceCoords(name: string): [number, number] | null {
+export function resolvePlaceKey(name: string): string | null {
   const trimmed = name.trim();
   if (!trimmed) return null;
 
   const alias = PLACE_ALIASES[trimmed];
-  if (alias && COORDS[alias]) return COORDS[alias];
-  if (COORDS[trimmed]) return COORDS[trimmed];
+  if (alias && COORDS[alias]) return alias;
+  if (COORDS[trimmed]) return trimmed;
 
   const normalized = normalizePlace(trimmed);
   if (PLACE_ALIASES[normalized] && COORDS[PLACE_ALIASES[normalized]]) {
-    return COORDS[PLACE_ALIASES[normalized]];
+    return PLACE_ALIASES[normalized];
   }
-  if (COORDS[normalized]) return COORDS[normalized];
+  if (COORDS[normalized]) return normalized;
 
   const byPrefix = Object.keys(COORDS)
     .sort((a, b) => b.length - a.length)
     .find((city) => trimmed.startsWith(city) || normalized.startsWith(city));
-  if (byPrefix) return COORDS[byPrefix];
+  return byPrefix ?? null;
+}
 
-  return null;
+export function resolvePlaceCoords(name: string): [number, number] | null {
+  const key = resolvePlaceKey(name);
+  return key ? COORDS[key] : null;
+}
+
+export function isDomesticPlace(name: string): boolean {
+  const key = resolvePlaceKey(name);
+  return key != null && CHINA_DOMESTIC.has(key);
 }
 
 export function projectLngLat([lng, lat]: [number, number]): [number, number] {
@@ -243,9 +322,10 @@ export function projectLngLat([lng, lat]: [number, number]): [number, number] {
 }
 
 export function resolveProjectedPoint(name: string): [number, number] | null {
-  const coords = resolvePlaceCoords(name);
-  if (!coords) return null;
-  return projectLngLat(coords);
+  const key = resolvePlaceKey(name);
+  if (!key) return null;
+  if (MAP_POINT_OVERRIDES[key]) return MAP_POINT_OVERRIDES[key];
+  return projectLngLat(COORDS[key]);
 }
 
 export function routeArcPath(from: [number, number], to: [number, number], bulge = 0.18): string {
@@ -281,6 +361,8 @@ function aggregateRoutes(
   >();
 
   for (const seg of segments) {
+    if (!isDomesticPlace(seg.from) || !isDomesticPlace(seg.to)) continue;
+
     const p1 = resolveProjectedPoint(seg.from);
     const p2 = resolveProjectedPoint(seg.to);
     if (!p1 || !p2) continue;
