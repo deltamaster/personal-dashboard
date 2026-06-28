@@ -1,4 +1,4 @@
-import { getOtsClient, nextStartPrimaryKey, rowToObject, toAttributeColumns } from "@/lib/ots";
+import { coerceOtsNumber, getOtsClient, nextStartPrimaryKey, rowToObject, toAttributeColumns } from "@/lib/ots";
 import { otsCall, TableStore } from "@/lib/ots-client";
 import type { DirectorStat, Movie, MovieInput, MovieStats } from "@/lib/types/movie";
 
@@ -11,6 +11,20 @@ function nowIso(): string {
 function parseDirectors(director?: string): string[] {
   if (!director) return [];
   return director.split(" / ").map((d) => d.trim()).filter(Boolean);
+}
+
+function normalizeMovie(raw: Record<string, unknown>): Movie {
+  const rating = coerceOtsNumber(raw.user_rating);
+  return {
+    ...(raw as Movie),
+    user_rating: rating != null ? Math.min(5, Math.max(1, Math.round(rating))) : 0,
+    release_year: coerceOtsNumber(raw.release_year),
+    duration_minutes: coerceOtsNumber(raw.duration_minutes),
+  };
+}
+
+function rowToMovie(row: Parameters<typeof rowToObject>[0]): Movie {
+  return normalizeMovie(rowToObject(row));
 }
 
 export async function listMovies(): Promise<Movie[]> {
@@ -32,7 +46,7 @@ export async function listMovies(): Promise<Movie[]> {
     });
 
     for (const row of result.rows ?? []) {
-      movies.push(rowToObject(row as Parameters<typeof rowToObject>[0]) as unknown as Movie);
+      movies.push(rowToMovie(row as Parameters<typeof rowToObject>[0]));
     }
 
     const next = result.nextStartPrimaryKey;
@@ -54,7 +68,7 @@ export async function getMovie(doubanSubjectId: string): Promise<Movie | null> {
       primaryKey: [{ douban_subject_id: doubanSubjectId }],
     });
     if (!result.row) return null;
-    return rowToObject(result.row as Parameters<typeof rowToObject>[0]) as unknown as Movie;
+    return rowToMovie(result.row as Parameters<typeof rowToObject>[0]);
   } catch {
     return null;
   }
@@ -143,13 +157,15 @@ export function computeMovieStats(movies: Movie[]): MovieStats {
   const directorMap = new Map<string, { count: number; totalRating: number }>();
 
   for (const movie of movies) {
-    if (movie.release_year) {
-      yearMap.set(movie.release_year, (yearMap.get(movie.release_year) ?? 0) + 1);
+    const rating = coerceOtsNumber(movie.user_rating) ?? 0;
+    const year = coerceOtsNumber(movie.release_year);
+    if (year != null) {
+      yearMap.set(year, (yearMap.get(year) ?? 0) + 1);
     }
     for (const name of parseDirectors(movie.director)) {
       const entry = directorMap.get(name) ?? { count: 0, totalRating: 0 };
       entry.count += 1;
-      entry.totalRating += movie.user_rating;
+      entry.totalRating += rating;
       directorMap.set(name, entry);
     }
   }
@@ -167,7 +183,7 @@ export function computeMovieStats(movies: Movie[]): MovieStats {
     .sort((a, b) => b.count - a.count || b.avgRating - a.avgRating);
 
   const fiveStar = movies
-    .filter((m) => m.user_rating === 5)
+    .filter((m) => (coerceOtsNumber(m.user_rating) ?? 0) === 5)
     .sort((a, b) => b.watched_date.localeCompare(a.watched_date));
 
   return { total: movies.length, byYear, directors, fiveStar };

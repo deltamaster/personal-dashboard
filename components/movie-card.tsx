@@ -1,10 +1,17 @@
 import type { Movie } from "@/lib/types/movie";
 
+function starCount(rating: number): number {
+  const n = Number(rating);
+  if (Number.isNaN(n)) return 0;
+  return Math.min(5, Math.max(0, Math.round(n)));
+}
+
 function Stars({ rating }: { rating: number }) {
+  const n = starCount(rating);
   return (
-    <span className="text-amber-400" aria-label={`${rating} stars`}>
-      {"★".repeat(rating)}
-      <span className="text-[var(--border)]">{"★".repeat(5 - rating)}</span>
+    <span className="text-amber-400" aria-label={`${n} stars`}>
+      {"★".repeat(n)}
+      <span className="text-[var(--border)]">{"★".repeat(5 - n)}</span>
     </span>
   );
 }

@@ -28,6 +28,21 @@ export function getOtsClient(): InstanceType<typeof TableStore.Client> {
 
 type AttributeValue = string | number | boolean | null | undefined;
 
+/** OTS may return Long or string for numeric columns — coerce safely. */
+export function coerceOtsNumber(value: unknown): number | undefined {
+  if (value == null) return undefined;
+  if (typeof value === "number" && !Number.isNaN(value)) return value;
+  if (typeof value === "object" && value !== null && "toNumber" in value) {
+    const n = (value as { toNumber: () => number }).toNumber();
+    return Number.isNaN(n) ? undefined : n;
+  }
+  if (typeof value === "string" && value.trim() !== "") {
+    const n = Number(value);
+    return Number.isNaN(n) ? undefined : n;
+  }
+  return undefined;
+}
+
 /** Convert GetRange nextStartPrimaryKey to inclusiveStartPrimaryKey format. */
 export function nextStartPrimaryKey(
   next: { name: string; value: unknown }[]

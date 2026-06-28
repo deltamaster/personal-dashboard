@@ -3,11 +3,41 @@
 import { useState } from "react";
 import type { MovieStats } from "@/lib/types/movie";
 
+type YearBar = { key: string; count: number; label: string; title: string };
+
+/** Collapse 50+ distinct release years into decade buckets for readability. */
+function releaseYearBars(byYear: { year: number; count: number }[]): YearBar[] {
+  if (byYear.length <= 20) {
+    return byYear.map(({ year, count }) => ({
+      key: String(year),
+      count,
+      label: String(year),
+      title: `${year}: ${count} movies`,
+    }));
+  }
+
+  const decades = new Map<number, number>();
+  for (const { year, count } of byYear) {
+    const decade = Math.floor(year / 10) * 10;
+    decades.set(decade, (decades.get(decade) ?? 0) + count);
+  }
+
+  return Array.from(decades.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([decade, count]) => ({
+      key: String(decade),
+      count,
+      label: `${String(decade).slice(-2)}s`,
+      title: `${decade}s: ${count} movies`,
+    }));
+}
+
 export function MovieStatsPanel({ stats }: { stats: MovieStats }) {
   const byYear = stats.byYear ?? [];
   const directors = stats.directors ?? [];
   const fiveStar = stats.fiveStar ?? [];
-  const maxYearCount = Math.max(...byYear.map((y) => y.count), 1);
+  const yearBars = releaseYearBars(byYear);
+  const maxYearCount = Math.max(...yearBars.map((y) => y.count), 1);
   const topDirectors = directors.slice(0, 8);
   const maxDirectorCount = Math.max(...topDirectors.map((d) => d.count), 1);
 
@@ -22,19 +52,21 @@ export function MovieStatsPanel({ stats }: { stats: MovieStats }) {
       </div>
 
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 md:col-span-2">
-        <h3 className="mb-3 text-sm font-medium text-[var(--muted)]">By release year</h3>
-        {byYear.length === 0 ? (
+        <h3 className="mb-3 text-sm font-medium text-[var(--muted)]">
+          By release year{byYear.length > 20 ? " (by decade)" : ""}
+        </h3>
+        {yearBars.length === 0 ? (
           <p className="text-sm text-[var(--muted)]">No data yet</p>
         ) : (
-          <div className="flex items-end gap-1 h-24">
-            {byYear.map(({ year, count }) => (
-              <div key={year} className="flex flex-1 flex-col items-center gap-1">
+          <div className="flex items-end gap-1.5 h-24 overflow-x-auto pb-1">
+            {yearBars.map(({ key, count, label, title }) => (
+              <div key={key} className="flex min-w-[2rem] flex-1 flex-col items-center gap-1">
                 <div
                   className="w-full rounded-t bg-[var(--accent)]/80"
                   style={{ height: `${(count / maxYearCount) * 100}%`, minHeight: count ? 4 : 0 }}
-                  title={`${year}: ${count}`}
+                  title={title}
                 />
-                <span className="text-[10px] text-[var(--muted)]">{String(year).slice(-2)}</span>
+                <span className="text-[10px] text-[var(--muted)]">{label}</span>
               </div>
             ))}
           </div>
@@ -56,8 +88,8 @@ export function MovieStatsPanel({ stats }: { stats: MovieStats }) {
                     style={{ width: `${(count / maxDirectorCount) * 100}%` }}
                   />
                 </div>
-                <span className="w-16 shrink-0 text-right text-[var(--muted)]">
-                  {count} · ★{avgRating}
+                <span className="w-20 shrink-0 text-right text-[var(--muted)]">
+                  {count} · ★{avgRating.toFixed(1)}
                 </span>
               </li>
             ))}
