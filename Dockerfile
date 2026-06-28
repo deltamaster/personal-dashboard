@@ -4,6 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+RUN mkdir -p public
 ENV BUILD_TARGET=api
 RUN npm run build:api
 
