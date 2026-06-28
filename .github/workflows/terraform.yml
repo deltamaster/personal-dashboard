@@ -34,39 +34,22 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  terraform:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - stack: ap-southeast-1
-            environment: personal-dashboard-sg
-            tfvars: env/ap-southeast-1.tfvars
-            state_key: terraform-state-ap-southeast-1
-            region: ap-southeast-1
-            ots_instance: pd-dash-sg
-            oss_web_bucket: pd-web-sg
-            oss_vault_bucket: pd-vault-sg
-            auto_on_push: true
-          - stack: cn-shanghai
-            environment: personal-dashboard
-            tfvars: env/cn-shanghai.tfvars
-            state_key: terraform-state-cn-shanghai
-            region: cn-shanghai
-            ots_instance: pd-dashboard
-            oss_web_bucket: huhansen-web
-            oss_vault_bucket: personal-dashboard-vault
-            auto_on_push: false
+  terraform-ap-southeast-1:
     if: |
-      (github.event_name == 'push' && matrix.auto_on_push) ||
-      (github.event_name == 'pull_request' && matrix.stack == 'ap-southeast-1') ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.stack == matrix.stack)
-    environment: ${{ matrix.environment }}
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.stack == 'ap-southeast-1'
+    runs-on: ubuntu-latest
+    environment: personal-dashboard-sg
     env:
+      TF_STACK: ap-southeast-1
       TF_WORKING_DIR: terraform
       TF_VERSION: "1.9.8"
-      TF_VAR_region: ${{ matrix.region }}
+      TF_VAR_region: ap-southeast-1
+      TFVARS_FILE: env/ap-southeast-1.tfvars
+      STATE_KEY: terraform-state-ap-southeast-1
+      OTS_INSTANCE: pd-dash-sg
+      OSS_WEB_BUCKET: pd-web-sg
+      OSS_VAULT_BUCKET: pd-vault-sg
       ALICLOUD_ACCESS_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
       ALICLOUD_SECRET_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
       ALICLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
@@ -77,9 +60,6 @@ jobs:
       TF_VAR_auth_microsoft_entra_id_secret: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_SECRET }}
       TF_VAR_runtime_access_key: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
       TF_VAR_runtime_secret_key: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
-      OTS_INSTANCE: ${{ matrix.ots_instance }}
-      OSS_WEB_BUCKET: ${{ matrix.oss_web_bucket }}
-      OSS_VAULT_BUCKET: ${{ matrix.oss_vault_bucket }}
     defaults:
       run:
         working-directory: ${{ env.TF_WORKING_DIR }}
@@ -106,7 +86,7 @@ jobs:
           [ -z "$AUTH_MICROSOFT_ENTRA_ID_ID" ] && missing+=("AUTH_MICROSOFT_ENTRA_ID_ID")
           [ -z "$AUTH_MICROSOFT_ENTRA_ID_SECRET" ] && missing+=("AUTH_MICROSOFT_ENTRA_ID_SECRET")
           if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::Missing environment secrets (Settings → Environments → ${{ matrix.environment }}):"
+            echo "::error::Missing environment secrets (Settings → Environments → personal-dashboard-sg):"
             printf '  - %s\n' "${missing[@]}"
             exit 1
           fi
@@ -132,8 +112,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: terraform/terraform.tfstate
-          key: ${{ matrix.state_key }}-${{ github.ref_name }}
-          restore-keys: ${{ matrix.state_key }}-main
+          key: ${{ env.STATE_KEY }}-${{ github.ref_name }}
+          restore-keys: ${{ env.STATE_KEY }}-main
 
       - uses: hashicorp/setup-terraform@v3
         with:
@@ -175,7 +155,7 @@ jobs:
         env:
           AUTH_URL: ${{ secrets.AUTH_URL }}
         run: |
-          EXTRA=(-var-file="${{ matrix.tfvars }}")
+          EXTRA=(-var-file="$TFVARS_FILE")
           if [ -n "$AUTH_URL" ]; then EXTRA+=(-var="auth_url=$AUTH_URL"); fi
           terraform plan "${EXTRA[@]}" -input=false -no-color
 
@@ -186,7 +166,7 @@ jobs:
         env:
           AUTH_URL: ${{ secrets.AUTH_URL }}
         run: |
-          EXTRA=(-var-file="${{ matrix.tfvars }}")
+          EXTRA=(-var-file="$TFVARS_FILE")
           if [ -n "$AUTH_URL" ]; then EXTRA+=(-var="auth_url=$AUTH_URL"); fi
           terraform apply "${EXTRA[@]}" -input=false -auto-approve
 
@@ -197,7 +177,140 @@ jobs:
            github.event_name == 'push' && github.ref == 'refs/heads/main')
         uses: actions/upload-artifact@v4
         with:
-          name: terraform-state-${{ matrix.stack }}-${{ github.run_id }}
+          name: terraform-state-ap-southeast-1-${{ github.run_id }}
+          path: terraform/terraform.tfstate
+          retention-days: 90
+          if-no-files-found: ignore
+
+  terraform-cn-shanghai:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.stack == 'cn-shanghai'
+    runs-on: ubuntu-latest
+    environment: personal-dashboard
+    env:
+      TF_STACK: cn-shanghai
+      TF_WORKING_DIR: terraform
+      TF_VERSION: "1.9.8"
+      TF_VAR_region: cn-shanghai
+      TFVARS_FILE: env/cn-shanghai.tfvars
+      STATE_KEY: terraform-state-cn-shanghai
+      OTS_INSTANCE: pd-dashboard
+      OSS_WEB_BUCKET: huhansen-web
+      OSS_VAULT_BUCKET: personal-dashboard-vault
+      ALICLOUD_ACCESS_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+      ALICLOUD_SECRET_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+      ALICLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
+      TF_VAR_role_arn: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
+      TF_VAR_acr_registry: ${{ secrets.ACR_REGISTRY }}
+      TF_VAR_auth_secret: ${{ secrets.AUTH_SECRET }}
+      TF_VAR_auth_microsoft_entra_id_id: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_ID }}
+      TF_VAR_auth_microsoft_entra_id_secret: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_SECRET }}
+      TF_VAR_runtime_access_key: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+      TF_VAR_runtime_secret_key: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          ALIBABA_CLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
+          ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          AUTH_MICROSOFT_ENTRA_ID_ID: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_ID }}
+          AUTH_MICROSOFT_ENTRA_ID_SECRET: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_SECRET }}
+        run: |
+          missing=()
+          [ -z "$ALIBABA_CLOUD_ACCESS_KEY_ID" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_ID")
+          [ -z "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
+          [ -z "$ALIBABA_CLOUD_ROLE_ARN" ] && missing+=("ALIBABA_CLOUD_ROLE_ARN")
+          [ -z "$ACR_REGISTRY" ] && missing+=("ACR_REGISTRY")
+          [ -z "$AUTH_SECRET" ] && missing+=("AUTH_SECRET")
+          [ -z "$AUTH_MICROSOFT_ENTRA_ID_ID" ] && missing+=("AUTH_MICROSOFT_ENTRA_ID_ID")
+          [ -z "$AUTH_MICROSOFT_ENTRA_ID_SECRET" ] && missing+=("AUTH_MICROSOFT_ENTRA_ID_SECRET")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing environment secrets (Settings → Environments → personal-dashboard):"
+            printf '  - %s\n' "${missing[@]}"
+            exit 1
+          fi
+
+      - name: Validate apply-only secrets
+        if: github.event.inputs.action == 'apply'
+        env:
+          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+        run: |
+          missing=()
+          [ -z "$ACR_USERNAME" ] && missing+=("ACR_USERNAME")
+          [ -z "$ACR_PASSWORD" ] && missing+=("ACR_PASSWORD")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing GitHub Actions secrets for apply:"
+            printf '  - %s\n' "${missing[@]}"
+            exit 1
+          fi
+
+      - name: Restore Terraform state
+        uses: actions/cache@v4
+        with:
+          path: terraform/terraform.tfstate
+          key: ${{ env.STATE_KEY }}-${{ github.ref_name }}
+          restore-keys: ${{ env.STATE_KEY }}-main
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform init
+        run: terraform init -input=false
+
+      - name: Import existing resources (if created outside state)
+        if: github.event.inputs.action == 'apply'
+        run: bash scripts/import-existing.sh
+
+      - name: Push placeholder container image to ACR
+        if: github.event.inputs.action == 'apply'
+        env:
+          ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
+          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+          ACR_NAMESPACE: personal-dashboard
+          ACR_REPO: api
+        run: |
+          set -euo pipefail
+          IMAGE="${ACR_REGISTRY}/${ACR_NAMESPACE}/${ACR_REPO}:latest"
+
+          echo "$ACR_PASSWORD" | docker login "$ACR_REGISTRY" -u "$ACR_USERNAME" --password-stdin
+
+          docker pull nginx:alpine
+          docker tag nginx:alpine "$IMAGE"
+          docker push "$IMAGE"
+
+      - name: Terraform plan
+        if: github.event.inputs.action == 'plan'
+        env:
+          AUTH_URL: ${{ secrets.AUTH_URL }}
+        run: |
+          EXTRA=(-var-file="$TFVARS_FILE")
+          if [ -n "$AUTH_URL" ]; then EXTRA+=(-var="auth_url=$AUTH_URL"); fi
+          terraform plan "${EXTRA[@]}" -input=false -no-color
+
+      - name: Terraform apply
+        if: github.event.inputs.action == 'apply'
+        env:
+          AUTH_URL: ${{ secrets.AUTH_URL }}
+        run: |
+          EXTRA=(-var-file="$TFVARS_FILE")
+          if [ -n "$AUTH_URL" ]; then EXTRA+=(-var="auth_url=$AUTH_URL"); fi
+          terraform apply "${EXTRA[@]}" -input=false -auto-approve
+
+      - name: Upload Terraform state backup
+        if: always() && github.event.inputs.action == 'apply'
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-state-cn-shanghai-${{ github.run_id }}
           path: terraform/terraform.tfstate
           retention-days: 90
           if-no-files-found: ignore
