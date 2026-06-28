@@ -62,6 +62,7 @@ OSS_WEB_BUCKET="${OSS_WEB_BUCKET:-huhansen-web}"
 OSS_VAULT_BUCKET="${OSS_VAULT_BUCKET:-personal-dashboard-vault}"
 
 import_if_missing alicloud_oss_bucket.web "$OSS_WEB_BUCKET"
+import_if_missing alicloud_oss_bucket_public_access_block.web "$OSS_WEB_BUCKET"
 import_if_missing alicloud_oss_bucket.vault "$OSS_VAULT_BUCKET"
 import_if_missing alicloud_oss_bucket_acl.web "$OSS_WEB_BUCKET"
 import_if_missing alicloud_oss_bucket_acl.vault "$OSS_VAULT_BUCKET"

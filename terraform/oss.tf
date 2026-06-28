@@ -3,9 +3,16 @@ resource "alicloud_oss_bucket" "web" {
   tags   = local.tags
 }
 
+resource "alicloud_oss_bucket_public_access_block" "web" {
+  bucket              = alicloud_oss_bucket.web.id
+  block_public_access = false
+}
+
 resource "alicloud_oss_bucket_acl" "web" {
   bucket = alicloud_oss_bucket.web.id
   acl    = "public-read"
+
+  depends_on = [alicloud_oss_bucket_public_access_block.web]
 }
 
 resource "alicloud_oss_bucket_website" "web" {
