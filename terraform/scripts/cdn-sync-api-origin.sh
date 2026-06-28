@@ -122,6 +122,12 @@ fi
 
 CONFIGS=$(echo "$RESP" | normalize_configs)
 
+# advanced_origin conflicts with origin_dns_host (even when switch=off).
+echo "$CONFIGS" | jq -c '.[] | select(.FunctionName == "advanced_origin")' | while IFS= read -r cfg; do
+  [ -z "$cfg" ] && continue
+  delete_cdn_config "$(echo "$cfg" | jq -r '.ConfigId | tostring')" "advanced_origin"
+done
+
 API_PATH_PARENT_IDS=$(echo "$CONFIGS" | jq -r '
   [.[] | select(.FunctionName == "condition") |
     select(
