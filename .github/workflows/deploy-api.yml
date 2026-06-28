@@ -29,6 +29,7 @@ jobs:
       STACK: ${{ github.event.inputs.stack || 'ap-southeast-1' }}
       FC_REGION: ${{ github.event.inputs.stack == 'cn-shanghai' && 'cn-shanghai' || 'ap-southeast-1' }}
       FC_FUNCTION: api
+      ACR_REGISTRY: ${{ (github.event.inputs.stack == 'cn-shanghai' && secrets.ACR_REGISTRY) || (secrets.ACR_REGISTRY_SG || secrets.ACR_REGISTRY) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -37,7 +38,7 @@ jobs:
           ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
           ALIBABA_CLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
-          ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
+          ACR_REGISTRY: ${{ env.ACR_REGISTRY }}
           ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
           ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
         run: |
@@ -57,13 +58,13 @@ jobs:
       - name: Log in to ACR
         uses: aliyun/acr-login@v1
         with:
-          login-server: ${{ secrets.ACR_REGISTRY }}
+          login-server: ${{ env.ACR_REGISTRY }}
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Build and push Docker image
         env:
-          IMAGE: ${{ secrets.ACR_REGISTRY }}/personal-dashboard/api
+          IMAGE: ${{ env.ACR_REGISTRY }}/personal-dashboard/api
         run: |
           docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" .
           docker push "$IMAGE:${{ github.sha }}"
@@ -80,7 +81,7 @@ jobs:
           ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
           ALIBABA_CLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
-          ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
+          ACR_REGISTRY: ${{ env.ACR_REGISTRY }}
         run: |
           aliyun configure set \
             --profile default \

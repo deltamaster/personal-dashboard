@@ -20,7 +20,8 @@ Add these to the **`personal-dashboard`** environment (shared by both stacks):
 | Secret | Description |
 |---|---|
 | `ALIBABA_CLOUD_*`, `ALIBABA_CLOUD_ROLE_ARN` | RAM user + provision role |
-| `ACR_REGISTRY` / `ACR_USERNAME` / `ACR_PASSWORD` | ACR (same registry for both stacks if cross-region pull works) |
+| `ACR_REGISTRY` / `ACR_USERNAME` / `ACR_PASSWORD` | Shanghai ACR (cn-shanghai) |
+| `ACR_REGISTRY_SG` | Singapore ACR (ap-southeast-1) — **required** for Singapore FC; username/password same as above |
 | `AUTH_*` | Auth.js + Azure OAuth |
 | `AUTH_URL` | Shanghai only — `https://huhansen.cn` (used when applying cn-shanghai stack) |
 

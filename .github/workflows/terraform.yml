@@ -54,7 +54,7 @@ jobs:
       ALICLOUD_SECRET_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
       ALICLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
       TF_VAR_role_arn: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
-      TF_VAR_acr_registry: ${{ secrets.ACR_REGISTRY }}
+      TF_VAR_acr_registry: ${{ secrets.ACR_REGISTRY_SG || secrets.ACR_REGISTRY }}
       TF_VAR_auth_secret: ${{ secrets.AUTH_SECRET }}
       TF_VAR_auth_microsoft_entra_id_id: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_ID }}
       TF_VAR_auth_microsoft_entra_id_secret: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_SECRET }}
@@ -133,7 +133,7 @@ jobs:
           github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||
           github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
-          ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
+          ACR_REGISTRY: ${{ secrets.ACR_REGISTRY_SG || secrets.ACR_REGISTRY }}
           ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
           ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
           ACR_NAMESPACE: personal-dashboard
