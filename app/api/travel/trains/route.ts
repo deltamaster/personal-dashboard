@@ -1,16 +1,19 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/api-auth";
-import { emptyTravelStats, isOtsConfigured } from "@/lib/ots-config";
+import { isOtsConfigured } from "@/lib/ots-config";
 import { computeTravelStats, listFlights, listTrains, listVisits } from "@/lib/ots/travel";
+import { getDummyTravelData, shouldUseTravelDummyData } from "@/lib/travel-dummy-data";
 
 export async function GET() {
   const { error } = await requireSession();
   if (error) return error;
 
+  if (shouldUseTravelDummyData()) {
+    const { trains, stats } = getDummyTravelData();
+    return NextResponse.json({ trains, stats: stats.trains });
+  }
+
   if (!isOtsConfigured()) {
-    if (process.env.NODE_ENV === "development") {
-      return NextResponse.json({ trains: [], stats: emptyTravelStats.trains });
-    }
     return NextResponse.json({ error: "OTS is not configured" }, { status: 503 });
   }
 

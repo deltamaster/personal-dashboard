@@ -16,6 +16,7 @@ import {
   buildFlightRoutes,
   buildTrainRoutes,
   collectRouteEndpoints,
+  type MapEndpoint,
 } from "@/lib/travel-geo";
 import type { Flight, ProvinceStat, Train } from "@/lib/types/travel";
 
@@ -47,6 +48,7 @@ export function TravelMap({
 }) {
   const [showFlights, setShowFlights] = useState(true);
   const [showTrains, setShowTrains] = useState(true);
+  const [hoveredEndpoint, setHoveredEndpoint] = useState<MapEndpoint | null>(null);
 
   const chinaStats = byProvince.filter(({ province }) => CHINA_PROVINCE_NAMES.has(province));
   const countMap = new Map(chinaStats.map(({ province, count }) => [province, count]));
@@ -113,6 +115,7 @@ export function TravelMap({
           className="mx-auto h-auto w-full max-w-3xl"
           role="img"
           aria-label="Map of China with visit provinces, flight routes, and train routes"
+          onMouseLeave={() => setHoveredEndpoint(null)}
         >
           <defs>
             <clipPath id="travel-map-clip">
@@ -195,18 +198,46 @@ export function TravelMap({
                 </path>
               ))}
 
-            {endpoints.map(([x, y]) => (
-              <circle
-                key={`${x}-${y}`}
-                cx={x}
-                cy={y}
-                r={1.8}
-                fill="rgba(255, 255, 255, 0.95)"
-                stroke="rgba(15, 20, 25, 0.85)"
-                strokeWidth={0.5}
-              />
-            ))}
+            {endpoints.map((endpoint) => {
+              const [x, y] = endpoint.point;
+              const label = endpoint.names.join(" · ");
+              const active =
+                hoveredEndpoint?.point[0] === x && hoveredEndpoint?.point[1] === y;
+              return (
+                <g key={`${x}-${y}`}>
+                  <circle
+                    cx={x}
+                    cy={y}
+                    r={10}
+                    fill="#ffffff"
+                    fillOpacity={0.001}
+                    className="cursor-help"
+                    aria-label={label}
+                    onMouseEnter={() => setHoveredEndpoint(endpoint)}
+                    onFocus={() => setHoveredEndpoint(endpoint)}
+                    onBlur={() => setHoveredEndpoint(null)}
+                  />
+                  <circle
+                    cx={x}
+                    cy={y}
+                    r={active ? 2.4 : 1.8}
+                    fill="rgba(255, 255, 255, 0.95)"
+                    stroke="rgba(15, 20, 25, 0.85)"
+                    strokeWidth={0.5}
+                    pointerEvents="none"
+                  />
+                </g>
+              );
+            })}
           </g>
+
+          {hoveredEndpoint && (
+            <MapEndpointTooltip
+              x={hoveredEndpoint.point[0]}
+              y={hoveredEndpoint.point[1]}
+              label={hoveredEndpoint.names.join(" · ")}
+            />
+          )}
         </svg>
       </div>
 
@@ -222,5 +253,38 @@ export function TravelMap({
         <span>{visited.length} provinces visited</span>
       </div>
     </div>
+  );
+}
+
+function MapEndpointTooltip({
+  x,
+  y,
+  label,
+}: {
+  x: number;
+  y: number;
+  label: string;
+}) {
+  const padY = 5;
+  const lineHeight = 16;
+  const maxWidth = 140;
+  const tooltipX = x + 12;
+  let tooltipY = y - 28;
+  if (tooltipY < 4) tooltipY = y + 12;
+
+  return (
+    <g pointerEvents="none" aria-hidden>
+      <foreignObject
+        x={tooltipX}
+        y={tooltipY}
+        width={maxWidth}
+        height={lineHeight + padY * 2}
+        className="overflow-visible"
+      >
+        <div className="w-max max-w-[140px] rounded-md border border-white/15 bg-[#0f1419]/95 px-2 py-1 text-xs leading-4 text-white shadow-lg">
+          {label}
+        </div>
+      </foreignObject>
+    </g>
   );
 }

@@ -1,6 +1,6 @@
-/** Affine fit to @svg-maps/china viewBox (774×569) from Chinese reference cities. */
-const PROJECT_X = [13.766949732035831, 0.2276106933720514, -1069.449289916812] as const;
-const PROJECT_Y = [-0.6818097165976287, -16.127381668427304, 954.7500150620601] as const;
+/** Affine fit lng/lat → @svg-maps/china viewBox (774×569). Refit: scripts/fit-map-align.mjs */
+const PROJECT_X = [13.325659128422258, -0.2733074632622181, -1002.4557279859407] as const;
+const PROJECT_Y = [0.9174293637216984, -14.705237865546145, 735.609567165455] as const;
 
 export const MAP_VIEW_BOX = "0 0 774 569";
 
@@ -67,13 +67,6 @@ const CHINA_DOMESTIC = new Set([
   "福田",
   "连云港",
 ]);
-
-/** Manual SVG fixes where the affine fit drifts (southern coast). */
-const MAP_POINT_OVERRIDES: Record<string, [number, number]> = {
-  北海: [434, 520],
-  湛江: [468, 533],
-  三亚: [456, 562],
-};
 
 /** [longitude, latitude] WGS84 */
 const COORDS: Record<string, [number, number]> = {
@@ -324,7 +317,6 @@ export function projectLngLat([lng, lat]: [number, number]): [number, number] {
 export function resolveProjectedPoint(name: string): [number, number] | null {
   const key = resolvePlaceKey(name);
   if (!key) return null;
-  if (MAP_POINT_OVERRIDES[key]) return MAP_POINT_OVERRIDES[key];
   return projectLngLat(COORDS[key]);
 }
 
@@ -349,6 +341,13 @@ export interface MapRoute {
   count: number;
   from: [number, number];
   to: [number, number];
+  fromKey: string;
+  toKey: string;
+}
+
+export interface MapEndpoint {
+  point: [number, number];
+  names: string[];
 }
 
 function aggregateRoutes(
@@ -357,22 +356,30 @@ function aggregateRoutes(
 ): MapRoute[] {
   const groups = new Map<
     string,
-    { from: [number, number]; to: [number, number]; labels: string[] }
+    {
+      from: [number, number];
+      to: [number, number];
+      fromKey: string;
+      toKey: string;
+      labels: string[];
+    }
   >();
 
   for (const seg of segments) {
     if (!isDomesticPlace(seg.from) || !isDomesticPlace(seg.to)) continue;
 
+    const fromKey = resolvePlaceKey(seg.from);
+    const toKey = resolvePlaceKey(seg.to);
     const p1 = resolveProjectedPoint(seg.from);
     const p2 = resolveProjectedPoint(seg.to);
-    if (!p1 || !p2) continue;
+    if (!fromKey || !toKey || !p1 || !p2) continue;
 
     const key = [seg.from, seg.to].sort().join("↔");
     const existing = groups.get(key);
     if (existing) {
       existing.labels.push(seg.label);
     } else {
-      groups.set(key, { from: p1, to: p2, labels: [seg.label] });
+      groups.set(key, { from: p1, to: p2, fromKey, toKey, labels: [seg.label] });
     }
   }
 
@@ -383,6 +390,8 @@ function aggregateRoutes(
     count: group.labels.length,
     from: group.from,
     to: group.to,
+    fromKey: group.fromKey,
+    toKey: group.toKey,
   }));
 }
 
@@ -426,17 +435,29 @@ export function buildTrainRoutes(
   );
 }
 
-export function collectRouteEndpoints(routes: MapRoute[]): [number, number][] {
-  const seen = new Set<string>();
-  const points: [number, number][] = [];
+function pointKey(point: [number, number]): string {
+  return `${point[0]},${point[1]}`;
+}
+
+export function collectRouteEndpoints(routes: MapRoute[]): MapEndpoint[] {
+  const byPoint = new Map<string, Set<string>>();
   for (const route of routes) {
-    for (const point of [route.from, route.to]) {
-      const key = `${point[0]},${point[1]}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        points.push(point);
-      }
+    for (const [point, name] of [
+      [route.from, route.fromKey],
+      [route.to, route.toKey],
+    ] as const) {
+      const key = pointKey(point);
+      const names = byPoint.get(key) ?? new Set<string>();
+      names.add(name);
+      byPoint.set(key, names);
     }
   }
-  return points;
+
+  return Array.from(byPoint.entries()).map(([key, names]) => {
+    const [x, y] = key.split(",").map(Number);
+    return {
+      point: [x, y] as [number, number],
+      names: Array.from(names).sort((a, b) => a.localeCompare(b, "zh-Hans")),
+    };
+  });
 }
