@@ -147,11 +147,12 @@ import_cdn_config \
 # Drop renamed / obsolete state from earlier iterations.
 prune_stale_state 'alicloud_cdn_domain_config.api_origin_host[0]'
 
-TF_CONSOLE_ARGS=(-input=false)
-if [ -n "${TFVARS_FILE:-}" ] && [ -f "$TFVARS_FILE" ]; then
-  TF_CONSOLE_ARGS+=(-var-file="$TFVARS_FILE")
+if [ -z "${FC_ORIGIN_DNS:-}" ]; then
+  ACCOUNT_ID=$(aliyun sts GetCallerIdentity --region "$REGION" 2>/dev/null | jq -r '.AccountId // empty')
+  if [ -n "$ACCOUNT_ID" ]; then
+    FC_ORIGIN_DNS="${ACCOUNT_ID}.${REGION}.fc.aliyuncs.com"
+  fi
 fi
-FC_ORIGIN_DNS=$(terraform console "${TF_CONSOLE_ARGS[@]}" <<< 'local.fc_origin_dns' 2>/dev/null | tr -d '"' || true)
 echo "Expected FC origin DNS: ${FC_ORIGIN_DNS:-<unknown>}"
 
 child_of_api_path() {
