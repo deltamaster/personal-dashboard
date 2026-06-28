@@ -106,6 +106,104 @@ const DONUT_COLORS = [
   "#8b949e",
 ];
 
+const CHART_BAR_HEIGHT_PX = 96;
+
+function NavHistoryLineChart({
+  snapshots,
+}: {
+  snapshots: Snapshot[];
+}) {
+  const chartHeight = CHART_BAR_HEIGHT_PX;
+  const chartWidth = 320;
+  const padding = { top: 14, right: 12, bottom: 14, left: 44 };
+  const plotWidth = chartWidth - padding.left - padding.right;
+  const plotHeight = chartHeight - padding.top - padding.bottom;
+
+  const values = snapshots.map((s) => s.total_value ?? 0);
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+  const range = maxValue - minValue || 1;
+  const lastIndex = values.length - 1;
+
+  const points = values.map((value, index) => {
+    const x =
+      padding.left + (lastIndex === 0 ? plotWidth / 2 : (index / lastIndex) * plotWidth);
+    const y = padding.top + plotHeight - ((value - minValue) / range) * plotHeight;
+    return {
+      x,
+      y,
+      date: snapshots[index].snapshot_date,
+      value,
+    };
+  });
+
+  const linePoints = points.map((point) => `${point.x},${point.y}`).join(" ");
+  const areaPath = [
+    `M ${points[0].x} ${padding.top + plotHeight}`,
+    ...points.map((point) => `L ${point.x} ${point.y}`),
+    `L ${points[lastIndex].x} ${padding.top + plotHeight}`,
+    "Z",
+  ].join(" ");
+
+  return (
+    <div className="space-y-1">
+      <svg
+        viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+        className="h-28 w-full"
+        role="img"
+        aria-label="NAV history line chart"
+      >
+        {[0, 0.5, 1].map((ratio) => {
+          const y = padding.top + plotHeight * (1 - ratio);
+          return (
+            <line
+              key={ratio}
+              x1={padding.left}
+              y1={y}
+              x2={padding.left + plotWidth}
+              y2={y}
+              stroke="var(--border)"
+              strokeWidth="1"
+            />
+          );
+        })}
+        <text
+          x={padding.left - 6}
+          y={padding.top + 4}
+          fill="var(--muted)"
+          fontSize="9"
+          textAnchor="end"
+        >
+          {formatMoney(maxValue)}
+        </text>
+        <text
+          x={padding.left - 6}
+          y={padding.top + plotHeight}
+          fill="var(--muted)"
+          fontSize="9"
+          textAnchor="end"
+        >
+          {formatMoney(minValue)}
+        </text>
+        <path d={areaPath} fill="color-mix(in srgb, var(--accent) 18%, transparent)" />
+        <polyline
+          points={linePoints}
+          fill="none"
+          stroke="#1d9bf0"
+          strokeWidth="2.5"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+        {points.map((point) => (
+          <circle key={point.date} cx={point.x} cy={point.y} r="3.5" fill="#1d9bf0">
+            <title>{`${point.date}: ${formatMoney(point.value)}`}</title>
+          </circle>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 export function PortfolioStatsPanel({
   stats,
   snapshots,
@@ -114,7 +212,6 @@ export function PortfolioStatsPanel({
   snapshots: Snapshot[];
 }) {
   const maxRiskValue = Math.max(...stats.byRiskLevel.map((r) => r.value), 1);
-  const chartBarMaxPx = 96;
   const hasStale = stats.staleHoldingIds.length > 0;
 
   const bankSegments = stats.byBank
@@ -136,7 +233,6 @@ export function PortfolioStatsPanel({
   const snapshotValues = snapshots
     .filter((s) => s.total_value != null)
     .slice(-24);
-  const maxSnapshotValue = Math.max(...snapshotValues.map((s) => s.total_value ?? 0), 1);
 
   return (
     <div className="space-y-6">
@@ -194,26 +290,30 @@ export function PortfolioStatsPanel({
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
-          <h3 className="mb-3 text-sm font-medium text-[var(--muted)]">
+          <h3 className="mb-4 shrink-0 text-sm font-medium text-[var(--muted)]">
             Risk level (R1–R5) by value
           </h3>
-          <div className="flex h-28 items-end gap-2">
+          <div className="flex gap-2 pt-1">
             {stats.byRiskLevel.map(({ level, value, count }) => (
               <div
                 key={level}
                 className="flex min-w-[2.5rem] flex-1 flex-col items-center gap-1"
               >
                 <div
-                  className="w-full rounded-t"
-                  style={{
-                    height: `${Math.max(
-                      value > 0 ? 4 : 0,
-                      Math.round((value / maxRiskValue) * chartBarMaxPx)
-                    )}px`,
-                    background: RISK_COLORS[level],
-                  }}
-                  title={`R${level}: ${formatMoney(value)} (${count})`}
-                />
+                  className="flex h-24 w-full items-end overflow-hidden rounded-sm bg-[var(--background)]/40"
+                >
+                  <div
+                    className="w-full rounded-t"
+                    style={{
+                      height: `${Math.max(
+                        value > 0 ? 4 : 0,
+                        Math.round((value / maxRiskValue) * CHART_BAR_HEIGHT_PX)
+                      )}px`,
+                      background: RISK_COLORS[level],
+                    }}
+                    title={`R${level}: ${formatMoney(value)} (${count})`}
+                  />
+                </div>
                 <span className="text-[10px] text-[var(--muted)]">R{level}</span>
                 {count > 0 && (
                   <span className="text-[10px] text-[var(--muted)]">{count}</span>
@@ -226,27 +326,7 @@ export function PortfolioStatsPanel({
         {snapshotValues.length > 1 && (
           <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
             <h3 className="mb-3 text-sm font-medium text-[var(--muted)]">NAV history</h3>
-            <div className="flex h-28 items-end gap-0.5 overflow-x-auto pb-1">
-              {snapshotValues.map((snapshot) => (
-                <div
-                  key={snapshot.snapshot_date}
-                  className="flex min-w-[0.5rem] flex-1 flex-col items-center gap-1"
-                >
-                  <div
-                    className="w-full rounded-t bg-[var(--accent)]"
-                    style={{
-                      height: `${Math.max(
-                        4,
-                        Math.round(
-                          ((snapshot.total_value ?? 0) / maxSnapshotValue) * chartBarMaxPx
-                        )
-                      )}px`,
-                    }}
-                    title={`${snapshot.snapshot_date}: ${formatMoney(snapshot.total_value ?? 0)}`}
-                  />
-                </div>
-              ))}
-            </div>
+            <NavHistoryLineChart snapshots={snapshotValues} />
             <p className="mt-2 text-xs text-[var(--muted)]">
               {snapshotValues[0]?.snapshot_date} →{" "}
               {snapshotValues[snapshotValues.length - 1]?.snapshot_date}
