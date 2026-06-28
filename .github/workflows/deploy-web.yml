@@ -88,7 +88,7 @@ jobs:
           if ossutil ls "oss://${OSS_WEB_BUCKET}/" >/dev/null 2>&1; then
             echo "Bucket ${OSS_WEB_BUCKET} exists"
           else
-            echo "::error::Bucket ${OSS_WEB_BUCKET} not found. This account blocks programmatic OSS bucket creation (UserDisable). Create it in the OSS console (cn-shanghai): public-read, static website index index.html / error 404.html. Then re-run Deploy Web."
+            echo "::error::Bucket ${OSS_WEB_BUCKET} not found. Create it in the OSS console (cn-shanghai): public-read, static website index index.html / error 404.html. Then re-run Deploy Web."
             exit 1
           fi
 
