@@ -7,6 +7,14 @@ SEARCH_INDEX_TYPE="${SEARCH_INDEX_TYPE:-Search}"
 FC_FUNCTION="${FC_FUNCTION:-api}"
 FC_HTTP_TRIGGER="${FC_HTTP_TRIGGER:-http}"
 
+tf_cli_args() {
+  local args=(-input=false)
+  if [ -n "${TFVARS_FILE:-}" ] && [ -f "$TFVARS_FILE" ]; then
+    args+=(-var-file="$TFVARS_FILE")
+  fi
+  printf '%s\n' "${args[@]}"
+}
+
 import_if_missing() {
   local addr="$1"
   local id="$2"
@@ -15,7 +23,8 @@ import_if_missing() {
     return 0
   fi
   echo "Importing $addr ($id)..."
-  if terraform import -input=false "$addr" "$id"; then
+  # shellcheck disable=SC2046
+  if terraform import $(tf_cli_args) "$addr" "$id"; then
     echo "Imported: $addr"
   else
     echo "Import skipped: $addr ($id)"
@@ -102,7 +111,8 @@ if [ -n "${CDN_DOMAIN:-}" ]; then
     echo "Already in state: alicloud_cdn_domain_new.main[0]"
   else
     echo "Importing alicloud_cdn_domain_new.main[0] ($CDN_DOMAIN)..."
-    if terraform import -input=false 'alicloud_cdn_domain_new.main[0]' "$CDN_DOMAIN"; then
+    # shellcheck disable=SC2046
+    if terraform import $(tf_cli_args) 'alicloud_cdn_domain_new.main[0]' "$CDN_DOMAIN"; then
       echo "Imported CDN domain: $CDN_DOMAIN"
     else
       echo "CDN import skipped (domain may not exist yet — Terraform will create it)"
