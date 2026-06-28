@@ -16,7 +16,8 @@ resource "alicloud_oss_bucket_website" "web" {
   }
 
   error_document {
-    key = "404.html"
+    key         = "404.html"
+    http_status = 404
   }
 }
 
