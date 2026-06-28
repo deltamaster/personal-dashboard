@@ -117,3 +117,44 @@ resource "alicloud_cdn_domain_config" "html_short_cache" {
     arg_value = "on"
   }
 }
+
+# CDN pulls OSS by object key; rewrite trailing-slash paths to index.html (skip /api/*).
+resource "alicloud_cdn_domain_config" "root_index_rewrite" {
+  count = var.create_cdn_domain ? 1 : 0
+
+  domain_name   = alicloud_cdn_domain_new.main[0].domain_name
+  function_name = "back_to_origin_url_rewrite"
+
+  function_args {
+    arg_name  = "source_url"
+    arg_value = "^/$"
+  }
+  function_args {
+    arg_name  = "target_url"
+    arg_value = "/index.html"
+  }
+  function_args {
+    arg_name  = "flag"
+    arg_value = "break"
+  }
+}
+
+resource "alicloud_cdn_domain_config" "subdir_index_rewrite" {
+  count = var.create_cdn_domain ? 1 : 0
+
+  domain_name   = alicloud_cdn_domain_new.main[0].domain_name
+  function_name = "back_to_origin_url_rewrite"
+
+  function_args {
+    arg_name  = "source_url"
+    arg_value = "^/(?!api/)(.+/)$"
+  }
+  function_args {
+    arg_name  = "target_url"
+    arg_value = "/$1index.html"
+  }
+  function_args {
+    arg_name  = "flag"
+    arg_value = "break"
+  }
+}
