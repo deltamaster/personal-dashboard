@@ -56,21 +56,6 @@ variable "oss_vault_bucket" {
   default = "personal-dashboard-vault"
 }
 
-variable "acr_namespace" {
-  type    = string
-  default = "personal-dashboard"
-}
-
-variable "acr_repo" {
-  type    = string
-  default = "api"
-}
-
-variable "acr_registry" {
-  description = "ACR login server, e.g. crpi-xxxxx.cn-shanghai.personal.cr.aliyuncs.com"
-  type        = string
-}
-
 variable "fc_function_name" {
   type    = string
   default = "api"
@@ -78,12 +63,6 @@ variable "fc_function_name" {
 
 variable "fc_execution_role_arn" {
   description = "Optional RAM role ARN attached to the FC function (OTS/OSS at runtime)."
-  type        = string
-  default     = ""
-}
-
-variable "initial_fc_image" {
-  description = "Container image for first FC deploy. Push to ACR before apply, or re-apply after Deploy API workflow."
   type        = string
   default     = ""
 }

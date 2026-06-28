@@ -1,4 +1,4 @@
-# API server (FC) — BUILD_TARGET=api only
+# Optional: local Docker run (production uses FC zip deploy, not containers)
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./

@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "node scripts/build-static.mjs",
     "build:api": "node scripts/build-api.mjs",
+    "package:api": "node scripts/package-api.mjs",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"

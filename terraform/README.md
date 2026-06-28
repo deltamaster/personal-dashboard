@@ -1,6 +1,6 @@
 # Terraform — Alibaba Cloud provisioning (GitHub Actions)
 
-Provisions OTS, OSS, FC, and (optionally) CDN. **Runs on GitHub Actions** — you do not need Terraform installed locally.
+Provisions OTS, OSS, FC (zip / custom runtime), and (optionally) CDN. **Runs on GitHub Actions** — you do not need Terraform installed locally.
 
 Does **not** create RAM users/roles. Uses your existing RAM user + AssumeRole.
 
@@ -11,47 +11,44 @@ Does **not** create RAM users/roles. Uses your existing RAM user + AssumeRole.
 | **Singapore (active)** | `ap-southeast-1` | `personal-dashboard` | `terraform-state-ap-southeast-1` | yes |
 | **Shanghai (paused)** | `cn-shanghai` | `personal-dashboard` | `terraform-state-cn-shanghai` | manual only |
 
-Both stacks use the **same** GitHub environment secrets. Singapore `auth_url` comes from `env/ap-southeast-1.tfvars` (update after first FC apply); Shanghai uses the `AUTH_URL` secret (`https://huhansen.cn`).
+Both stacks use the **same** GitHub environment secrets. Singapore `auth_url` comes from `env/ap-southeast-1.tfvars`; Shanghai uses the `AUTH_URL` secret (`https://huhansen.cn`).
+
+## FC deployment model
+
+API runs as **FC Custom Runtime** — no ACR or Docker required:
+
+1. **Deploy API** builds Next.js standalone → zips → uploads to private OSS (`fc/api.zip` in vault bucket)
+2. FC pulls code from OSS and runs `node server.js` on port 9000
+
+This avoids the Personal Edition ACR limit (one instance per account) and works identically in both regions.
 
 ## 1. GitHub secrets
 
-Add these to the **`personal-dashboard`** environment (shared by both stacks):
+Add these to the **`personal-dashboard`** environment:
 
 | Secret | Description |
 |---|---|
 | `ALIBABA_CLOUD_*`, `ALIBABA_CLOUD_ROLE_ARN` | RAM user + provision role |
-| `ACR_REGISTRY` / `ACR_USERNAME` / `ACR_PASSWORD` | Shanghai ACR (cn-shanghai) |
-| `ACR_REGISTRY_SG` | Singapore ACR (ap-southeast-1) — **required** for Singapore FC; username/password same as above |
 | `AUTH_*` | Auth.js + Azure OAuth |
-| `AUTH_URL` | Shanghai only — `https://huhansen.cn` (used when applying cn-shanghai stack) |
+| `AUTH_URL` | Shanghai only — `https://huhansen.cn` (cn-shanghai Terraform apply) |
 
-Singapore FC `auth_url` is set in `env/ap-southeast-1.tfvars` — update it to the FC trigger URL after the first Singapore apply.
+## 2. Run provisioning
 
-Terraform **does not** create ACR. In **Container Registry console** for each region:
-
-1. Create Personal Edition instance → copy login server to `ACR_REGISTRY`
-2. Set registry login password
-3. Namespace **`personal-dashboard`**, repo **`api`**
-
-## 3. Run provisioning
-
-**Singapore (default):** push changes under `terraform/` to `main`, or  
+**Singapore:** push changes under `terraform/` to `main`, or  
 **Actions → Terraform → stack `ap-southeast-1` → apply**
 
-**Shanghai:** **Actions → Terraform → stack `cn-shanghai` → apply** (not triggered on push)
+**Shanghai:** **Actions → Terraform → stack `cn-shanghai` → apply** (manual only)
 
-After first Singapore apply:
+After first apply:
 
 1. Copy `fc_http_trigger_url` from workflow output
-2. Set `AUTH_URL` secret on `personal-dashboard-sg` to that URL
-3. Re-run Terraform apply (updates FC env)
-4. Run **Deploy Web** / **Deploy API** (default to Singapore)
+2. Update `auth_url` in `env/ap-southeast-1.tfvars` (Singapore) or keep `AUTH_URL` secret (Shanghai)
+3. Re-run Terraform apply if auth env changed
+4. Run **Deploy API** then **Deploy Web**
 
-## 4. CDN (Shanghai only, after ICP)
+## 3. CDN (Shanghai only, after ICP)
 
-When `huhansen.cn` is ready: CDN console → origin `huhansen-web.oss-cn-shanghai.aliyuncs.com`, path `/api/*` → FC trigger, HTTPS + CNAME.
-
-Set `create_cdn_domain = true` in `env/cn-shanghai.tfvars` after domain registration if desired.
+When `huhansen.cn` is ready: CDN console → origin OSS web bucket, path `/api/*` → FC trigger, HTTPS + CNAME.
 
 ## What gets created
 
@@ -59,12 +56,9 @@ Set `create_cdn_domain = true` in `env/cn-shanghai.tfvars` after domain registra
 
 | Resource | Name |
 |---|---|
-| OTS | `pd-dash-sg` + 7 tables + 6 indexes |
-| OSS | `pd-web-sg` (public), `pd-vault-sg` (private) |
-| FC v3 | `api` + HTTP trigger |
-| CDN | skipped |
-
-Static site URL (after Deploy Web): `http://pd-web-sg.oss-ap-southeast-1.aliyuncs.com`
+| OTS | `pd-dash-sg` + tables + indexes |
+| OSS | `pd-web-sg` (public), `pd-vault-sg` (private, holds `fc/api.zip`) |
+| FC v3 | `api` custom runtime + HTTP trigger |
 
 ### Shanghai (`env/cn-shanghai.tfvars`)
 
@@ -73,7 +67,6 @@ Static site URL (after Deploy Web): `http://pd-web-sg.oss-ap-southeast-1.aliyunc
 | OTS | `pd-dashboard` |
 | OSS | `huhansen-web`, `personal-dashboard-vault` |
 | FC v3 | `api` |
-| CDN | manual — `huhansen.cn` |
 
 ## Local Terraform (optional)
 

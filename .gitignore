@@ -12,6 +12,8 @@
 /out/
 /.api-stash/
 /.ui-stash/
+/.fc-stage/
+/api.zip
 
 # production
 /build
@@ -42,6 +44,7 @@ build-log.txt
 *.tfstate.*
 terraform.tfvars
 .terraform.lock.hcl
+terraform/.generated/
 
 # IDE / OS
 Thumbs.db

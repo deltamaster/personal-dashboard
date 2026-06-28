@@ -9,5 +9,9 @@ terraform {
       source  = "aliyun/alicloud"
       version = ">= 1.230.0"
     }
+    archive = {
+      source  = "hashicorp/archive"
+      version = ">= 2.4.0"
+    }
   }
 }

@@ -54,7 +54,6 @@ jobs:
       ALICLOUD_SECRET_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
       ALICLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
       TF_VAR_role_arn: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
-      TF_VAR_acr_registry: ${{ secrets.ACR_REGISTRY_SG || secrets.ACR_REGISTRY }}
       TF_VAR_auth_secret: ${{ secrets.AUTH_SECRET }}
       TF_VAR_auth_microsoft_entra_id_id: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_ID }}
       TF_VAR_auth_microsoft_entra_id_secret: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_SECRET }}
@@ -72,7 +71,6 @@ jobs:
           ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
           ALIBABA_CLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
-          ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           AUTH_MICROSOFT_ENTRA_ID_ID: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_ID }}
           AUTH_MICROSOFT_ENTRA_ID_SECRET: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_SECRET }}
@@ -81,29 +79,11 @@ jobs:
           [ -z "$ALIBABA_CLOUD_ACCESS_KEY_ID" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_ID")
           [ -z "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
           [ -z "$ALIBABA_CLOUD_ROLE_ARN" ] && missing+=("ALIBABA_CLOUD_ROLE_ARN")
-          [ -z "$ACR_REGISTRY" ] && missing+=("ACR_REGISTRY")
           [ -z "$AUTH_SECRET" ] && missing+=("AUTH_SECRET")
           [ -z "$AUTH_MICROSOFT_ENTRA_ID_ID" ] && missing+=("AUTH_MICROSOFT_ENTRA_ID_ID")
           [ -z "$AUTH_MICROSOFT_ENTRA_ID_SECRET" ] && missing+=("AUTH_MICROSOFT_ENTRA_ID_SECRET")
           if [ ${#missing[@]} -gt 0 ]; then
             echo "::error::Missing environment secrets (Settings → Environments → personal-dashboard):"
-            printf '  - %s\n' "${missing[@]}"
-            exit 1
-          fi
-
-      - name: Validate apply-only secrets
-        if: |
-          github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||
-          github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
-          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
-        run: |
-          missing=()
-          [ -z "$ACR_USERNAME" ] && missing+=("ACR_USERNAME")
-          [ -z "$ACR_PASSWORD" ] && missing+=("ACR_PASSWORD")
-          if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::Missing GitHub Actions secrets for apply:"
             printf '  - %s\n' "${missing[@]}"
             exit 1
           fi
@@ -127,26 +107,6 @@ jobs:
           github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||
           github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: bash scripts/import-existing.sh
-
-      - name: Push placeholder container image to ACR
-        if: |
-          github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||
-          github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          ACR_REGISTRY: ${{ secrets.ACR_REGISTRY_SG || secrets.ACR_REGISTRY }}
-          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
-          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
-          ACR_NAMESPACE: personal-dashboard
-          ACR_REPO: api
-        run: |
-          set -euo pipefail
-          IMAGE="${ACR_REGISTRY}/${ACR_NAMESPACE}/${ACR_REPO}:latest"
-
-          echo "$ACR_PASSWORD" | docker login "$ACR_REGISTRY" -u "$ACR_USERNAME" --password-stdin
-
-          docker pull nginx:alpine
-          docker tag nginx:alpine "$IMAGE"
-          docker push "$IMAGE"
 
       - name: Terraform plan
         if: |
@@ -190,7 +150,6 @@ jobs:
       ALICLOUD_SECRET_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
       ALICLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
       TF_VAR_role_arn: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
-      TF_VAR_acr_registry: ${{ secrets.ACR_REGISTRY }}
       TF_VAR_auth_secret: ${{ secrets.AUTH_SECRET }}
       TF_VAR_auth_microsoft_entra_id_id: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_ID }}
       TF_VAR_auth_microsoft_entra_id_secret: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_SECRET }}
@@ -208,7 +167,6 @@ jobs:
           ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
           ALIBABA_CLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
-          ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           AUTH_MICROSOFT_ENTRA_ID_ID: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_ID }}
           AUTH_MICROSOFT_ENTRA_ID_SECRET: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_SECRET }}
@@ -217,27 +175,11 @@ jobs:
           [ -z "$ALIBABA_CLOUD_ACCESS_KEY_ID" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_ID")
           [ -z "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
           [ -z "$ALIBABA_CLOUD_ROLE_ARN" ] && missing+=("ALIBABA_CLOUD_ROLE_ARN")
-          [ -z "$ACR_REGISTRY" ] && missing+=("ACR_REGISTRY")
           [ -z "$AUTH_SECRET" ] && missing+=("AUTH_SECRET")
           [ -z "$AUTH_MICROSOFT_ENTRA_ID_ID" ] && missing+=("AUTH_MICROSOFT_ENTRA_ID_ID")
           [ -z "$AUTH_MICROSOFT_ENTRA_ID_SECRET" ] && missing+=("AUTH_MICROSOFT_ENTRA_ID_SECRET")
           if [ ${#missing[@]} -gt 0 ]; then
             echo "::error::Missing environment secrets (Settings → Environments → personal-dashboard):"
-            printf '  - %s\n' "${missing[@]}"
-            exit 1
-          fi
-
-      - name: Validate apply-only secrets
-        if: github.event.inputs.action == 'apply'
-        env:
-          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
-          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
-        run: |
-          missing=()
-          [ -z "$ACR_USERNAME" ] && missing+=("ACR_USERNAME")
-          [ -z "$ACR_PASSWORD" ] && missing+=("ACR_PASSWORD")
-          if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::Missing GitHub Actions secrets for apply:"
             printf '  - %s\n' "${missing[@]}"
             exit 1
           fi
@@ -259,24 +201,6 @@ jobs:
       - name: Import existing resources (if created outside state)
         if: github.event.inputs.action == 'apply'
         run: bash scripts/import-existing.sh
-
-      - name: Push placeholder container image to ACR
-        if: github.event.inputs.action == 'apply'
-        env:
-          ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
-          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
-          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
-          ACR_NAMESPACE: personal-dashboard
-          ACR_REPO: api
-        run: |
-          set -euo pipefail
-          IMAGE="${ACR_REGISTRY}/${ACR_NAMESPACE}/${ACR_REPO}:latest"
-
-          echo "$ACR_PASSWORD" | docker login "$ACR_REGISTRY" -u "$ACR_USERNAME" --password-stdin
-
-          docker pull nginx:alpine
-          docker tag nginx:alpine "$IMAGE"
-          docker push "$IMAGE"
 
       - name: Terraform plan
         if: github.event.inputs.action == 'plan'

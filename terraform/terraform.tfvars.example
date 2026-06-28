@@ -6,8 +6,6 @@ access_key = "LTAI..."
 secret_key = "..."
 role_arn   = "acs:ram::1234567890123456:role/your-provision-role"
 
-acr_registry = "crpi-xxxxx.ap-southeast-1.personal.cr.aliyuncs.com"
-
 # Optional: attach existing runtime role to FC (OTS/OSS). Leave empty to skip.
 # fc_execution_role_arn = "acs:ram::1234567890123456:role/your-runtime-role"
 
@@ -20,6 +18,3 @@ runtime_secret_key               = "..."
 
 # Set false if huhansen.cn is already registered on CDN (import instead)
 # create_cdn_domain = true
-
-# Push a placeholder image to ACR before first apply if FC create fails:
-# initial_fc_image = "crpi-xxxxx.cn-shanghai.personal.cr.aliyuncs.com/personal-dashboard/api:latest"

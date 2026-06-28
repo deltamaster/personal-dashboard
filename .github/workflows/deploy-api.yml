@@ -29,7 +29,9 @@ jobs:
       STACK: ${{ github.event.inputs.stack || 'ap-southeast-1' }}
       FC_REGION: ${{ github.event.inputs.stack == 'cn-shanghai' && 'cn-shanghai' || 'ap-southeast-1' }}
       FC_FUNCTION: api
-      ACR_REGISTRY: ${{ (github.event.inputs.stack == 'cn-shanghai' && secrets.ACR_REGISTRY) || (secrets.ACR_REGISTRY_SG || secrets.ACR_REGISTRY) }}
+      FC_CODE_KEY: fc/api.zip
+      OSS_ENDPOINT: ${{ github.event.inputs.stack == 'cn-shanghai' && 'oss-cn-shanghai.aliyuncs.com' || 'oss-ap-southeast-1.aliyuncs.com' }}
+      OSS_VAULT_BUCKET: ${{ github.event.inputs.stack == 'cn-shanghai' && 'personal-dashboard-vault' || 'pd-vault-sg' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -38,37 +40,27 @@ jobs:
           ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
           ALIBABA_CLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
-          ACR_REGISTRY: ${{ env.ACR_REGISTRY }}
-          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
-          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
         run: |
           missing=()
           [ -z "$ALIBABA_CLOUD_ACCESS_KEY_ID" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_ID")
           [ -z "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
           [ -z "$ALIBABA_CLOUD_ROLE_ARN" ] && missing+=("ALIBABA_CLOUD_ROLE_ARN")
-          [ -z "$ACR_REGISTRY" ] && missing+=("ACR_REGISTRY")
-          [ -z "$ACR_USERNAME" ] && missing+=("ACR_USERNAME")
-          [ -z "$ACR_PASSWORD" ] && missing+=("ACR_PASSWORD")
           if [ ${#missing[@]} -gt 0 ]; then
             echo "::error::Missing environment secrets for stack $STACK"
             printf '  - %s\n' "${missing[@]}"
             exit 1
           fi
 
-      - name: Log in to ACR
-        uses: aliyun/acr-login@v1
+      - uses: actions/setup-node@v4
         with:
-          login-server: ${{ env.ACR_REGISTRY }}
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
+          node-version: "20"
+          cache: npm
 
-      - name: Build and push Docker image
-        env:
-          IMAGE: ${{ env.ACR_REGISTRY }}/personal-dashboard/api
+      - name: Build and package API zip
         run: |
-          docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" .
-          docker push "$IMAGE:${{ github.sha }}"
-          docker push "$IMAGE:latest"
+          npm ci
+          npm run build:api
+          npm run package:api
 
       - name: Install aliyun CLI
         run: |
@@ -76,12 +68,15 @@ jobs:
           tar -xzf aliyun-cli-linux-latest-amd64.tgz
           sudo mv aliyun /usr/local/bin/
 
-      - name: Update FC function
+      - name: Install ossutil
+        run: curl -fsSL https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
+
+      - name: Assume provision role
+        id: sts
         env:
           ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
           ALIBABA_CLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
-          ACR_REGISTRY: ${{ env.ACR_REGISTRY }}
         run: |
           aliyun configure set \
             --profile default \
@@ -95,26 +90,37 @@ jobs:
             --RoleSessionName "github-deploy-api-$STACK" \
             --DurationSeconds 3600)
 
-          AK=$(echo "$CREDS" | jq -r '.Credentials.AccessKeyId')
-          SK=$(echo "$CREDS" | jq -r '.Credentials.AccessKeySecret')
-          ST=$(echo "$CREDS" | jq -r '.Credentials.SecurityToken')
+          echo "access_key_id=$(echo "$CREDS" | jq -r '.Credentials.AccessKeyId')" >> "$GITHUB_OUTPUT"
+          echo "access_key_secret=$(echo "$CREDS" | jq -r '.Credentials.AccessKeySecret')" >> "$GITHUB_OUTPUT"
+          echo "security_token=$(echo "$CREDS" | jq -r '.Credentials.SecurityToken')" >> "$GITHUB_OUTPUT"
 
+      - name: Upload API zip to OSS
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ steps.sts.outputs.access_key_id }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ steps.sts.outputs.access_key_secret }}
+          ALIBABA_CLOUD_SECURITY_TOKEN: ${{ steps.sts.outputs.security_token }}
+        run: |
+          ossutil config -e "$OSS_ENDPOINT" -i "$ALIBABA_CLOUD_ACCESS_KEY_ID" -k "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" -t "$ALIBABA_CLOUD_SECURITY_TOKEN" -L CH
+          ossutil cp api.zip "oss://${OSS_VAULT_BUCKET}/${FC_CODE_KEY}" --force
+
+      - name: Update FC function code
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ steps.sts.outputs.access_key_id }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ steps.sts.outputs.access_key_secret }}
+          ALIBABA_CLOUD_SECURITY_TOKEN: ${{ steps.sts.outputs.security_token }}
+        run: |
           aliyun configure set \
             --profile default \
             --mode StsToken \
-            --access-key-id "$AK" \
-            --access-key-secret "$SK" \
-            --sts-token "$ST" \
+            --access-key-id "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
+            --access-key-secret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
+            --sts-token "$ALIBABA_CLOUD_SECURITY_TOKEN" \
             --region "$FC_REGION"
 
           aliyun fc PUT "/2023-03-30/functions/${FC_FUNCTION}" \
             --body "{
-              \"customContainerConfig\": {
-                \"image\": \"${ACR_REGISTRY}/personal-dashboard/api:latest\",
-                \"port\": 3000
-              },
-              \"memorySize\": 512,
-              \"cpu\": 0.5,
-              \"timeout\": 60,
-              \"instanceConcurrency\": 1
+              \"code\": {
+                \"ossBucketName\": \"${OSS_VAULT_BUCKET}\",
+                \"ossObjectName\": \"${FC_CODE_KEY}\"
+              }
             }"

@@ -18,12 +18,8 @@ output "oss_vault_bucket" {
   value = alicloud_oss_bucket.vault.bucket
 }
 
-output "acr_registry" {
-  value = var.acr_registry
-}
-
-output "acr_image" {
-  value = "${var.acr_registry}/${var.acr_namespace}/${var.acr_repo}:latest"
+output "fc_code_oss_key" {
+  value = local.fc_code_key
 }
 
 output "fc_function_name" {
@@ -41,10 +37,11 @@ output "cdn_domain" {
 output "github_actions_secrets" {
   description = "Values to copy into GitHub Actions repository secrets."
   value = {
-    OSS_ENDPOINT   = local.oss_endpoint
-    OSS_WEB_BUCKET = var.oss_web_bucket
-    ACR_REGISTRY   = var.acr_registry
-    FC_REGION      = var.region
-    FC_FUNCTION    = var.fc_function_name
+    OSS_ENDPOINT     = local.oss_endpoint
+    OSS_WEB_BUCKET   = var.oss_web_bucket
+    OSS_VAULT_BUCKET = var.oss_vault_bucket
+    FC_CODE_KEY      = local.fc_code_key
+    FC_REGION        = var.region
+    FC_FUNCTION      = var.fc_function_name
   }
 }

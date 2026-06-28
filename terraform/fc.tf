@@ -1,9 +1,9 @@
 resource "alicloud_fcv3_function" "api" {
   function_name = var.fc_function_name
   description   = "${var.project} API (Next.js + Auth.js)"
-  runtime       = "custom-container"
-  handler       = "index.handler"
-  memory_size   = 512
+  runtime       = "custom.debian12"
+  handler       = "bootstrap"
+  memory_size   = 1024
   cpu           = 0.5
   disk_size     = 512
   timeout       = 60
@@ -12,9 +12,14 @@ resource "alicloud_fcv3_function" "api" {
 
   role = var.fc_execution_role_arn != "" ? var.fc_execution_role_arn : null
 
-  custom_container_config {
-    image = local.fc_image
-    port  = 3000
+  custom_runtime_config {
+    command = ["/bin/sh", "bootstrap"]
+    port    = 9000
+  }
+
+  code {
+    oss_bucket_name = alicloud_oss_bucket.vault.bucket
+    oss_object_name = local.fc_code_key
   }
 
   environment_variables = local.fc_env
@@ -25,9 +30,11 @@ resource "alicloud_fcv3_function" "api" {
 
   lifecycle {
     ignore_changes = [
-      custom_container_config[0].image,
+      code,
     ]
   }
+
+  depends_on = [alicloud_oss_bucket_object.fc_code]
 }
 
 resource "alicloud_fcv3_trigger" "http" {

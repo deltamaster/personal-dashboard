@@ -6,11 +6,7 @@ locals {
 
   ots_endpoint = "https://${var.ots_instance_name}.${var.region}.ots.aliyuncs.com"
   oss_endpoint = "oss-${var.region}.aliyuncs.com"
-
-  fc_image = coalesce(
-    var.initial_fc_image,
-    "${var.acr_registry}/${var.acr_namespace}/${var.acr_repo}:latest"
-  )
+  fc_code_key  = "fc/${var.fc_function_name}.zip"
 
   ots_tables = {
     pd_holdings = {

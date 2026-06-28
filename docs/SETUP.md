@@ -18,7 +18,7 @@ Complete these **before** the app works in production or locally with real data.
 
 ### One-time in Alibaba console
 
-**Container Registry (Personal Edition):** create namespace `personal-dashboard` and repo `api`, set registry password. See [terraform/README.md](../terraform/README.md).
+Activate **OSS** in each region you use (if not already). No container registry required — API deploys as a zip to OSS.
 
 ### GitHub secrets
 
@@ -49,16 +49,13 @@ Add these in **GitHub → Settings → Secrets and variables → Actions**:
 | `ALIBABA_CLOUD_ACCESS_KEY_ID` | RAM user access key |
 | `ALIBABA_CLOUD_ACCESS_KEY_SECRET` | RAM user secret |
 | `ALIBABA_CLOUD_ROLE_ARN` | `acs:ram::…:role/…` (AssumeRole for Terraform and deploy workflows) |
-| `ACR_REGISTRY` | `crpi-xxxxx.cn-shanghai.personal.cr.aliyuncs.com` |
-| `ACR_USERNAME` | ACR login username |
-| `ACR_PASSWORD` | ACR login password |
 | `AUTH_SECRET` | Auth.js secret (prod) |
 | `AUTH_MICROSOFT_ENTRA_ID_ID` | Azure client ID |
 | `AUTH_MICROSOFT_ENTRA_ID_SECRET` | Azure client secret |
 
 Deploy workflows use fixed values for `OSS_ENDPOINT`, `OSS_WEB_BUCKET`, `FC_REGION`, and `FC_FUNCTION` (see workflow files). You do not need separate secrets for those unless you override them.
 
-Run **Terraform** for Singapore first (`personal-dashboard-sg` environment), then **Deploy Web** / **Deploy API**.
+Run **Terraform** for Singapore first, then **Deploy Web** / **Deploy API**.
 
 Shanghai stack is kept for production after ICP — apply/deploy manually via workflow **stack = cn-shanghai**.
 
@@ -66,7 +63,7 @@ Shanghai stack is kept for production after ICP — apply/deploy manually via wo
 
 1. Push to `main` on GitHub
 2. **Deploy Web** workflow uploads `out/` → `huhansen-web`
-3. **Deploy API** workflow builds Docker → ACR → updates FC
+3. **Deploy API** workflow builds Next.js → zip → OSS → updates FC
 4. Verify: https://huhansen.cn/auth/signin/
 
 ## 6. Troubleshooting
