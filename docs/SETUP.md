@@ -18,7 +18,7 @@ Complete these **before** the app works in production or locally with real data.
 
 ### One-time in Alibaba console
 
-Create a **Container Registry Personal Edition** instance (cn-shanghai) and note the login server URL → `ACR_REGISTRY` secret.
+**Container Registry (Personal Edition):** create namespace `personal-dashboard` and repo `api`, set registry password. See [terraform/README.md](../terraform/README.md).
 
 ### GitHub secrets
 

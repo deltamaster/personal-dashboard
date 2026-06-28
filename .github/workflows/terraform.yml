@@ -105,15 +105,6 @@ jobs:
       - name: Terraform init
         run: terraform init -input=false
 
-      - name: Bootstrap ACR repo (for FC placeholder image)
-        if: |
-          github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||
-          github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          terraform apply -input=false -auto-approve \
-            -target=alicloud_cr_namespace.main \
-            -target=alicloud_cr_repo.api
-
       - name: Push placeholder container image to ACR
         if: |
           github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||

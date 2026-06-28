@@ -29,9 +29,18 @@ Your RAM user needs `sts:AssumeRole` on the provision role. Terraform uses the r
 
 **Terraform state** is stored in GitHub Actions cache (not OSS). Each apply also uploads a state backup artifact. This avoids OSS `UserDisable` errors on accounts where programmatic OSS API access is restricted.
 
-## 2. One-time: ACR instance
+## 2. One-time: ACR (Personal Edition)
 
-Create a **Container Registry Personal Edition** instance in cn-shanghai. Copy the login server URL into the `ACR_REGISTRY` secret.
+Terraform **does not** create ACR resources — Personal Edition (`crpi-*.personal.cr.aliyuncs.com`) rejects the legacy Terraform CR API with `user jurisdiction error`.
+
+In **Container Registry console** (cn-shanghai):
+
+1. Create Personal Edition instance if needed → copy login server to `ACR_REGISTRY`
+2. Set a **registry login password** (ACR → instance → access credentials)
+3. Create namespace: `personal-dashboard`
+4. Create repository: `api` (private)
+
+Then add `ACR_USERNAME` / `ACR_PASSWORD` to GitHub environment secrets.
 
 ## 3. Run provisioning
 
@@ -41,10 +50,9 @@ Or push changes under `terraform/` to `main` (auto-applies).
 
 On first run the workflow will:
 
-1. Create an OSS bucket `personal-dashboard-tfstate` for Terraform state
-2. Create ACR namespace/repo
-3. Push a placeholder `nginx:alpine` image (FC needs an image before the function can start)
-4. Apply all resources (OTS, OSS, FC, CDN, …)
+1. Push a placeholder `nginx:alpine` image to ACR (namespace/repo must exist — see step 2)
+2. Apply all resources (OTS, OSS, FC, CDN, …)
+3. Save Terraform state to GitHub Actions cache
 
 ## 4. After Terraform succeeds
 
@@ -62,7 +70,7 @@ Re-run when you change `terraform/` or when FC auth env vars change.
 | OTS instance | `personal-dashboard` |
 | OTS tables | 7 × `pd_*` + 6 search indexes |
 | OSS | `huhansen-web` (public), `personal-dashboard-vault` (private) |
-| ACR | namespace `personal-dashboard`, repo `api` |
+| ACR | namespace `personal-dashboard`, repo `api` (manual — see README) |
 | FC v3 | function `api`, HTTP trigger, min instances 0 |
 | CDN | `huhansen.cn` → OSS (static) |
 
