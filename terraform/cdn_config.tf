@@ -8,7 +8,7 @@ locals {
       criteria = [{
         matchType     = "uri"
         matchOperator = "contains"
-        matchValue    = "/api/*"
+        matchValue    = "*/api/*"
         negate        = false
       }]
     }
