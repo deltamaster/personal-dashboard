@@ -4,8 +4,11 @@ import { useState } from "react";
 import type { MovieStats } from "@/lib/types/movie";
 
 export function MovieStatsPanel({ stats }: { stats: MovieStats }) {
-  const maxYearCount = Math.max(...stats.byYear.map((y) => y.count), 1);
-  const topDirectors = stats.directors.slice(0, 8);
+  const byYear = stats.byYear ?? [];
+  const directors = stats.directors ?? [];
+  const fiveStar = stats.fiveStar ?? [];
+  const maxYearCount = Math.max(...byYear.map((y) => y.count), 1);
+  const topDirectors = directors.slice(0, 8);
   const maxDirectorCount = Math.max(...topDirectors.map((d) => d.count), 1);
 
   return (
@@ -14,17 +17,17 @@ export function MovieStatsPanel({ stats }: { stats: MovieStats }) {
         <p className="text-sm text-[var(--muted)]">Total watched</p>
         <p className="mt-1 text-3xl font-bold">{stats.total}</p>
         <p className="mt-2 text-sm text-[var(--muted)]">
-          {stats.fiveStar.length} five-star picks
+          {fiveStar.length} five-star picks
         </p>
       </div>
 
       <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 md:col-span-2">
         <h3 className="mb-3 text-sm font-medium text-[var(--muted)]">By release year</h3>
-        {stats.byYear.length === 0 ? (
+        {byYear.length === 0 ? (
           <p className="text-sm text-[var(--muted)]">No data yet</p>
         ) : (
           <div className="flex items-end gap-1 h-24">
-            {stats.byYear.map(({ year, count }) => (
+            {byYear.map(({ year, count }) => (
               <div key={year} className="flex flex-1 flex-col items-center gap-1">
                 <div
                   className="w-full rounded-t bg-[var(--accent)]/80"

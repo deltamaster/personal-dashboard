@@ -1,4 +1,4 @@
-import { getOtsClient, rowToObject, toAttributeColumns } from "@/lib/ots";
+import { getOtsClient, nextStartPrimaryKey, rowToObject, toAttributeColumns } from "@/lib/ots";
 import { otsCall, TableStore } from "@/lib/ots-client";
 import type { DirectorStat, Movie, MovieInput, MovieStats } from "@/lib/types/movie";
 
@@ -16,27 +16,28 @@ function parseDirectors(director?: string): string[] {
 export async function listMovies(): Promise<Movie[]> {
   const client = getOtsClient();
   const movies: Movie[] = [];
-  let startKey: { douban_subject_id: unknown }[] = [{ douban_subject_id: TableStore.INF_MIN }];
+  let startKey: Record<string, unknown>[] = [{ douban_subject_id: TableStore.INF_MIN }];
   let done = false;
 
   while (!done) {
-    const result = await otsCall<{ rows?: unknown[]; nextStartPrimaryKey?: unknown[] }>(
-      client.getRange.bind(client),
-      {
-        tableName: TABLE,
-        direction: TableStore.Direction.FORWARD,
-        inclusiveStartPrimaryKey: startKey,
-        inclusiveEndPrimaryKey: [{ douban_subject_id: TableStore.INF_MAX }],
-        limit: 100,
-      }
-    );
+    const result = await otsCall<{
+      rows?: unknown[];
+      nextStartPrimaryKey?: { name: string; value: unknown }[];
+    }>(client.getRange.bind(client), {
+      tableName: TABLE,
+      direction: TableStore.Direction.FORWARD,
+      inclusiveStartPrimaryKey: startKey,
+      exclusiveEndPrimaryKey: [{ douban_subject_id: TableStore.INF_MAX }],
+      limit: 100,
+    });
 
     for (const row of result.rows ?? []) {
       movies.push(rowToObject(row as Parameters<typeof rowToObject>[0]) as unknown as Movie);
     }
 
-    if (result.nextStartPrimaryKey) {
-      startKey = result.nextStartPrimaryKey as { douban_subject_id: unknown }[];
+    const next = result.nextStartPrimaryKey;
+    if (next?.length) {
+      startKey = nextStartPrimaryKey(next);
     } else {
       done = true;
     }

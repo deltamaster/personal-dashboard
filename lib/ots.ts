@@ -28,7 +28,17 @@ export function getOtsClient(): InstanceType<typeof TableStore.Client> {
 
 type AttributeValue = string | number | boolean | null | undefined;
 
-/** Convert OTS row attributes to a plain object. */
+/** Convert GetRange nextStartPrimaryKey to inclusiveStartPrimaryKey format. */
+export function nextStartPrimaryKey(
+  next: { name: string; value: unknown }[]
+): Record<string, unknown>[] {
+  const key: Record<string, unknown> = {};
+  for (const item of next) {
+    key[item.name] = item.value;
+  }
+  return [key];
+}
+
 export function rowToObject(row: {
   primaryKey?: { name: string; value: unknown }[];
   attributes?: { columnName: string; columnValue: unknown }[];

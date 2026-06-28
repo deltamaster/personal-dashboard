@@ -22,8 +22,8 @@ export default function MoviesPage() {
         throw new Error(data.error ?? `HTTP ${res.status}`);
       }
       const data = await res.json();
-      setMovies(data.movies);
-      setStats(data.stats);
+      setMovies(Array.isArray(data.movies) ? data.movies : []);
+      setStats(data.stats ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load movies");
     } finally {
