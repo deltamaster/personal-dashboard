@@ -2,6 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AuthGuard } from "@/components/auth-guard";
+import {
+  PortfolioAmountsToggle,
+  PortfolioPrivacyProvider,
+} from "@/components/portfolio-privacy";
 import { HoldingsTable, PortfolioStatsPanel } from "@/components/portfolio-panel";
 import { sortHoldingsByCnyValue } from "@/lib/portfolio-format";
 import type { Holding, PortfolioStats, Snapshot } from "@/lib/types/portfolio";
@@ -53,13 +57,17 @@ export default function PortfolioPage() {
 
   return (
     <AuthGuard>
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-2xl font-bold">Portfolio</h1>
-          <p className="mt-1 text-[var(--muted)]">
-            Holdings, risk allocation, and NAV snapshots
-          </p>
-        </div>
+      <PortfolioPrivacyProvider>
+        <div className="space-y-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold">Portfolio</h1>
+              <p className="mt-1 text-[var(--muted)]">
+                Holdings, risk allocation, and NAV snapshots
+              </p>
+            </div>
+            <PortfolioAmountsToggle />
+          </div>
 
         {loading && <p className="text-[var(--muted)]">Loading…</p>}
         {error && (
@@ -81,7 +89,8 @@ export default function PortfolioPage() {
             />
           </div>
         )}
-      </div>
+        </div>
+      </PortfolioPrivacyProvider>
     </AuthGuard>
   );
 }

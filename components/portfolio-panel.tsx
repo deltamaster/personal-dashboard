@@ -1,7 +1,19 @@
 "use client";
 
 import type { Holding, PortfolioStats, Snapshot } from "@/lib/types/portfolio";
-import { buildNavHistoryPoints, formatMoney, formatMoneyCompact, formatMoneyParts, type NavHistoryPoint } from "@/lib/portfolio-format";
+import {
+  buildNavHistoryPoints,
+  formatMoney,
+  formatMoneyCompact,
+  formatMoneyParts,
+  maskInteger,
+  maskMoney,
+  maskMoneyCompact,
+  maskMoneyParts,
+  maskPercent,
+  type NavHistoryPoint,
+} from "@/lib/portfolio-format";
+import { usePortfolioPrivacy } from "@/components/portfolio-privacy";
 
 const RISK_COLORS: Record<number, string> = {
   1: "#22c55e",
@@ -20,7 +32,8 @@ const ASSET_TYPE_LABELS: Record<string, string> = {
   gold: "Gold",
 };
 
-function formatPct(value: number): string {
+function formatPct(value: number, amountsVisible: boolean): string {
+  if (!amountsVisible) return maskPercent();
   const sign = value > 0 ? "+" : "";
   return `${sign}${value.toFixed(2)}%`;
 }
@@ -40,9 +53,14 @@ function DonutChart({
   segments: { label: string; value: number; color: string }[];
   total: number;
 }) {
+  const { amountsVisible } = usePortfolioPrivacy();
+
+  const cardClass =
+    "flex flex-col rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 md:h-full";
+
   if (segments.length === 0 || total <= 0) {
     return (
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+      <div className={cardClass}>
         <h3 className="mb-3 text-sm font-medium text-[var(--muted)]">{title}</h3>
         <p className="text-sm text-[var(--muted)]">No data yet</p>
       </div>
@@ -61,24 +79,26 @@ function DonutChart({
   gradient += stops.join(", ") + ")";
 
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
-      <h3 className="mb-3 text-sm font-medium text-[var(--muted)]">{title}</h3>
-      <div className="flex items-center gap-4">
+    <div className={cardClass}>
+      <h3 className="mb-2 shrink-0 text-sm font-medium text-[var(--muted)]">{title}</h3>
+      <div className="flex flex-1 items-center gap-3 sm:gap-4">
         <div
-          className="h-24 w-24 shrink-0 rounded-full"
+          className="aspect-square size-36 shrink-0 rounded-full sm:size-40 md:size-44"
           style={{ background: gradient }}
           title={title}
         />
-        <ul className="min-w-0 flex-1 space-y-1.5">
+        <ul className="flex min-w-0 flex-1 flex-col justify-center gap-1">
           {segments.slice(0, 6).map((segment) => (
-            <li key={segment.label} className="flex items-center gap-2 text-sm">
+            <li key={segment.label} className="flex items-center gap-2 text-sm leading-snug">
               <span
                 className="h-2.5 w-2.5 shrink-0 rounded-full"
                 style={{ background: segment.color }}
               />
               <span className="truncate">{segment.label}</span>
-              <span className="ml-auto shrink-0 text-[var(--muted)]">
-                {((segment.value / total) * 100).toFixed(1)}%
+              <span className="ml-auto shrink-0 tabular-nums text-[var(--muted)]">
+                {amountsVisible
+                  ? `${((segment.value / total) * 100).toFixed(1)}%`
+                  : maskPercent()}
               </span>
             </li>
           ))}
@@ -101,6 +121,7 @@ const DONUT_COLORS = [
 const CHART_BAR_HEIGHT_PX = 96;
 
 function NavHistoryLineChart({ points }: { points: NavHistoryPoint[] }) {
+  const { amountsVisible } = usePortfolioPrivacy();
   const chartHeight = CHART_BAR_HEIGHT_PX;
   const chartWidth = 320;
   const padding = { top: 14, right: 12, bottom: 14, left: 44 };
@@ -163,7 +184,7 @@ function NavHistoryLineChart({ points }: { points: NavHistoryPoint[] }) {
           fontSize="9"
           textAnchor="end"
         >
-          {formatMoneyCompact(maxValue)}
+          {amountsVisible ? formatMoneyCompact(maxValue) : maskMoneyCompact()}
         </text>
         <text
           x={padding.left - 6}
@@ -172,7 +193,7 @@ function NavHistoryLineChart({ points }: { points: NavHistoryPoint[] }) {
           fontSize="9"
           textAnchor="end"
         >
-          {formatMoneyCompact(minValue)}
+          {amountsVisible ? formatMoneyCompact(minValue) : maskMoneyCompact()}
         </text>
         <path d={areaPath} fill="color-mix(in srgb, var(--accent) 18%, transparent)" />
         <polyline
@@ -185,7 +206,11 @@ function NavHistoryLineChart({ points }: { points: NavHistoryPoint[] }) {
         />
         {plotPoints.map((point) => (
           <circle key={point.date} cx={point.x} cy={point.y} r="3.5" fill="#1d9bf0">
-            <title>{`${point.date}: ${formatMoney(point.value)}`}</title>
+            <title>
+              {amountsVisible
+                ? `${point.date}: ${formatMoney(point.value)}`
+                : `${point.date}: ${maskMoney()}`}
+            </title>
           </circle>
         ))}
       </svg>
@@ -200,6 +225,7 @@ export function PortfolioStatsPanel({
   stats: PortfolioStats;
   snapshots: Snapshot[];
 }) {
+  const { amountsVisible } = usePortfolioPrivacy();
   const maxRiskValue = Math.max(...stats.byRiskLevel.map((r) => r.value), 1);
   const hasStale = stats.staleHoldingIds.length > 0;
 
@@ -225,18 +251,20 @@ export function PortfolioStatsPanel({
     <div className="space-y-6">
       {hasStale && (
         <div className="rounded-lg border border-red-800 bg-red-950/30 p-4 text-sm text-red-300">
-          {stats.staleHoldingIds.length} holding
-          {stats.staleHoldingIds.length === 1 ? "" : "s"} need valuation updates
-          (R4/R5 &gt; 30 days, R3 &gt; 90 days since last update).
+          {amountsVisible ? stats.staleHoldingIds.length : maskInteger()} holding
+          {amountsVisible && stats.staleHoldingIds.length === 1 ? "" : amountsVisible ? "s" : ""} need
+          valuation updates (R4/R5 &gt; 30 days, R3 &gt; 90 days since last update).
         </div>
       )}
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
           <p className="text-sm text-[var(--muted)]">Total NAV</p>
-          <p className="mt-1 text-3xl font-bold">{formatMoney(stats.totalValue)}</p>
+          <p className="mt-1 text-3xl font-bold">
+            {amountsVisible ? formatMoney(stats.totalValue) : maskMoney()}
+          </p>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            {stats.holdingCount} holdings
+            {amountsVisible ? stats.holdingCount : maskInteger()} holdings
           </p>
         </div>
 
@@ -244,13 +272,17 @@ export function PortfolioStatsPanel({
           <p className="text-sm text-[var(--muted)]">Unrealized P&amp;L</p>
           <p
             className={`mt-1 text-3xl font-bold ${
-              stats.totalPnl >= 0 ? "text-green-400" : "text-red-400"
+              amountsVisible && stats.totalPnl >= 0
+                ? "text-green-400"
+                : amountsVisible && stats.totalPnl < 0
+                  ? "text-red-400"
+                  : ""
             }`}
           >
-            {formatMoney(stats.totalPnl)}
+            {amountsVisible ? formatMoney(stats.totalPnl) : maskMoney()}
           </p>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Dividends {formatMoney(stats.totalDividend)}
+            Dividends {amountsVisible ? formatMoney(stats.totalDividend) : maskMoney()}
           </p>
         </div>
 
@@ -258,10 +290,14 @@ export function PortfolioStatsPanel({
           <p className="text-sm text-[var(--muted)]">Total return</p>
           <p
             className={`mt-1 text-3xl font-bold ${
-              stats.totalReturn >= 0 ? "text-green-400" : "text-red-400"
+              amountsVisible && stats.totalReturn >= 0
+                ? "text-green-400"
+                : amountsVisible && stats.totalReturn < 0
+                  ? "text-red-400"
+                  : ""
             }`}
           >
-            {formatMoney(stats.totalReturn)}
+            {amountsVisible ? formatMoney(stats.totalReturn) : maskMoney()}
           </p>
           <p className="mt-2 text-sm text-[var(--muted)]">Including dividends</p>
         </div>
@@ -269,41 +305,46 @@ export function PortfolioStatsPanel({
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
           <p className="text-sm text-[var(--muted)]">Defensive ratio</p>
           <p className="mt-1 text-3xl font-bold">
-            {(stats.defensiveRatio * 100).toFixed(1)}%
+            {amountsVisible
+              ? `${(stats.defensiveRatio * 100).toFixed(1)}%`
+              : maskPercent()}
           </p>
           <p className="mt-2 text-sm text-[var(--muted)]">R1 + R2 allocation</p>
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
-          <h3 className="mb-4 shrink-0 text-sm font-medium text-[var(--muted)]">
+        <div className="flex flex-col rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 md:h-full">
+          <h3 className="mb-3 shrink-0 text-sm font-medium text-[var(--muted)]">
             Risk level (R1–R5) by value
           </h3>
-          <div className="flex gap-2 pt-1">
+          <div className="flex min-h-24 flex-1 items-stretch gap-2 pt-1">
             {stats.byRiskLevel.map(({ level, value, count }) => (
               <div
                 key={level}
-                className="flex min-w-[2.5rem] flex-1 flex-col items-center gap-1"
+                className="flex min-h-0 min-w-[2.5rem] flex-1 flex-col items-center gap-1"
               >
                 <div
-                  className="flex h-24 w-full items-end overflow-hidden rounded-sm bg-[var(--background)]/40"
+                  className="flex min-h-24 w-full flex-1 items-end overflow-hidden rounded-sm bg-[var(--background)]/40"
                 >
                   <div
                     className="w-full rounded-t"
                     style={{
-                      height: `${Math.max(
-                        value > 0 ? 4 : 0,
-                        Math.round((value / maxRiskValue) * CHART_BAR_HEIGHT_PX)
-                      )}px`,
+                      height: `${value > 0 ? Math.max(4, (value / maxRiskValue) * 100) : 0}%`,
                       background: RISK_COLORS[level],
                     }}
-                    title={`R${level}: ${formatMoney(value)} (${count})`}
+                    title={
+                      amountsVisible
+                        ? `R${level}: ${formatMoney(value)} (${count})`
+                        : `R${level}: ${maskMoney()} (${maskInteger()})`
+                    }
                   />
                 </div>
-                <span className="text-[10px] text-[var(--muted)]">R{level}</span>
+                <span className="shrink-0 text-[10px] text-[var(--muted)]">R{level}</span>
                 {count > 0 && (
-                  <span className="text-[10px] text-[var(--muted)]">{count}</span>
+                  <span className="shrink-0 text-[10px] text-[var(--muted)]">
+                    {amountsVisible ? count : maskInteger()}
+                  </span>
                 )}
               </div>
             ))}
@@ -311,17 +352,17 @@ export function PortfolioStatsPanel({
         </div>
 
         {navHistoryPoints.length > 1 && (
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
-            <h3 className="mb-3 text-sm font-medium text-[var(--muted)]">NAV history</h3>
+          <div className="flex flex-col rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 md:h-full">
+            <h3 className="mb-3 shrink-0 text-sm font-medium text-[var(--muted)]">NAV history</h3>
             <NavHistoryLineChart points={navHistoryPoints} />
-            <p className="mt-2 text-xs text-[var(--muted)]">
+            <p className="mt-2 shrink-0 text-xs text-[var(--muted)]">
               {navHistoryPoints[0]?.date} → {navHistoryPoints[navHistoryPoints.length - 1]?.date}
             </p>
           </div>
         )}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2 md:items-stretch">
         <DonutChart
           title="By bank"
           segments={bankSegments}
@@ -476,7 +517,10 @@ function MoneyAmount({
   currency?: string;
   className?: string;
 }) {
-  const { sign, prefix, integer, decimal } = formatMoneyParts(value, currency);
+  const { amountsVisible } = usePortfolioPrivacy();
+  const { sign, prefix, integer, decimal } = amountsVisible
+    ? formatMoneyParts(value, currency)
+    : maskMoneyParts(currency);
   return (
     <span className={`tabular-nums ${className}`}>
       {sign}
@@ -488,13 +532,18 @@ function MoneyAmount({
 }
 
 function PnlCell({ pnlPct, className = "" }: { pnlPct: number; className?: string }) {
+  const { amountsVisible } = usePortfolioPrivacy();
   return (
     <span
       className={`shrink-0 tabular-nums ${className} ${
-        pnlPct >= 0 ? "text-green-400" : "text-red-400"
+        amountsVisible && pnlPct >= 0
+          ? "text-green-400"
+          : amountsVisible && pnlPct < 0
+            ? "text-red-400"
+            : ""
       }`}
     >
-      {formatPct(pnlPct)}
+      {formatPct(pnlPct, amountsVisible)}
     </span>
   );
 }

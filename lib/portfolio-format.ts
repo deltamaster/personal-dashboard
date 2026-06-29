@@ -31,7 +31,7 @@ export function filterActiveHoldings(holdings: Holding[]): Holding[] {
   return holdings.filter(isActiveHolding);
 }
 
-function currencyPrefix(currency?: string): string {
+export function currencyPrefix(currency?: string): string {
   const code = (currency ?? "CNY").toUpperCase();
   if (code === "CNY") return "¥";
   if (code === "USD") return "$";
@@ -75,6 +75,37 @@ export function formatMoneyCompact(value: number, currency = "CNY"): string {
     return `${sign}${prefix}${(abs / 1_000).toFixed(2)}K`;
   }
   return formatMoney(value, currency);
+}
+
+export function maskMoneyParts(currency = "CNY"): {
+  sign: string;
+  prefix: string;
+  integer: string;
+  decimal: string;
+} {
+  return {
+    sign: "",
+    prefix: currencyPrefix(currency),
+    integer: "****",
+    decimal: "**",
+  };
+}
+
+export function maskMoney(currency = "CNY"): string {
+  const { prefix, integer, decimal } = maskMoneyParts(currency);
+  return `${prefix}${integer}.${decimal}`;
+}
+
+export function maskMoneyCompact(currency = "CNY"): string {
+  return `${currencyPrefix(currency)}****`;
+}
+
+export function maskPercent(): string {
+  return "**.**%";
+}
+
+export function maskInteger(): string {
+  return "**";
 }
 
 export function sortHoldingsByCnyValue(holdings: Holding[]): Holding[] {
