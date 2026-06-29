@@ -1,53 +1,356 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import type { VisitWithImages } from "@/lib/types/travel";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { VisitImage, VisitWithImages } from "@/lib/types/travel";
 
 function starCount(rating?: number): number {
   if (rating == null) return 0;
   return Math.min(5, Math.max(0, Math.round(rating)));
 }
 
-function Stars({ rating }: { rating?: number }) {
-  const n = starCount(rating);
-  if (n === 0) return null;
+function QuickRating({
+  visitId,
+  rating,
+  saving,
+  onRate,
+}: {
+  visitId: string;
+  rating?: number;
+  saving: boolean;
+  onRate: (value: number) => void;
+}) {
+  const current = starCount(rating);
+  const [hover, setHover] = useState<number | null>(null);
+  const active = hover ?? current;
+
   return (
-    <span className="text-amber-400" aria-label={`${n} stars`}>
-      {"★".repeat(n)}
-    </span>
+    <div
+      className="flex items-center gap-0.5"
+      role="group"
+      aria-label={`Rate ${visitId}`}
+      onMouseLeave={() => setHover(null)}
+    >
+      {[1, 2, 3, 4, 5].map((value) => (
+        <button
+          key={value}
+          type="button"
+          disabled={saving}
+          aria-label={`${value} star${value === 1 ? "" : "s"}`}
+          aria-pressed={current === value}
+          onMouseEnter={() => setHover(value)}
+          onClick={() => onRate(value)}
+          className={`text-lg leading-none transition-colors disabled:opacity-50 ${
+            value <= active ? "text-amber-400" : "text-[var(--border)] hover:text-amber-300"
+          }`}
+        >
+          ★
+        </button>
+      ))}
+    </div>
   );
 }
 
-function VisitCard({ visit }: { visit: VisitWithImages }) {
+function readImageSize(file: File): Promise<{ width?: number; height?: number }> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve({});
+    };
+    img.src = url;
+  });
+}
+
+async function uploadVisitPhoto(visitId: string, file: File): Promise<VisitImage> {
+  const contentType = file.type || "image/jpeg";
+  const presignRes = await fetch("/api/media/upload/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ filename: file.name, contentType }),
+  });
+  if (!presignRes.ok) {
+    const body = await presignRes.json().catch(() => ({}));
+    throw new Error(body.error ?? "Failed to prepare upload");
+  }
+
+  const { uploadUrl, objectKey } = (await presignRes.json()) as {
+    uploadUrl: string;
+    objectKey: string;
+  };
+
+  const putRes = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": contentType },
+    body: file,
+  });
+  if (!putRes.ok) {
+    throw new Error("Upload to storage failed");
+  }
+
+  const { width, height } = await readImageSize(file);
+  const metaRes = await fetch(`/api/travel/visits/${visitId}/images/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ objectKey, width, height }),
+  });
+  if (!metaRes.ok) {
+    const body = await metaRes.json().catch(() => ({}));
+    throw new Error(body.error ?? "Failed to save photo metadata");
+  }
+
+  return metaRes.json() as Promise<VisitImage>;
+}
+
+type VisitPatch = {
+  rating?: number;
+  date?: string;
+  highlights?: string;
+};
+
+const fieldInputClass =
+  "rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-sm";
+
+function EditPencilButton({
+  label,
+  onClick,
+  disabled,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className="rounded p-0.5 text-[var(--muted)] hover:bg-[var(--background)] hover:text-[var(--foreground)] disabled:opacity-40"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+      </svg>
+    </button>
+  );
+}
+
+async function patchVisit(visitId: string, patch: VisitPatch): Promise<VisitWithImages> {
+  const res = await fetch(`/api/travel/visits/${visitId}/`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? "Failed to save visit");
+  }
+  return res.json() as Promise<VisitWithImages>;
+}
+
+function VisitCard({
+  visit,
+  onVisitUpdated,
+}: {
+  visit: VisitWithImages;
+  onVisitUpdated?: (visit: VisitWithImages) => void;
+}) {
   const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<"date" | "highlights" | null>(null);
+  const [date, setDate] = useState(visit.date);
+  const [highlights, setHighlights] = useState(visit.highlights ?? "");
+  const [rating, setRating] = useState(visit.rating);
+  const [images, setImages] = useState(visit.images);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
+  const highlightsRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    setDate(visit.date);
+    setHighlights(visit.highlights ?? "");
+    setRating(visit.rating);
+    setImages(visit.images);
+    setEditingField(null);
+  }, [visit]);
+
+  useEffect(() => {
+    if (editingField === "date") dateInputRef.current?.focus();
+    if (editingField === "highlights") highlightsRef.current?.focus();
+  }, [editingField]);
+
   const location = [visit.city, visit.province, visit.country !== "中国" ? visit.country : null]
     .filter(Boolean)
     .join(" · ");
+
+  async function savePatch(patch: VisitPatch, rollback?: () => void) {
+    setSaveError(null);
+    setSaving(true);
+    try {
+      const updated = await patchVisit(visit.visit_id, patch);
+      setDate(updated.date);
+      setHighlights(updated.highlights ?? "");
+      setRating(updated.rating);
+      setImages(updated.images);
+      onVisitUpdated?.(updated);
+    } catch (e) {
+      rollback?.();
+      setSaveError(e instanceof Error ? e.message : "Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleRate(value: number) {
+    const previous = rating;
+    setRating(value);
+    await savePatch({ rating: value }, () => setRating(previous));
+  }
+
+  function startEdit(field: "date" | "highlights") {
+    setDate(visit.date);
+    setHighlights(visit.highlights ?? "");
+    setEditingField(field);
+  }
+
+  function cancelEdit() {
+    setDate(visit.date);
+    setHighlights(visit.highlights ?? "");
+    setEditingField(null);
+  }
+
+  async function commitDateEdit() {
+    setEditingField(null);
+    if (date === visit.date) return;
+    const previous = visit.date;
+    await savePatch({ date }, () => setDate(previous));
+  }
+
+  async function commitHighlightsEdit() {
+    setEditingField(null);
+    const trimmed = highlights.trim();
+    const current = visit.highlights ?? "";
+    if (trimmed === current) return;
+    const previous = current;
+    await savePatch({ highlights: trimmed }, () => setHighlights(previous));
+  }
+
+  async function handleFilesSelected(fileList: FileList | null) {
+    if (!fileList?.length) return;
+    setSaveError(null);
+    setUploading(true);
+
+    try {
+      const added: VisitImage[] = [];
+      for (const file of Array.from(fileList)) {
+        if (!file.type.startsWith("image/")) continue;
+        const image = await uploadVisitPhoto(visit.visit_id, file);
+        added.push(image);
+      }
+      if (added.length === 0) {
+        throw new Error("No valid images selected");
+      }
+      const updated: VisitWithImages = {
+        ...visit,
+        rating,
+        images: [...images, ...added],
+      };
+      setImages(updated.images);
+      onVisitUpdated?.(updated);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
 
   return (
     <article className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 [content-visibility:auto] [contain-intrinsic-size:auto_12rem]">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="text-xs text-[var(--muted)]">{visit.date}</p>
+          <div className="flex items-center gap-1.5">
+            {editingField === "date" ? (
+              <input
+                ref={dateInputRef}
+                type="date"
+                value={date}
+                disabled={saving}
+                onChange={(e) => setDate(e.target.value)}
+                onBlur={() => void commitDateEdit()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void commitDateEdit();
+                  if (e.key === "Escape") cancelEdit();
+                }}
+                className={fieldInputClass}
+              />
+            ) : (
+              <>
+                <p className="text-xs text-[var(--muted)]">{date}</p>
+                <EditPencilButton
+                  label="Edit date"
+                  disabled={saving || editingField !== null}
+                  onClick={() => startEdit("date")}
+                />
+              </>
+            )}
+          </div>
           <h3 className="mt-1 font-semibold">{visit.attraction}</h3>
           {visit.attraction_en && (
             <p className="text-sm text-[var(--muted)]">{visit.attraction_en}</p>
           )}
           <p className="mt-1 text-sm text-[var(--muted)]">{location}</p>
         </div>
-        <div className="flex flex-col items-end gap-1 text-sm">
+        <div className="flex flex-col items-end gap-2 text-sm">
           <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-xs">
             {visit.type}
           </span>
-          <Stars rating={visit.rating} />
+          <QuickRating
+            visitId={visit.visit_id}
+            rating={rating}
+            saving={saving}
+            onRate={(value) => void handleRate(value)}
+          />
         </div>
       </div>
 
-      {visit.highlights && (
-        <p className="mt-3 text-sm">
-          <span className="text-[var(--muted)]">Highlights: </span>
-          {visit.highlights}
-        </p>
+      {editingField === "highlights" ? (
+        <textarea
+          ref={highlightsRef}
+          value={highlights}
+          disabled={saving}
+          rows={2}
+          placeholder="What stood out?"
+          onChange={(e) => setHighlights(e.target.value)}
+          onBlur={() => void commitHighlightsEdit()}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") cancelEdit();
+          }}
+          className={`${fieldInputClass} mt-3 w-full resize-y`}
+        />
+      ) : (
+        <div className="mt-3 flex items-start gap-1.5 text-sm">
+          {highlights ? (
+            <p>
+              <span className="text-[var(--muted)]">Highlights: </span>
+              {highlights}
+            </p>
+          ) : (
+            <p className="text-[var(--muted)]">No highlights yet</p>
+          )}
+          <EditPencilButton
+            label="Edit highlights"
+            disabled={saving || editingField !== null}
+            onClick={() => startEdit("highlights")}
+          />
+        </div>
       )}
       {visit.thoughts && (
         <p className="mt-2 text-sm text-[var(--muted)]">{visit.thoughts}</p>
@@ -59,9 +362,9 @@ function VisitCard({ visit }: { visit: VisitWithImages }) {
         </p>
       )}
 
-      {visit.images.length > 0 && (
+      {images.length > 0 && (
         <div className="mt-4 grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(7.5rem,1fr))]">
-          {visit.images.map((image) =>
+          {images.map((image) =>
             image.oss_url ? (
               <button
                 key={image.image_id}
@@ -90,6 +393,28 @@ function VisitCard({ visit }: { visit: VisitWithImages }) {
         </div>
       )}
 
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif"
+          multiple
+          className="hidden"
+          onChange={(e) => void handleFilesSelected(e.target.files)}
+        />
+        <button
+          type="button"
+          disabled={uploading}
+          onClick={() => fileInputRef.current?.click()}
+          className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm hover:bg-[var(--background)] disabled:opacity-50"
+        >
+          {uploading ? "Uploading…" : "Add photos"}
+        </button>
+        {saving && <span className="text-xs text-[var(--muted)]">Saving…</span>}
+      </div>
+
+      {saveError && <p className="mt-2 text-sm text-red-400">{saveError}</p>}
+
       {expandedPhoto && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4"
@@ -110,7 +435,13 @@ function VisitCard({ visit }: { visit: VisitWithImages }) {
   );
 }
 
-export function VisitTimeline({ visits }: { visits: VisitWithImages[] }) {
+export function VisitTimeline({
+  visits,
+  onVisitUpdated,
+}: {
+  visits: VisitWithImages[];
+  onVisitUpdated?: (visit: VisitWithImages) => void;
+}) {
   const grouped = useMemo(() => {
     const map = new Map<string, VisitWithImages[]>();
     for (const visit of visits) {
@@ -133,7 +464,7 @@ export function VisitTimeline({ visits }: { visits: VisitWithImages[] }) {
           <h2 className="mb-4 text-lg font-semibold">{year}</h2>
           <div className="space-y-4 border-l border-[var(--border)] pl-4 sm:pl-6">
             {yearVisits.map((visit) => (
-              <VisitCard key={visit.visit_id} visit={visit} />
+              <VisitCard key={visit.visit_id} visit={visit} onVisitUpdated={onVisitUpdated} />
             ))}
           </div>
         </section>

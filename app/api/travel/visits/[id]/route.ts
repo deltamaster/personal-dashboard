@@ -1,0 +1,96 @@
+import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/api-auth";
+import { isOtsConfigured } from "@/lib/ots-config";
+import { getVisitWithImages, updateVisit } from "@/lib/ots/travel";
+import { withPresignedVisitImages } from "@/lib/travel-presign";
+import { shouldUseTravelDummyData, updateDummyVisit } from "@/lib/travel-dummy-data";
+
+type RouteContext = { params: { id: string } };
+
+type VisitUpdateBody = {
+  rating?: number;
+  date?: string;
+  highlights?: string;
+};
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function parseVisitUpdate(body: VisitUpdateBody): { patch: VisitUpdateBody; error?: string } {
+  const patch: VisitUpdateBody = {};
+  let count = 0;
+
+  if (body.rating !== undefined) {
+    if (body.rating < 1 || body.rating > 5) {
+      return { patch, error: "rating must be 1–5" };
+    }
+    patch.rating = body.rating;
+    count += 1;
+  }
+
+  if (body.date !== undefined) {
+    const date = body.date.trim();
+    if (!DATE_RE.test(date)) {
+      return { patch, error: "date must be YYYY-MM-DD" };
+    }
+    patch.date = date;
+    count += 1;
+  }
+
+  if (body.highlights !== undefined) {
+    patch.highlights = body.highlights.trim();
+    count += 1;
+  }
+
+  if (count === 0) {
+    return { patch, error: "At least one of rating, date, or highlights is required" };
+  }
+
+  return { patch };
+}
+
+export async function PUT(request: Request, context: RouteContext) {
+  const { error } = await requireSession();
+  if (error) return error;
+
+  const visitId = context.params.id;
+
+  try {
+    const body = (await request.json()) as VisitUpdateBody;
+    const { patch, error: validationError } = parseVisitUpdate(body);
+    if (validationError) {
+      return NextResponse.json({ error: validationError }, { status: 400 });
+    }
+
+    if (shouldUseTravelDummyData()) {
+      const visit = updateDummyVisit(visitId, patch);
+      if (!visit) {
+        return NextResponse.json({ error: "Visit not found" }, { status: 404 });
+      }
+      const [presigned] = withPresignedVisitImages([visit]);
+      return NextResponse.json(presigned);
+    }
+
+    if (!isOtsConfigured()) {
+      return NextResponse.json({ error: "OTS is not configured" }, { status: 503 });
+    }
+
+    const updated = await updateVisit(visitId, patch);
+    if (!updated) {
+      return NextResponse.json({ error: "Visit not found" }, { status: 404 });
+    }
+
+    const visit = await getVisitWithImages(visitId);
+    if (!visit) {
+      return NextResponse.json({ error: "Visit not found" }, { status: 404 });
+    }
+
+    const [presigned] = withPresignedVisitImages([visit]);
+    return NextResponse.json(presigned);
+  } catch (e) {
+    console.error(`PUT /api/travel/visits/${visitId}`, e);
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Failed to update visit" },
+      { status: 500 }
+    );
+  }
+}

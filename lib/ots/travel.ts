@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   CHINA_PROVINCE_NAMES,
   normalizeProvince,
@@ -8,6 +9,7 @@ import {
   getOtsClient,
   nextStartPrimaryKey,
   rowToObject,
+  toAttributeColumns,
 } from "@/lib/ots";
 import { otsCall, TableStore } from "@/lib/ots-client";
 import type {
@@ -26,6 +28,10 @@ const VISITS_TABLE = "pd_visits";
 const IMAGES_TABLE = "pd_visit_images";
 const FLIGHTS_TABLE = "pd_flights";
 const TRAINS_TABLE = "pd_trains";
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
 
 function normalizeVisit(raw: Record<string, unknown>): Visit {
   return {
@@ -120,6 +126,113 @@ export async function listVisitsWithImages(): Promise<VisitWithImages[]> {
       a.created_at.localeCompare(b.created_at)
     ),
   }));
+}
+
+export async function getVisit(visitId: string): Promise<Visit | null> {
+  const client = getOtsClient();
+  try {
+    const result = await otsCall<{ row?: unknown }>(client.getRow.bind(client), {
+      tableName: VISITS_TABLE,
+      primaryKey: [{ visit_id: visitId }],
+    });
+    if (!result.row) return null;
+    return normalizeVisit(rowToObject(result.row as Parameters<typeof rowToObject>[0]));
+  } catch {
+    return null;
+  }
+}
+
+export async function updateVisit(
+  visitId: string,
+  patch: Partial<Pick<Visit, "date" | "rating" | "thoughts" | "highlights" | "tips" | "revisit">>
+): Promise<Visit | null> {
+  const existing = await getVisit(visitId);
+  if (!existing) return null;
+
+  const updated: Visit = {
+    ...existing,
+    ...patch,
+    visit_id: visitId,
+    updated_at: nowIso(),
+  };
+
+  const client = getOtsClient();
+  await otsCall(client.putRow.bind(client), {
+    tableName: VISITS_TABLE,
+    condition: new TableStore.Condition(TableStore.RowExistenceExpectation.IGNORE, null),
+    primaryKey: [{ visit_id: visitId }],
+    attributeColumns: toAttributeColumns({
+      date: updated.date,
+      province: updated.province,
+      city: updated.city,
+      attraction: updated.attraction,
+      attraction_en: updated.attraction_en,
+      type: updated.type,
+      country: updated.country,
+      rating: updated.rating,
+      cost: updated.cost,
+      cost_currency: updated.cost_currency,
+      thoughts: updated.thoughts,
+      highlights: updated.highlights,
+      tips: updated.tips,
+      revisit: updated.revisit,
+      created_at: updated.created_at,
+      updated_at: updated.updated_at,
+    }),
+  });
+
+  return updated;
+}
+
+export interface VisitImageInput {
+  image_id?: string;
+  visit_id: string;
+  oss_url: string;
+  width?: number;
+  height?: number;
+  description?: string;
+}
+
+export async function createVisitImage(input: VisitImageInput): Promise<VisitImage> {
+  const client = getOtsClient();
+  const ts = nowIso();
+  const imageId = input.image_id?.trim() || randomUUID();
+  const image: VisitImage = {
+    image_id: imageId,
+    visit_id: input.visit_id,
+    oss_url: input.oss_url,
+    width: input.width,
+    height: input.height,
+    description: input.description,
+    created_at: ts,
+  };
+
+  await otsCall(client.putRow.bind(client), {
+    tableName: IMAGES_TABLE,
+    condition: new TableStore.Condition(TableStore.RowExistenceExpectation.IGNORE, null),
+    primaryKey: [{ image_id: imageId }],
+    attributeColumns: toAttributeColumns({
+      visit_id: image.visit_id,
+      oss_url: image.oss_url,
+      width: image.width,
+      height: image.height,
+      description: image.description,
+      created_at: image.created_at,
+    }),
+  });
+
+  return image;
+}
+
+export async function getVisitWithImages(visitId: string): Promise<VisitWithImages | null> {
+  const visit = await getVisit(visitId);
+  if (!visit) return null;
+
+  const images = (await listVisitImages())
+    .filter((image) => image.visit_id === visitId)
+    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+
+  return { ...visit, images };
 }
 
 export async function listFlights(): Promise<Flight[]> {

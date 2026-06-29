@@ -1,6 +1,7 @@
 import { isOtsConfigured } from "@/lib/ots-config";
 import { computeTravelStats } from "@/lib/ots/travel";
-import type { Flight, Train, VisitWithImages } from "@/lib/types/travel";
+import type { Flight, Train, Visit, VisitImage, VisitWithImages } from "@/lib/types/travel";
+import { randomUUID } from "node:crypto";
 
 const CREATED = "2024-06-01T00:00:00Z";
 
@@ -486,10 +487,73 @@ const dummyTrains: Train[] = [
   },
 ];
 
-export function getDummyTravelData() {
-  const stats = computeTravelStats(dummyVisits, dummyFlights, dummyTrains);
+type DummyVisitPatch = Partial<
+  Pick<Visit, "date" | "rating" | "thoughts" | "highlights" | "tips" | "revisit">
+> & {
+  extraImages?: VisitImage[];
+};
+
+const dummyVisitPatches = new Map<string, DummyVisitPatch>();
+
+function mergeDummyVisit(base: VisitWithImages, patch?: DummyVisitPatch): VisitWithImages {
+  if (!patch) return base;
+  const { extraImages, ...visitPatch } = patch;
   return {
-    visits: dummyVisits,
+    ...base,
+    ...visitPatch,
+    updated_at: new Date().toISOString(),
+    images: extraImages ? [...base.images, ...extraImages] : base.images,
+  };
+}
+
+function getDummyVisitsMerged(): VisitWithImages[] {
+  return dummyVisits.map((visit) => mergeDummyVisit(visit, dummyVisitPatches.get(visit.visit_id)));
+}
+
+export function updateDummyVisit(
+  visitId: string,
+  patch: Partial<Pick<Visit, "date" | "rating" | "thoughts" | "highlights" | "tips" | "revisit">>
+): VisitWithImages | null {
+  const base = dummyVisits.find((visit) => visit.visit_id === visitId);
+  if (!base) return null;
+  const existing = dummyVisitPatches.get(visitId) ?? {};
+  dummyVisitPatches.set(visitId, { ...existing, ...patch });
+  return mergeDummyVisit(base, dummyVisitPatches.get(visitId));
+}
+
+export function addDummyVisitImage(visitId: string, image: VisitImage): VisitWithImages | null {
+  const base = dummyVisits.find((visit) => visit.visit_id === visitId);
+  if (!base) return null;
+  const patch = dummyVisitPatches.get(visitId) ?? {};
+  const extraImages = [...(patch.extraImages ?? []), image];
+  dummyVisitPatches.set(visitId, { ...patch, extraImages });
+  return mergeDummyVisit(base, dummyVisitPatches.get(visitId));
+}
+
+export function createDummyVisitImageRecord(
+  visitId: string,
+  objectKey: string,
+  width?: number,
+  height?: number,
+  description?: string
+): VisitImage | null {
+  if (!dummyVisits.some((visit) => visit.visit_id === visitId)) return null;
+  return {
+    image_id: `dummy-img-${randomUUID()}`,
+    visit_id: visitId,
+    oss_url: objectKey,
+    width,
+    height,
+    description,
+    created_at: new Date().toISOString(),
+  };
+}
+
+export function getDummyTravelData() {
+  const visits = getDummyVisitsMerged();
+  const stats = computeTravelStats(visits, dummyFlights, dummyTrains);
+  return {
+    visits,
     flights: dummyFlights,
     trains: dummyTrains,
     stats,

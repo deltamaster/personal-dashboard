@@ -65,6 +65,7 @@ export interface UseOtsCacheResult<T> {
   /** Set when the initial load fails and there is nothing cached to show. */
   error: string | null;
   refresh: () => Promise<void>;
+  patchData: (patch: (current: T) => T) => void;
 }
 
 export function useOtsCache<T>(
@@ -124,5 +125,14 @@ export function useOtsCache<T>(
     }
   }, [cacheKey]);
 
-  return { data, loading, error, refresh };
+  const patchData = useCallback((patch: (current: T) => T) => {
+    setData((current) => {
+      if (!current) return current;
+      const next = patch(current);
+      writeOtsCacheEntry(cacheKey, next);
+      return next;
+    });
+  }, [cacheKey]);
+
+  return { data, loading, error, refresh, patchData };
 }

@@ -31,7 +31,16 @@ export default function TravelPage() {
     };
   }, []);
 
-  const { data, loading, error } = useOtsCache("travel", fetchTravel);
+  const { data, loading, error, patchData } = useOtsCache("travel", fetchTravel);
+
+  const handleVisitUpdated = useCallback((updated: VisitWithImages) => {
+    patchData((current) => ({
+      ...current,
+      visits: current.visits
+        .map((visit) => (visit.visit_id === updated.visit_id ? updated : visit))
+        .sort((a, b) => b.date.localeCompare(a.date)),
+    }));
+  }, [patchData]);
 
   const visits = data?.visits ?? [];
   const flights = data?.flights ?? [];
@@ -69,7 +78,7 @@ export default function TravelPage() {
         {!loading && !error && (
           <div>
             <h2 className="mb-4 text-lg font-semibold">Timeline</h2>
-            <VisitTimeline visits={visits} />
+            <VisitTimeline visits={visits} onVisitUpdated={handleVisitUpdated} />
           </div>
         )}
       </div>
