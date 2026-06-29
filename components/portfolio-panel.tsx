@@ -1,7 +1,7 @@
 "use client";
 
 import type { Holding, PortfolioStats, Snapshot } from "@/lib/types/portfolio";
-import { buildNavHistoryPoints, formatMoney, type NavHistoryPoint } from "@/lib/portfolio-format";
+import { buildNavHistoryPoints, formatMoney, formatMoneyCompact, type NavHistoryPoint } from "@/lib/portfolio-format";
 
 const RISK_COLORS: Record<number, string> = {
   1: "#22c55e",
@@ -163,7 +163,7 @@ function NavHistoryLineChart({ points }: { points: NavHistoryPoint[] }) {
           fontSize="9"
           textAnchor="end"
         >
-          {formatMoney(maxValue)}
+          {formatMoneyCompact(maxValue)}
         </text>
         <text
           x={padding.left - 6}
@@ -172,7 +172,7 @@ function NavHistoryLineChart({ points }: { points: NavHistoryPoint[] }) {
           fontSize="9"
           textAnchor="end"
         >
-          {formatMoney(minValue)}
+          {formatMoneyCompact(minValue)}
         </text>
         <path d={areaPath} fill="color-mix(in srgb, var(--accent) 18%, transparent)" />
         <polyline

@@ -41,6 +41,21 @@ export function formatMoney(value: number, currency = "CNY"): string {
   return value < 0 ? `-${prefix}${formatted}` : `${prefix}${formatted}`;
 }
 
+/** Short axis labels for charts — e.g. ¥4.31M, ¥57.14K. */
+export function formatMoneyCompact(value: number, currency = "CNY"): string {
+  const prefix = currencyPrefix(currency);
+  const abs = Math.abs(value);
+  const sign = value < 0 ? "-" : "";
+
+  if (abs >= 1_000_000) {
+    return `${sign}${prefix}${(abs / 1_000_000).toFixed(2)}M`;
+  }
+  if (abs >= 1_000) {
+    return `${sign}${prefix}${(abs / 1_000).toFixed(2)}K`;
+  }
+  return formatMoney(value, currency);
+}
+
 export function sortHoldingsByCnyValue(holdings: Holding[]): Holding[] {
   return [...holdings].sort(
     (a, b) => holdingValueInCny(b) - holdingValueInCny(a)
