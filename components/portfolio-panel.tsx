@@ -357,79 +357,129 @@ export function HoldingsTable({
     return <p className="text-[var(--muted)]">No holdings yet.</p>;
   }
 
-  return (
-    <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
-      <table className="w-full min-w-[720px] text-left text-sm">
-        <thead className="border-b border-[var(--border)] bg-[var(--card)] text-[var(--muted)]">
-          <tr>
-            <th className="px-4 py-3 font-medium">Name</th>
-            <th className="px-4 py-3 font-medium">Bank</th>
-            <th className="px-4 py-3 font-medium">Type</th>
-            <th className="px-4 py-3 font-medium">Risk</th>
-            <th className="px-4 py-3 font-medium text-right">Value</th>
-            <th className="px-4 py-3 font-medium text-right">P&amp;L</th>
-            <th className="px-4 py-3 font-medium text-right">Updated</th>
-          </tr>
-        </thead>
-        <tbody>
-          {holdings.map((holding) => {
-            const stale = staleSet.has(holding.holding_id);
-            const currency = holding.currency ?? "CNY";
-            const value = holding.current_value ?? 0;
-            const pnlPct = holding.unrealized_pct ?? 0;
-            const risk = holding.risk_level;
+  const headerGrid =
+    "md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 md:gap-x-3 md:gap-y-1 md:items-center";
+  const rowGrid =
+    "md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 md:gap-x-3 md:gap-y-2 md:items-center";
+  const secondaryMeta =
+    "text-xs text-[var(--muted)] xl:text-sm xl:text-[var(--muted)]";
 
-            return (
-              <tr
-                key={holding.holding_id}
-                className={`border-b border-[var(--border)] last:border-0 ${
-                  stale ? "border-l-2 border-l-red-500 bg-red-950/10" : ""
-                }`}
-              >
-                <td className="px-4 py-3">
-                  <div className="font-medium">{holding.name}</div>
-                  {holding.ticker && (
-                    <div className="text-xs text-[var(--muted)]">{holding.ticker}</div>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-[var(--muted)]">
-                  {holding.bank ?? "—"}
-                </td>
-                <td className="px-4 py-3 text-[var(--muted)]">
-                  {ASSET_TYPE_LABELS[holding.asset_type ?? ""] ??
-                    holding.asset_type ??
-                    "—"}
-                </td>
-                <td className="px-4 py-3">
-                  {risk != null ? (
-                    <span
-                      className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium text-white"
-                      style={{ background: RISK_COLORS[risk] ?? "#71767b" }}
-                    >
-                      R{risk}
+  return (
+    <div className="rounded-xl border border-[var(--border)] text-sm">
+      <div
+        className={`hidden border-b border-[var(--border)] bg-[var(--card)] px-4 py-3 text-[var(--muted)] ${headerGrid}`}
+      >
+        <span className="font-medium">Name</span>
+        <span className="font-medium text-right">Value</span>
+        <span className="font-medium">Risk</span>
+        <span className="font-medium text-right">P&amp;L</span>
+        <span className="hidden font-medium lg:block">Type</span>
+        <span className="hidden font-medium xl:block">Bank</span>
+        <span className="hidden font-medium text-right xl:block">Updated</span>
+      </div>
+
+      <ul className="divide-y divide-[var(--border)]">
+        {holdings.map((holding) => {
+          const stale = staleSet.has(holding.holding_id);
+          const currency = holding.currency ?? "CNY";
+          const value = holding.current_value ?? 0;
+          const pnlPct = holding.unrealized_pct ?? 0;
+          const risk = holding.risk_level;
+          const typeLabel =
+            ASSET_TYPE_LABELS[holding.asset_type ?? ""] ??
+            holding.asset_type ??
+            "—";
+          const bankLabel = holding.bank ?? "—";
+          const updatedLabel = formatDate(holding.updated_at);
+
+          const rowClass = `px-4 py-3 ${
+            stale ? "border-l-2 border-l-red-500 bg-red-950/10" : ""
+          }`;
+
+          return (
+            <li key={holding.holding_id}>
+              <div className={`md:hidden ${rowClass}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <HoldingNameCell holding={holding} className="min-w-0 flex-1" />
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="font-medium tabular-nums">
+                      {formatMoney(value, currency)}
                     </span>
-                  ) : (
-                    "—"
-                  )}
-                </td>
-                <td className="px-4 py-3 text-right font-medium">
+                    <RiskBadge risk={risk} />
+                    <PnlCell pnlPct={pnlPct} />
+                  </div>
+                </div>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--muted)]">
+                  <span>{typeLabel}</span>
+                  <span>{bankLabel}</span>
+                  <span className="tabular-nums">{updatedLabel}</span>
+                </div>
+              </div>
+
+              <div className={`hidden md:grid ${rowGrid} ${rowClass}`}>
+                <HoldingNameCell holding={holding} className="min-w-0" />
+                <span className="text-right font-medium tabular-nums">
                   {formatMoney(value, currency)}
-                </td>
-                <td
-                  className={`px-4 py-3 text-right ${
-                    pnlPct >= 0 ? "text-green-400" : "text-red-400"
-                  }`}
-                >
-                  {formatPct(pnlPct)}
-                </td>
-                <td className="px-4 py-3 text-right text-[var(--muted)]">
-                  {formatDate(holding.updated_at)}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                </span>
+                <RiskBadge risk={risk} />
+                <PnlCell pnlPct={pnlPct} className="text-right" />
+                <span className={`truncate ${secondaryMeta}`}>{typeLabel}</span>
+                <span className={`truncate ${secondaryMeta}`}>{bankLabel}</span>
+                <span className={`text-right tabular-nums ${secondaryMeta}`}>
+                  {updatedLabel}
+                </span>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
     </div>
+  );
+}
+
+function HoldingNameCell({
+  holding,
+  className = "",
+}: {
+  holding: Holding;
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <div className="font-medium leading-snug">{holding.name}</div>
+      {holding.ticker && (
+        <div className="text-xs text-[var(--muted)]">{holding.ticker}</div>
+      )}
+    </div>
+  );
+}
+
+function RiskBadge({ risk }: { risk?: number }) {
+  if (risk == null) {
+    return (
+      <span className="inline-flex w-8 shrink-0 justify-center justify-self-start text-[var(--muted)]">
+        —
+      </span>
+    );
+  }
+  return (
+    <span
+      className="inline-flex w-8 shrink-0 justify-center justify-self-start items-center rounded px-1 py-0.5 text-xs font-medium text-white"
+      style={{ background: RISK_COLORS[risk] ?? "#71767b" }}
+    >
+      R{risk}
+    </span>
+  );
+}
+
+function PnlCell({ pnlPct, className = "" }: { pnlPct: number; className?: string }) {
+  return (
+    <span
+      className={`shrink-0 tabular-nums ${className} ${
+        pnlPct >= 0 ? "text-green-400" : "text-red-400"
+      }`}
+    >
+      {formatPct(pnlPct)}
+    </span>
   );
 }
