@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { AuthGuard } from "@/components/auth-guard";
 import { MovieCard } from "@/components/movie-card";
 import { AddMovieForm, MovieStatsPanel } from "@/components/movies-panel";
@@ -11,36 +11,33 @@ import {
   filterMovies,
 } from "@/lib/movies-filter";
 import type { Movie, MovieStats } from "@/lib/types/movie";
+import { useOtsCache } from "@/lib/use-ots-cache";
+
+interface MoviesCache {
+  movies: Movie[];
+  stats: MovieStats | null;
+}
 
 export default function MoviesPage() {
-  const [movies, setMovies] = useState<Movie[]>([]);
-  const [stats, setStats] = useState<MovieStats | null>(null);
   const [filters, setFilters] = useState(emptyMovieFilters);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/movies/");
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? `HTTP ${res.status}`);
-      }
-      const data = await res.json();
-      setMovies(Array.isArray(data.movies) ? data.movies : []);
-      setStats(data.stats ?? null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load movies");
-    } finally {
-      setLoading(false);
+  const fetchMovies = useCallback(async (): Promise<MoviesCache> => {
+    const res = await fetch("/api/movies/");
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error ?? `HTTP ${res.status}`);
     }
+    const body = await res.json();
+    return {
+      movies: Array.isArray(body.movies) ? body.movies : [],
+      stats: body.stats ?? null,
+    };
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const { data, loading, error, refresh } = useOtsCache("movies", fetchMovies);
+
+  const movies = data?.movies ?? [];
+  const stats = data?.stats ?? null;
 
   const releaseYears = useMemo(() => distinctReleaseYears(movies), [movies]);
   const filteredMovies = useMemo(
@@ -56,7 +53,7 @@ export default function MoviesPage() {
             <h1 className="text-2xl font-bold">Cinema Room</h1>
             <p className="mt-1 text-[var(--muted)]">Your watched movies log</p>
           </div>
-          <AddMovieForm onAdded={load} />
+          <AddMovieForm onAdded={refresh} />
         </div>
 
         {loading && <p className="text-[var(--muted)]">Loading…</p>}

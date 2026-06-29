@@ -1,44 +1,42 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import { AuthGuard } from "@/components/auth-guard";
 import { TravelMap } from "@/components/travel-map";
 import { TravelStatsPanel } from "@/components/travel-stats-panel";
 import { VisitTimeline } from "@/components/visit-timeline";
 import type { Flight, Train, TravelStats, VisitWithImages } from "@/lib/types/travel";
+import { useOtsCache } from "@/lib/use-ots-cache";
+
+interface TravelCache {
+  visits: VisitWithImages[];
+  flights: Flight[];
+  trains: Train[];
+  stats: TravelStats | null;
+}
 
 export default function TravelPage() {
-  const [visits, setVisits] = useState<VisitWithImages[]>([]);
-  const [flights, setFlights] = useState<Flight[]>([]);
-  const [trains, setTrains] = useState<Train[]>([]);
-  const [stats, setStats] = useState<TravelStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/travel/visits/");
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? `HTTP ${res.status}`);
-      }
-      const data = await res.json();
-      setVisits(Array.isArray(data.visits) ? data.visits : []);
-      setFlights(Array.isArray(data.flights) ? data.flights : []);
-      setTrains(Array.isArray(data.trains) ? data.trains : []);
-      setStats(data.stats ?? null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load travel data");
-    } finally {
-      setLoading(false);
+  const fetchTravel = useCallback(async (): Promise<TravelCache> => {
+    const res = await fetch("/api/travel/visits/");
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error ?? `HTTP ${res.status}`);
     }
+    const body = await res.json();
+    return {
+      visits: Array.isArray(body.visits) ? body.visits : [],
+      flights: Array.isArray(body.flights) ? body.flights : [],
+      trains: Array.isArray(body.trains) ? body.trains : [],
+      stats: body.stats ?? null,
+    };
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const { data, loading, error } = useOtsCache("travel", fetchTravel);
+
+  const visits = data?.visits ?? [];
+  const flights = data?.flights ?? [];
+  const trains = data?.trains ?? [];
+  const stats = data?.stats ?? null;
 
   return (
     <AuthGuard>
