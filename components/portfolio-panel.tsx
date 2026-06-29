@@ -1,7 +1,7 @@
 "use client";
 
 import type { Holding, PortfolioStats, Snapshot } from "@/lib/types/portfolio";
-import { buildNavHistoryPoints, formatMoney, formatMoneyCompact, type NavHistoryPoint } from "@/lib/portfolio-format";
+import { buildNavHistoryPoints, formatMoney, formatMoneyCompact, formatMoneyParts, type NavHistoryPoint } from "@/lib/portfolio-format";
 
 const RISK_COLORS: Record<number, string> = {
   1: "#22c55e",
@@ -13,11 +13,11 @@ const RISK_COLORS: Record<number, string> = {
 
 const ASSET_TYPE_LABELS: Record<string, string> = {
   fund: "Fund",
-  stock: "Stock",
-  structured_deposit: "Structured",
-  bond: "Bond",
-  etf: "ETF",
-  other: "Other",
+  wealth_mgmt: "Wealth Management",
+  life_insurance: "Insurance & Annuities",
+  pension: "Tax-Deferred Pension",
+  structured_deposit: "Structured Deposit",
+  gold: "Gold",
 };
 
 function formatPct(value: number): string {
@@ -395,9 +395,11 @@ export function HoldingsTable({
                 <div className="flex items-start justify-between gap-3">
                   <HoldingNameCell holding={holding} className="min-w-0 flex-1" />
                   <div className="flex shrink-0 items-center gap-2">
-                    <span className="font-medium tabular-nums">
-                      {formatMoney(value, currency)}
-                    </span>
+                    <MoneyAmount
+                      value={value}
+                      currency={currency}
+                      className="font-medium"
+                    />
                     <RiskBadge risk={risk} />
                     <PnlCell pnlPct={pnlPct} />
                   </div>
@@ -411,9 +413,9 @@ export function HoldingsTable({
 
               <div className={`hidden md:grid ${rowGrid} ${rowClass}`}>
                 <HoldingNameCell holding={holding} className="min-w-0" />
-                <span className="text-right font-medium tabular-nums">
-                  {formatMoney(value, currency)}
-                </span>
+                <div className="text-right">
+                  <MoneyAmount value={value} currency={currency} className="font-medium" />
+                </div>
                 <RiskBadge risk={risk} />
                 <PnlCell pnlPct={pnlPct} className="text-right" />
                 <span className={`truncate ${secondaryMeta}`}>{typeLabel}</span>
@@ -461,6 +463,26 @@ function RiskBadge({ risk }: { risk?: number }) {
       style={{ background: RISK_COLORS[risk] ?? "#71767b" }}
     >
       R{risk}
+    </span>
+  );
+}
+
+function MoneyAmount({
+  value,
+  currency = "CNY",
+  className = "",
+}: {
+  value: number;
+  currency?: string;
+  className?: string;
+}) {
+  const { sign, prefix, integer, decimal } = formatMoneyParts(value, currency);
+  return (
+    <span className={`tabular-nums ${className}`}>
+      {sign}
+      {prefix}
+      {integer}
+      <span className="text-[0.72em] font-normal text-[var(--muted)]">.{decimal}</span>
     </span>
   );
 }

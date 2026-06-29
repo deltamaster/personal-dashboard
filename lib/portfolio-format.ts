@@ -22,6 +22,15 @@ export function holdingValueInCny(holding: Holding): number {
   return toCnyEquivalent(holding.current_value ?? 0, holding.currency);
 }
 
+/** Holdings with zero current value are treated as redeemed — hide from UI and stats. */
+export function isActiveHolding(holding: Holding): boolean {
+  return (holding.current_value ?? 0) > 0;
+}
+
+export function filterActiveHoldings(holdings: Holding[]): Holding[] {
+  return holdings.filter(isActiveHolding);
+}
+
 function currencyPrefix(currency?: string): string {
   const code = (currency ?? "CNY").toUpperCase();
   if (code === "CNY") return "¥";
@@ -32,13 +41,25 @@ function currencyPrefix(currency?: string): string {
 
 /** Format with thousands separators; keep original currency symbol. */
 export function formatMoney(value: number, currency = "CNY"): string {
+  const { sign, prefix, integer, decimal } = formatMoneyParts(value, currency);
+  return `${sign}${prefix}${integer}.${decimal}`;
+}
+
+export function formatMoneyParts(
+  value: number,
+  currency = "CNY"
+): { sign: string; prefix: string; integer: string; decimal: string } {
   const prefix = currencyPrefix(currency);
+  const sign = value < 0 ? "-" : "";
   const abs = Math.abs(value);
-  const formatted = abs.toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
+  const fixed = abs.toFixed(2);
+  const dot = fixed.indexOf(".");
+  const intRaw = fixed.slice(0, dot);
+  const decimal = fixed.slice(dot + 1);
+  const integer = Number(intRaw).toLocaleString(undefined, {
+    maximumFractionDigits: 0,
   });
-  return value < 0 ? `-${prefix}${formatted}` : `${prefix}${formatted}`;
+  return { sign, prefix, integer, decimal };
 }
 
 /** Short axis labels for charts — e.g. ¥4.31M, ¥57.14K. */

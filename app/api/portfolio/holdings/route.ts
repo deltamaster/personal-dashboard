@@ -5,6 +5,7 @@ import {
   getDummyPortfolioHoldingsData,
   shouldUsePortfolioDummyData,
 } from "@/lib/portfolio-dummy-data";
+import { filterActiveHoldings } from "@/lib/portfolio-format";
 import {
   computePortfolioStats,
   createHolding,
@@ -25,7 +26,7 @@ export async function GET() {
   }
 
   try {
-    const holdings = await listHoldings();
+    const holdings = filterActiveHoldings(await listHoldings());
     const stats = computePortfolioStats(holdings);
     return NextResponse.json({ holdings, stats });
   } catch (e) {

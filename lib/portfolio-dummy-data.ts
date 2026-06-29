@@ -1,6 +1,6 @@
 import { isOtsConfigured } from "@/lib/ots-config";
 import { computePortfolioStats } from "@/lib/ots/portfolio";
-import { sortHoldingsByCnyValue } from "@/lib/portfolio-format";
+import { filterActiveHoldings, sortHoldingsByCnyValue } from "@/lib/portfolio-format";
 import type { Holding, Snapshot } from "@/lib/types/portfolio";
 
 const CREATED = "2024-06-01T00:00:00Z";
@@ -196,7 +196,7 @@ const dummySnapshots: Snapshot[] = [
 ];
 
 export function getDummyPortfolioHoldingsData() {
-  const holdings = sortHoldingsByCnyValue(dummyHoldings);
+  const holdings = sortHoldingsByCnyValue(filterActiveHoldings(dummyHoldings));
   const stats = computePortfolioStats(holdings);
   return { holdings, stats };
 }
