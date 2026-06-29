@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AuthGuard } from "@/components/auth-guard";
 import { HoldingsTable, PortfolioStatsPanel } from "@/components/portfolio-panel";
+import { sortHoldingsByCnyValue } from "@/lib/portfolio-format";
 import type { Holding, PortfolioStats, Snapshot } from "@/lib/types/portfolio";
 
 export default function PortfolioPage() {
@@ -27,7 +28,8 @@ export default function PortfolioPage() {
       }
 
       const holdingsData = await holdingsRes.json();
-      setHoldings(Array.isArray(holdingsData.holdings) ? holdingsData.holdings : []);
+      const rows = Array.isArray(holdingsData.holdings) ? holdingsData.holdings : [];
+      setHoldings(sortHoldingsByCnyValue(rows));
       setStats(holdingsData.stats ?? null);
 
       if (snapshotsRes.ok) {

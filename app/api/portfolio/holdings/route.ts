@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/api-auth";
-import { emptyPortfolioStats, isOtsConfigured } from "@/lib/ots-config";
+import { isOtsConfigured } from "@/lib/ots-config";
+import {
+  getDummyPortfolioHoldingsData,
+  shouldUsePortfolioDummyData,
+} from "@/lib/portfolio-dummy-data";
 import {
   computePortfolioStats,
   createHolding,
@@ -12,10 +16,11 @@ export async function GET() {
   const { error } = await requireSession();
   if (error) return error;
 
+  if (shouldUsePortfolioDummyData()) {
+    return NextResponse.json(getDummyPortfolioHoldingsData());
+  }
+
   if (!isOtsConfigured()) {
-    if (process.env.NODE_ENV === "development") {
-      return NextResponse.json({ holdings: [], stats: emptyPortfolioStats });
-    }
     return NextResponse.json({ error: "OTS is not configured" }, { status: 503 });
   }
 

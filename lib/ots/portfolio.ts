@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { sortHoldingsByCnyValue } from "@/lib/portfolio-format";
 import {
   coerceOtsNumber,
   getOtsClient,
@@ -171,7 +172,7 @@ async function scanTable<T>(
 
 export async function listHoldings(): Promise<Holding[]> {
   const holdings = await scanTable(HOLDINGS_TABLE, "holding_id", normalizeHolding);
-  return holdings.sort((a, b) => (b.current_value ?? 0) - (a.current_value ?? 0));
+  return sortHoldingsByCnyValue(holdings);
 }
 
 export async function getHolding(holdingId: string): Promise<Holding | null> {

@@ -1,6 +1,7 @@
 "use client";
 
 import type { Holding, PortfolioStats, Snapshot } from "@/lib/types/portfolio";
+import { formatMoney } from "@/lib/portfolio-format";
 
 const RISK_COLORS: Record<number, string> = {
   1: "#22c55e",
@@ -18,15 +19,6 @@ const ASSET_TYPE_LABELS: Record<string, string> = {
   etf: "ETF",
   other: "Other",
 };
-
-function formatMoney(value: number, currency = "CNY"): string {
-  const prefix = currency === "CNY" ? "¥" : currency === "USD" ? "$" : currency === "HKD" ? "HK$" : "";
-  const abs = Math.abs(value);
-  if (abs >= 10000) {
-    return `${prefix}${(value / 10000).toFixed(2)}万`;
-  }
-  return `${prefix}${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-}
 
 function formatPct(value: number): string {
   const sign = value > 0 ? "+" : "";

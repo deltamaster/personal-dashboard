@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/api-auth";
 import { isOtsConfigured } from "@/lib/ots-config";
+import {
+  getDummyPortfolioSnapshotsData,
+  shouldUsePortfolioDummyData,
+} from "@/lib/portfolio-dummy-data";
 import { createSnapshot, listSnapshots } from "@/lib/ots/portfolio";
 import type { SnapshotInput } from "@/lib/types/portfolio";
 
@@ -8,10 +12,11 @@ export async function GET() {
   const { error } = await requireSession();
   if (error) return error;
 
+  if (shouldUsePortfolioDummyData()) {
+    return NextResponse.json(getDummyPortfolioSnapshotsData());
+  }
+
   if (!isOtsConfigured()) {
-    if (process.env.NODE_ENV === "development") {
-      return NextResponse.json({ snapshots: [] });
-    }
     return NextResponse.json({ error: "OTS is not configured" }, { status: 503 });
   }
 
