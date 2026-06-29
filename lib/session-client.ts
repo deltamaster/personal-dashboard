@@ -5,13 +5,25 @@ export interface ClientSession {
   };
 }
 
+let inflightSession: Promise<ClientSession | null> | null = null;
+
 export async function fetchSession(): Promise<ClientSession | null> {
+  if (inflightSession) return inflightSession;
+
+  inflightSession = (async () => {
+    try {
+      const res = await fetch("/api/auth/session/", { credentials: "include" });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data?.user ? data : null;
+    } catch {
+      return null;
+    }
+  })();
+
   try {
-    const res = await fetch("/api/auth/session/", { credentials: "include" });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data?.user ? data : null;
-  } catch {
-    return null;
+    return await inflightSession;
+  } finally {
+    inflightSession = null;
   }
 }

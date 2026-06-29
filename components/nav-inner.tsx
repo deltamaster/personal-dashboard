@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { fetchSession, type ClientSession } from "@/lib/session-client";
+import { useClientSession } from "@/components/session-provider";
 
 const links = [
   { href: "/", label: "Dashboard" },
@@ -14,13 +13,7 @@ const links = [
 
 export function NavInner() {
   const pathname = usePathname();
-  const [session, setSession] = useState<ClientSession | null>(null);
-
-  useEffect(() => {
-    if (pathname && !pathname.startsWith("/auth")) {
-      fetchSession().then(setSession);
-    }
-  }, [pathname]);
+  const { session } = useClientSession();
 
   if (!pathname || pathname.startsWith("/auth")) return null;
 
