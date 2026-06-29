@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { sortHoldingsByCnyValue } from "@/lib/portfolio-format";
+import { holdingValueInCny, sortHoldingsByCnyValue, toCnyEquivalent } from "@/lib/portfolio-format";
 import {
   coerceOtsNumber,
   getOtsClient,
@@ -312,7 +312,7 @@ function sumBreakdown(
   const map = new Map<string, number>();
   for (const holding of holdings) {
     const label = getLabel(holding);
-    const value = holding.current_value ?? 0;
+    const value = holdingValueInCny(holding);
     map.set(label, (map.get(label) ?? 0) + value);
   }
   return Array.from(map.entries())
@@ -330,10 +330,12 @@ export function computePortfolioStats(holdings: Holding[]): PortfolioStats {
   const riskMap = new Map<number, { value: number; count: number }>();
 
   for (const holding of holdings) {
-    const value = holding.current_value ?? 0;
-    const pnl = holding.unrealized_pnl ?? 0;
-    const dividend = holding.cash_dividend ?? 0;
-    const ret = holding.total_return ?? pnl + dividend;
+    const value = holdingValueInCny(holding);
+    const pnl = toCnyEquivalent(holding.unrealized_pnl ?? 0, holding.currency);
+    const dividend = toCnyEquivalent(holding.cash_dividend ?? 0, holding.currency);
+    const ret = holding.total_return != null
+      ? toCnyEquivalent(holding.total_return, holding.currency)
+      : pnl + dividend;
     const risk = holding.risk_level ?? 0;
 
     totalValue += value;

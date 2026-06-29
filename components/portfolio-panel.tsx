@@ -1,7 +1,7 @@
 "use client";
 
 import type { Holding, PortfolioStats, Snapshot } from "@/lib/types/portfolio";
-import { formatMoney } from "@/lib/portfolio-format";
+import { buildNavHistoryPoints, formatMoney, type NavHistoryPoint } from "@/lib/portfolio-format";
 
 const RISK_COLORS: Record<number, string> = {
   1: "#22c55e",
@@ -100,40 +100,36 @@ const DONUT_COLORS = [
 
 const CHART_BAR_HEIGHT_PX = 96;
 
-function NavHistoryLineChart({
-  snapshots,
-}: {
-  snapshots: Snapshot[];
-}) {
+function NavHistoryLineChart({ points }: { points: NavHistoryPoint[] }) {
   const chartHeight = CHART_BAR_HEIGHT_PX;
   const chartWidth = 320;
   const padding = { top: 14, right: 12, bottom: 14, left: 44 };
   const plotWidth = chartWidth - padding.left - padding.right;
   const plotHeight = chartHeight - padding.top - padding.bottom;
 
-  const values = snapshots.map((s) => s.total_value ?? 0);
+  const values = points.map((point) => point.value);
   const minValue = Math.min(...values);
   const maxValue = Math.max(...values);
   const range = maxValue - minValue || 1;
   const lastIndex = values.length - 1;
 
-  const points = values.map((value, index) => {
+  const plotPoints = values.map((value, index) => {
     const x =
       padding.left + (lastIndex === 0 ? plotWidth / 2 : (index / lastIndex) * plotWidth);
     const y = padding.top + plotHeight - ((value - minValue) / range) * plotHeight;
     return {
       x,
       y,
-      date: snapshots[index].snapshot_date,
+      date: points[index].date,
       value,
     };
   });
 
-  const linePoints = points.map((point) => `${point.x},${point.y}`).join(" ");
+  const linePoints = plotPoints.map((point) => `${point.x},${point.y}`).join(" ");
   const areaPath = [
-    `M ${points[0].x} ${padding.top + plotHeight}`,
-    ...points.map((point) => `L ${point.x} ${point.y}`),
-    `L ${points[lastIndex].x} ${padding.top + plotHeight}`,
+    `M ${plotPoints[0].x} ${padding.top + plotHeight}`,
+    ...plotPoints.map((point) => `L ${point.x} ${point.y}`),
+    `L ${plotPoints[lastIndex].x} ${padding.top + plotHeight}`,
     "Z",
   ].join(" ");
 
@@ -187,7 +183,7 @@ function NavHistoryLineChart({
           strokeLinejoin="round"
           strokeLinecap="round"
         />
-        {points.map((point) => (
+        {plotPoints.map((point) => (
           <circle key={point.date} cx={point.x} cy={point.y} r="3.5" fill="#1d9bf0">
             <title>{`${point.date}: ${formatMoney(point.value)}`}</title>
           </circle>
@@ -223,9 +219,7 @@ export function PortfolioStatsPanel({
       color: DONUT_COLORS[i % DONUT_COLORS.length],
     }));
 
-  const snapshotValues = snapshots
-    .filter((s) => s.total_value != null)
-    .slice(-24);
+  const navHistoryPoints = buildNavHistoryPoints(snapshots, stats.totalValue);
 
   return (
     <div className="space-y-6">
@@ -316,13 +310,12 @@ export function PortfolioStatsPanel({
           </div>
         </div>
 
-        {snapshotValues.length > 1 && (
+        {navHistoryPoints.length > 1 && (
           <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
             <h3 className="mb-3 text-sm font-medium text-[var(--muted)]">NAV history</h3>
-            <NavHistoryLineChart snapshots={snapshotValues} />
+            <NavHistoryLineChart points={navHistoryPoints} />
             <p className="mt-2 text-xs text-[var(--muted)]">
-              {snapshotValues[0]?.snapshot_date} →{" "}
-              {snapshotValues[snapshotValues.length - 1]?.snapshot_date}
+              {navHistoryPoints[0]?.date} → {navHistoryPoints[navHistoryPoints.length - 1]?.date}
             </p>
           </div>
         )}
