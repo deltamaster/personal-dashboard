@@ -86,7 +86,7 @@ export default function MoviesPage() {
           <p className="text-[var(--muted)]">No movies match your search or filters.</p>
         )}
 
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(9rem,1fr))]">
           {filteredMovies.map((movie) => (
             <MovieCard key={movie.douban_subject_id} movie={movie} />
           ))}

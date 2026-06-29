@@ -138,10 +138,11 @@ function NavHistoryLineChart({
   ].join(" ");
 
   return (
-    <div className="space-y-1">
+    <div className="aspect-[320/112] w-full">
       <svg
         viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-        className="h-28 w-full"
+        className="h-full w-full"
+        preserveAspectRatio="xMidYMid meet"
         role="img"
         aria-label="NAV history line chart"
       >

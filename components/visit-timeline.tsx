@@ -25,7 +25,7 @@ function VisitCard({ visit }: { visit: VisitWithImages }) {
     .join(" · ");
 
   return (
-    <article className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+    <article className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 [content-visibility:auto] [contain-intrinsic-size:auto_12rem]">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <p className="text-xs text-[var(--muted)]">{visit.date}</p>
@@ -60,7 +60,7 @@ function VisitCard({ visit }: { visit: VisitWithImages }) {
       )}
 
       {visit.images.length > 0 && (
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+        <div className="mt-4 grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(7.5rem,1fr))]">
           {visit.images.map((image) =>
             image.oss_url ? (
               <button
@@ -73,6 +73,8 @@ function VisitCard({ visit }: { visit: VisitWithImages }) {
                 <img
                   src={image.oss_url}
                   alt={image.description ?? visit.attraction}
+                  loading="lazy"
+                  decoding="async"
                   className="h-full w-full object-cover transition-transform group-hover:scale-105"
                 />
               </button>

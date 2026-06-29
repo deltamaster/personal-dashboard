@@ -28,6 +28,8 @@ export function MovieCard({ movie }: { movie: Movie }) {
             <img
               src={movie.poster_url}
               alt={movie.title_primary}
+              loading="lazy"
+              decoding="async"
               className="h-full w-full object-cover transition-transform group-hover:scale-105"
             />
           ) : (
