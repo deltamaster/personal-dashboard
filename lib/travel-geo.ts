@@ -1,6 +1,15 @@
 /** Affine fit lng/lat → @svg-maps/china viewBox (774×569). Refit: scripts/fit-map-align.mjs */
-const PROJECT_X = [13.325659128422258, -0.2733074632622181, -1002.4557279859407] as const;
-const PROJECT_Y = [0.9174293637216984, -14.705237865546145, 735.609567165455] as const;
+const PROJECT_X = [12.679102222815011, 0.40864968321136175, -947.1931959128049] as const;
+const PROJECT_Y = [0.46905453712273637, -15.101199346874008, 794.1161599147027] as const;
+
+/** Shared lng/lat bands — keep in sync with scripts/fit-map-align.mjs */
+function applyProjectionBands(lng: number, lat: number, x: number, y: number): [number, number] {
+  if (lng >= 120 && lng <= 122 && lat >= 30 && lat <= 32) y += 8;
+  if (lat < 24) y -= (24 - lat) * 1.2;
+  if (lng >= 115 && lat >= 45) y -= 8 + (lat - 45) * 4;
+  if (lng < 100) x += (100 - lng) * 0.25;
+  return [x, y];
+}
 
 export const MAP_VIEW_BOX = "0 0 774 569";
 
@@ -308,10 +317,9 @@ export function isDomesticPlace(name: string): boolean {
 }
 
 export function projectLngLat([lng, lat]: [number, number]): [number, number] {
-  return [
-    PROJECT_X[0] * lng + PROJECT_X[1] * lat + PROJECT_X[2],
-    PROJECT_Y[0] * lng + PROJECT_Y[1] * lat + PROJECT_Y[2],
-  ];
+  const x = PROJECT_X[0] * lng + PROJECT_X[1] * lat + PROJECT_X[2];
+  const y = PROJECT_Y[0] * lng + PROJECT_Y[1] * lat + PROJECT_Y[2];
+  return applyProjectionBands(lng, lat, x, y);
 }
 
 export function resolveProjectedPoint(name: string): [number, number] | null {

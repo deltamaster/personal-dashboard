@@ -95,37 +95,50 @@ function taiwanTarget() {
   return [minX + 12, y - 5];
 }
 
-function solve3(rows, targetIdx) {
-  const ATA = [
-    [0, 0, 0],
-    [0, 0, 0],
-    [0, 0, 0],
-  ];
-  const ATb = [0, 0, 0];
+function solve6(rows) {
+  const ATA = Array.from({ length: 6 }, () => Array(6).fill(0));
+  const ATb = Array(6).fill(0);
   for (const { ll, map, weight = 1 } of rows) {
-    const row = [ll[0], ll[1], 1];
-    const target = map[targetIdx];
-    for (let i = 0; i < 3; i++) {
-      for (let j = 0; j < 3; j++) ATA[i][j] += weight * row[i] * row[j];
-      ATb[i] += weight * row[i] * target;
+    const [lng, lat] = ll;
+    const [tx, ty] = map;
+    const rx = [lng, lat, 1, 0, 0, 0];
+    const ry = [0, 0, 0, lng, lat, 1];
+    for (const row of [rx, ry]) {
+      for (let i = 0; i < 6; i++) {
+        for (let j = 0; j < 6; j++) ATA[i][j] += weight * row[i] * row[j];
+      }
     }
+    for (let i = 0; i < 3; i++) ATb[i] += weight * rx[i] * tx;
+    ATb[3] += weight * lng * ty;
+    ATb[4] += weight * lat * ty;
+    ATb[5] += weight * ty;
   }
   const M = ATA.map((r, i) => [...r, ATb[i]]);
-  for (let col = 0; col < 3; col++) {
+  for (let col = 0; col < 6; col++) {
     let piv = col;
-    for (let r = col + 1; r < 3; r++) {
+    for (let r = col + 1; r < 6; r++) {
       if (Math.abs(M[r][col]) > Math.abs(M[piv][col])) piv = r;
     }
     [M[col], M[piv]] = [M[piv], M[col]];
     const div = M[col][col];
-    for (let j = col; j < 4; j++) M[col][j] /= div;
-    for (let r = 0; r < 3; r++) {
+    for (let j = col; j < 7; j++) M[col][j] /= div;
+    for (let r = 0; r < 6; r++) {
       if (r === col) continue;
       const f = M[r][col];
-      for (let j = col; j < 4; j++) M[r][j] -= f * M[col][j];
+      for (let j = col; j < 7; j++) M[r][j] -= f * M[col][j];
     }
   }
-  return M.map((r) => r[3]);
+  const p = M.map((r) => r[6]);
+  return [p.slice(0, 3), p.slice(3, 6)];
+}
+
+/** Keep in sync with lib/travel-geo.ts applyProjectionBands */
+function applyProjectionBands(lng, lat, x, y) {
+  if (lng >= 120 && lng <= 122 && lat >= 30 && lat <= 32) y += 8;
+  if (lat < 24) y -= (24 - lat) * 1.2;
+  if (lng >= 115 && lat >= 45) y -= 8 + (lat - 45) * 4;
+  if (lng < 100) x += (100 - lng) * 0.25;
+  return [x, y];
 }
 
 const COORDS = {
@@ -144,31 +157,77 @@ const COORDS = {
   西双版纳: [100.7979, 22.0017],
   北海: [109.1193, 21.4733],
   三亚: [109.5119, 18.2528],
+  哈尔滨: [126.534, 45.8038],
+  海拉尔: [119.7658, 49.2116],
+  乌鲁木齐: [87.6168, 43.8256],
+  敦煌: [94.6619, 40.1421],
+  拉萨: [91.1322, 29.6604],
 };
+
+/** Rough WGS84 bounds per province for placing cities on SVG paths. */
+const PROV_BOUNDS = {
+  heilongjiang: { minLng: 121, maxLng: 135, minLat: 43, maxLat: 53 },
+  "nei-mongol": { minLng: 97, maxLng: 126, minLat: 37, maxLat: 53 },
+  "xinjiang-uygur": { minLng: 73, maxLng: 96, minLat: 34, maxLat: 49 },
+  gansu: { minLng: 92, maxLng: 109, minLat: 32, maxLat: 43 },
+  xizang: { minLng: 78, maxLng: 99, minLat: 27, maxLat: 37 },
+};
+
+function provinceBBox(id) {
+  const loc = chinaMap.locations.find((l) => l.id === id);
+  const pts = pathPoints(loc.path);
+  const xs = pts.map((p) => p[0]);
+  const ys = pts.map((p) => p[1]);
+  return {
+    minX: Math.min(...xs),
+    maxX: Math.max(...xs),
+    minY: Math.min(...ys),
+    maxY: Math.max(...ys),
+  };
+}
+
+/** Place a city on the map from lng/lat within province bounds (north = smaller y). */
+function cityInProvince(lng, lat, provinceId) {
+  const b = provinceBBox(provinceId);
+  const pb = PROV_BOUNDS[provinceId];
+  const tx = (lng - pb.minLng) / (pb.maxLng - pb.minLng);
+  const ty = (lat - pb.minLat) / (pb.maxLat - pb.minLat);
+  return [
+    b.minX + tx * (b.maxX - b.minX),
+    b.minY + (1 - ty) * (b.maxY - b.minY),
+  ];
+}
 
 /** Manual SVG anchors for cities where province centroids drift (small NW / inland nudge). */
 const MANUAL_TARGETS = {
+  上海: [607.73, 388],
   西双版纳: [338, 503],
   北海: [443, 518],
   三亚: [450, 566],
+  台北: [604.38, 475.61],
+  哈尔滨: cityInProvince(126.534, 45.8038, "heilongjiang"),
+  海拉尔: cityInProvince(119.7658, 49.2116, "nei-mongol"),
+  乌鲁木齐: cityInProvince(87.6168, 43.8256, "xinjiang-uygur"),
+  敦煌: cityInProvince(94.6619, 40.1421, "gansu"),
+  拉萨: cityInProvince(91.1322, 29.6604, "xizang"),
 };
 
 const refs = [
-  ["上海", "shanghai", 4],
-  ["北京", "beijing", 1],
-  ["广州", "guangdong", 1],
-  ["昆明", "yunnan", 1],
-  ["成都", "sichuan", 1],
-  ["西安", "shaanxi", 1],
-  ["杭州", "zhejiang", 2],
-  ["南京", "jiangsu", 2],
-  ["南宁", "guangxi-zhuang", 1],
-  ["厦门", "fujian", 1],
-  ["武汉", "hubei", 1],
-  ["台北", null, 3],
-  ["西双版纳", "manual", 2],
-  ["北海", "manual", 2],
-  ["三亚", "manual", 1],
+  ["上海", "manual", 20],
+  ["北京", "beijing", 0.5],
+  ["广州", "guangdong", 0.5],
+  ["昆明", "yunnan", 0.5],
+  ["成都", "sichuan", 0.5],
+  ["西安", "shaanxi", 0.5],
+  ["台北", "manual", 6],
+  ["西双版纳", "manual", 12],
+  ["北海", "manual", 12],
+  ["三亚", "manual", 12],
+  ["哈尔滨", "manual", 2],
+  ["海拉尔", "manual", 2],
+  ["乌鲁木齐", "manual", 3],
+  ["敦煌", "manual", 2],
+  ["拉萨", "manual", 2],
 ];
 
 const twTarget = taiwanTarget();
@@ -186,17 +245,16 @@ for (const [name, id, weight] of refs) {
   rows.push({ name, ll: COORDS[name], map, weight });
 }
 
-const PROJECT_X = solve3(rows, 0);
-const PROJECT_Y = solve3(rows, 1);
+const [PROJECT_X, PROJECT_Y] = solve6(rows);
 
 console.log("PROJECT_X =", JSON.stringify(PROJECT_X));
 console.log("PROJECT_Y =", JSON.stringify(PROJECT_Y));
 
 function project(ll) {
-  return [
-    PROJECT_X[0] * ll[0] + PROJECT_X[1] * ll[1] + PROJECT_X[2],
-    PROJECT_Y[0] * ll[0] + PROJECT_Y[1] * ll[1] + PROJECT_Y[2],
-  ];
+  const [lng, lat] = ll;
+  const x = PROJECT_X[0] * lng + PROJECT_X[1] * lat + PROJECT_X[2];
+  const y = PROJECT_Y[0] * lng + PROJECT_Y[1] * lat + PROJECT_Y[2];
+  return applyProjectionBands(lng, lat, x, y);
 }
 
 for (const row of rows) {
@@ -206,6 +264,19 @@ for (const row of rows) {
 }
 
 console.log("--- check ---");
-for (const name of ["西双版纳", "北海", "三亚", "台北", "上海"]) {
-  console.log(name, project(COORDS[name]).map((v) => v.toFixed(1)));
+for (const name of [
+  "西双版纳",
+  "北海",
+  "三亚",
+  "台北",
+  "上海",
+  "哈尔滨",
+  "海拉尔",
+  "乌鲁木齐",
+  "敦煌",
+  "拉萨",
+]) {
+  const ll = COORDS[name];
+  if (!ll) continue;
+  console.log(name, project(ll).map((v) => v.toFixed(1)));
 }
