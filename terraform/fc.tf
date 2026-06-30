@@ -13,7 +13,7 @@ resource "alicloud_fcv3_function" "api" {
   role = var.fc_execution_role_arn != "" ? var.fc_execution_role_arn : null
 
   custom_runtime_config {
-    command = ["/var/fc/lang/nodejs20/bin/node"]
+    command = ["./node/bin/node"]
     args    = ["server.js"]
     port    = 9000
   }

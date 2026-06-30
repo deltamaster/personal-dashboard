@@ -13,6 +13,7 @@
 /.api-stash/
 /.ui-stash/
 /.fc-stage/
+/.fc-node-cache/
 /api.zip
 
 # production

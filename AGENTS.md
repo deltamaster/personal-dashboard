@@ -175,7 +175,7 @@ AGENTS.md
 
 ## Cursor Cloud specific instructions
 
-Dev environment is plain Next.js 14 (App Router). Node 22 works fine (CI pins Node 20). Standard commands live in `package.json` `scripts` and `docs/SETUP.md`; key notes below.
+Dev environment is plain Next.js 14 (App Router). **Node 24** Active LTS (see `.nvmrc`; CI uses `node-version-file`). FC bundles the matching Node **linux-x64** binary in `api.zip` (`./node/bin/node`); Deploy API syncs `customRuntimeConfig` on every deploy. Standard commands live in `package.json` `scripts` and `docs/SETUP.md`; key notes below.
 
 **Local env file (gitignored):** copy `.env.example` → `.env.local`. At minimum set `AUTH_SECRET` (`openssl rand -base64 32`).
 

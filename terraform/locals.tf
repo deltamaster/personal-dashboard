@@ -124,6 +124,6 @@ locals {
     OSS_MEDIA_BUCKET                 = var.oss_web_bucket
     PORT                             = "9000"
     HOSTNAME                         = "0.0.0.0"
-    PATH                             = "/var/fc/lang/nodejs20/bin:/usr/local/bin:/usr/bin:/bin"
+    PATH                             = "/code/node/bin:/usr/local/bin:/usr/bin:/bin"
   }
 }
