@@ -2,7 +2,6 @@ name: Deploy API
 
 on:
   push:
-    branches: [main]
     paths-ignore:
       - "**.md"
       - "docs/**"
@@ -19,23 +18,53 @@ on:
           - qa
 
 concurrency:
-  group: deploy-api-${{ github.event.inputs.stack || 'ap-southeast-1' }}
+  group: deploy-api-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.stack || (github.ref == 'refs/heads/main' && 'ap-southeast-1' || 'qa') }}
   cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: personal-dashboard
-    env:
-      STACK: ${{ github.event.inputs.stack || 'ap-southeast-1' }}
-      FC_REGION: ${{ github.event.inputs.stack == 'cn-shanghai' && 'cn-shanghai' || 'ap-southeast-1' }}
-      FC_FUNCTION: ${{ github.event.inputs.stack == 'qa' && 'api-qa' || 'api' }}
-      FC_CODE_KEY: ${{ github.event.inputs.stack == 'qa' && 'fc/api-qa.zip' || 'fc/api.zip' }}
-      OSS_ENDPOINT: ${{ github.event.inputs.stack == 'cn-shanghai' && 'oss-cn-shanghai.aliyuncs.com' || 'oss-ap-southeast-1.aliyuncs.com' }}
-      OSS_VAULT_BUCKET: ${{ github.event.inputs.stack == 'cn-shanghai' && 'personal-dashboard-vault' || github.event.inputs.stack == 'qa' && 'pd-vault-qa' || 'pd-vault-sg' }}
-      OTS_INSTANCE_NAME: ${{ github.event.inputs.stack == 'cn-shanghai' && 'pd-dashboard' || github.event.inputs.stack == 'qa' && 'pd-dash-qa' || 'pd-dash-sg' }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Resolve deployment stack
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            STACK="${{ github.event.inputs.stack }}"
+          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            STACK="ap-southeast-1"
+          else
+            STACK="qa"
+          fi
+          echo "STACK=$STACK" >> "$GITHUB_ENV"
+          case "$STACK" in
+            cn-shanghai)
+              echo "FC_REGION=cn-shanghai" >> "$GITHUB_ENV"
+              echo "FC_FUNCTION=api" >> "$GITHUB_ENV"
+              echo "FC_CODE_KEY=fc/api.zip" >> "$GITHUB_ENV"
+              echo "OSS_ENDPOINT=oss-cn-shanghai.aliyuncs.com" >> "$GITHUB_ENV"
+              echo "OSS_VAULT_BUCKET=personal-dashboard-vault" >> "$GITHUB_ENV"
+              echo "OTS_INSTANCE_NAME=pd-dashboard" >> "$GITHUB_ENV"
+              ;;
+            qa)
+              echo "FC_REGION=ap-southeast-1" >> "$GITHUB_ENV"
+              echo "FC_FUNCTION=api-qa" >> "$GITHUB_ENV"
+              echo "FC_CODE_KEY=fc/api-qa.zip" >> "$GITHUB_ENV"
+              echo "OSS_ENDPOINT=oss-ap-southeast-1.aliyuncs.com" >> "$GITHUB_ENV"
+              echo "OSS_VAULT_BUCKET=pd-vault-qa" >> "$GITHUB_ENV"
+              echo "OTS_INSTANCE_NAME=pd-dash-qa" >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "FC_REGION=ap-southeast-1" >> "$GITHUB_ENV"
+              echo "FC_FUNCTION=api" >> "$GITHUB_ENV"
+              echo "FC_CODE_KEY=fc/api.zip" >> "$GITHUB_ENV"
+              echo "OSS_ENDPOINT=oss-ap-southeast-1.aliyuncs.com" >> "$GITHUB_ENV"
+              echo "OSS_VAULT_BUCKET=pd-vault-sg" >> "$GITHUB_ENV"
+              echo "OTS_INSTANCE_NAME=pd-dash-sg" >> "$GITHUB_ENV"
+              ;;
+          esac
+          echo "Deploying stack=$STACK (ref=${{ github.ref }}, event=${{ github.event_name }})"
 
       - name: Validate required secrets
         env:
