@@ -13,6 +13,7 @@ import {
   toUpdatePutColumns,
 } from "@/lib/ots";
 import { otsCall, TableStore } from "@/lib/ots-client";
+import { toPublicMediaUrl } from "@/lib/oss";
 import type {
   AirlineStat,
   Flight,
@@ -82,6 +83,7 @@ function visitAttributes(visit: Visit): Record<string, string | number | undefin
 function normalizeImage(raw: Record<string, unknown>): VisitImage {
   return {
     ...(raw as unknown as VisitImage),
+    oss_url: toPublicMediaUrl(String(raw.oss_url ?? "")),
     width: coerceOtsNumber(raw.width),
     height: coerceOtsNumber(raw.height),
   };
