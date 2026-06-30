@@ -16,6 +16,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import TableStorePkg from "tablestore";
+import { buildQaSeed } from "./qa-seed-data.mjs";
 
 const TableStore = TableStorePkg.default ?? TableStorePkg;
 
@@ -66,109 +67,9 @@ const TABLES = {
   pd_movies: "douban_subject_id",
 };
 
-// --- dummy rows per table (kept small; clearly fake) ---
+// --- dummy rows (see scripts/qa-seed-data.mjs) ---
 const NOW = new Date().toISOString();
-const SEED = {
-  pd_movies: [
-    {
-      douban_subject_id: "qa-1292052",
-      title_primary: "肖申克的救赎",
-      title_alt: "The Shawshank Redemption",
-      user_rating: 5,
-      watched_date: "2024-05-10",
-      release_year: 1994,
-      director: "弗兰克·德拉邦特",
-      genres: "剧情 / 犯罪",
-      duration_minutes: 142,
-      movie_url: "https://movie.douban.com/subject/1292052/",
-      created_at: NOW,
-      updated_at: NOW,
-    },
-    {
-      douban_subject_id: "qa-1295644",
-      title_primary: "千与千寻",
-      user_rating: 5,
-      watched_date: "2024-02-21",
-      release_year: 2001,
-      director: "宫崎骏",
-      genres: "剧情 / 动画 / 奇幻",
-      duration_minutes: 125,
-      created_at: NOW,
-      updated_at: NOW,
-    },
-  ],
-  pd_holdings: [
-    {
-      holding_id: "qa-holding-fund",
-      name: "QA 测试基金",
-      bank: "招商银行",
-      asset_type: "fund",
-      risk_level: 3,
-      currency: "CNY",
-      quantity: 1000,
-      purchase_amount: 100000,
-      current_value: 112000,
-      cash_dividend: 0,
-      unrealized_pnl: 12000,
-      unrealized_pct: 12,
-      total_return: 12000,
-      total_return_pct: 12,
-      created_at: NOW,
-      updated_at: NOW,
-    },
-  ],
-  pd_snapshots: [
-    {
-      snapshot_date: "2024-06-01",
-      total_value: 112000,
-      total_pnl: 12000,
-      total_dividend: 0,
-      total_return: 12000,
-      created_at: NOW,
-    },
-  ],
-  pd_visits: [
-    {
-      visit_id: "qa-visit-shanghai",
-      date: "2024-03-15",
-      province: "上海",
-      city: "上海",
-      attraction: "外滩",
-      type: "景点",
-      country: "中国",
-      rating: 5,
-      created_at: NOW,
-      updated_at: NOW,
-    },
-  ],
-  pd_flights: [
-    {
-      flight_id: "qa-flight-1",
-      flight_date: "2024-03-15",
-      airline: "东方航空",
-      flight_number: "MU5101",
-      departure_city: "北京",
-      arrival_city: "上海",
-      distance_km: 1080,
-      status: "completed",
-      created_at: NOW,
-    },
-  ],
-  pd_trains: [
-    {
-      train_id: "qa-train-1",
-      train_date: "2024-03-16",
-      train_type: "高铁",
-      train_number: "G1",
-      departure_station: "上海虹桥",
-      arrival_station: "北京南",
-      duration_minutes: 270,
-      status: "completed",
-      created_at: NOW,
-    },
-  ],
-  pd_visit_images: [],
-};
+const SEED = buildQaSeed(NOW);
 
 // --- STS AssumeRole (raw signed request; mirrors lib/alibaba-credentials.ts) ---
 function percentEncode(v) {

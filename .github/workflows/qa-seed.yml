@@ -1,0 +1,38 @@
+name: QA Seed
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/qa-seed.mjs"
+      - "scripts/qa-seed-data.mjs"
+
+concurrency:
+  group: qa-seed
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    if: github.event_name == 'workflow_dispatch' || github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: personal-dashboard
+    env:
+      OTS_INSTANCE_NAME: pd-dash-qa
+      OTS_ENDPOINT: https://pd-dash-qa.ap-southeast-1.ots.aliyuncs.com
+      ALIBABA_CLOUD_REGION: ap-southeast-1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Seed QA OTS (dummy data)
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          ALIBABA_CLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
+        run: node scripts/qa-seed.mjs
