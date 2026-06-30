@@ -28,6 +28,8 @@ export interface VisitImage {
   height?: number;
   description?: string;
   created_at: string;
+  /** Soft-delete marker (ISO timestamp). Present => hidden from listings. */
+  deleted_at?: string;
 }
 
 export interface VisitWithImages extends Visit {
