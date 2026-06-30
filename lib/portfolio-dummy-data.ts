@@ -10,6 +10,7 @@ const STALE_R5 = "2026-03-10T00:00:00Z";
 
 /** Dev-only sample data — opt in with PORTFOLIO_DUMMY_DATA=1 (dev only). */
 export function shouldUsePortfolioDummyData(): boolean {
+  if (process.env.QA_DUMMY_DATA === "1") return true;
   if (process.env.NODE_ENV !== "development") return false;
   return process.env.PORTFOLIO_DUMMY_DATA === "1";
 }

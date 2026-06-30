@@ -92,6 +92,28 @@ export async function getPresignedPutUrl(
   return `https://${bucket}.${endpoint}/${key}?${params.toString()}`;
 }
 
+/**
+ * Public CDN base URL for serving vault media, if configured
+ * (e.g. https://pd-qa.huhansen.com). Trailing slash stripped.
+ */
+export function getMediaPublicBaseUrl(): string | undefined {
+  const v = process.env.MEDIA_PUBLIC_BASE_URL?.trim();
+  return v ? v.replace(/\/$/, "") : undefined;
+}
+
+/**
+ * Map an object key (or previously-stored URL) to a browser-loadable URL.
+ * When MEDIA_PUBLIC_BASE_URL (a CDN custom domain) is set, returns
+ * `<base>/<objectKey>`; otherwise returns the bare object key unchanged.
+ * Idempotent: a value already pointing at the base resolves to itself.
+ */
+export function toPublicMediaUrl(ossUrlOrKey: string): string {
+  if (!ossUrlOrKey) return ossUrlOrKey;
+  const base = getMediaPublicBaseUrl();
+  const key = extractObjectKey(ossUrlOrKey);
+  return base ? `${base}/${key}` : key;
+}
+
 /** New vault object key for a visit photo. */
 export function buildTravelImageKey(filename: string): string {
   const ext = filename.includes(".") ? filename.slice(filename.lastIndexOf(".")).toLowerCase() : ".jpg";

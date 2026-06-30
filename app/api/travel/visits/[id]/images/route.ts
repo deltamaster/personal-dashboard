@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/api-auth";
 import { isOtsConfigured } from "@/lib/ots-config";
 import { createVisitImage, getVisitWithImages } from "@/lib/ots/travel";
-import { extractObjectKey } from "@/lib/oss";
+import { extractObjectKey, toPublicMediaUrl } from "@/lib/oss";
 import {
   addDummyVisitImage,
   createDummyVisitImageRecord,
@@ -34,10 +34,14 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Invalid object key" }, { status: 400 });
     }
 
+    // Persist a browser-loadable URL: when MEDIA_PUBLIC_BASE_URL (CDN custom
+    // domain) is set, this rewrites the bare key to the custom-domain URL.
+    const storedUrl = toPublicMediaUrl(objectKey);
+
     if (shouldUseTravelDummyData()) {
       const record = createDummyVisitImageRecord(
         visitId,
-        objectKey,
+        storedUrl,
         body.width,
         body.height,
         body.description?.trim()
@@ -60,7 +64,7 @@ export async function POST(request: Request, context: RouteContext) {
 
     const image = await createVisitImage({
       visit_id: visitId,
-      oss_url: objectKey,
+      oss_url: storedUrl,
       width: body.width,
       height: body.height,
       description: body.description?.trim(),
