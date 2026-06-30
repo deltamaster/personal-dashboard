@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { fetchSession, type ClientSession } from "@/lib/session-client";
+import { getStubUser, isMicrosoftAuthEnabledClient } from "@/lib/auth-config";
 
 export type SessionState = "unknown" | "authed" | "guest";
 
@@ -23,6 +24,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<SessionState>("unknown");
 
   useEffect(() => {
+    if (!isMicrosoftAuthEnabledClient()) {
+      setSession({ user: getStubUser() });
+      setState("authed");
+      return;
+    }
+
     if (isAuthRoute) {
       setSession(null);
       setState("guest");

@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import { MicrosoftConsumerProvider } from "@/lib/auth/microsoft-consumer-provider";
+import { isMicrosoftAuthEnabled } from "@/lib/auth-config";
 
 const ALLOWED_EMAIL = (
   process.env.ALLOWED_USER_EMAIL ?? "huhansen318@hotmail.com"
@@ -15,7 +16,9 @@ function getOAuthCredentials(): { clientId: string; clientSecret: string } {
   if (clientId && clientSecret) {
     return { clientId, clientSecret };
   }
-  if (isBuildTime()) {
+  if (isBuildTime() || !isMicrosoftAuthEnabled()) {
+    // Auth disabled (QA/agent) or build time: the provider is never used to
+    // authenticate, so placeholders are safe and avoid crashing at import.
     return {
       clientId: "build-placeholder",
       clientSecret: "build-placeholder",
