@@ -32,6 +32,9 @@ resource "alicloud_oss_bucket_website" "web" {
     key         = "404.html"
     http_status = 404
   }
+
+  # Serialize per-bucket config writes to avoid OSS ConcurrentUpdateBucketFailed (409).
+  depends_on = [alicloud_oss_bucket_acl.web]
 }
 
 resource "alicloud_oss_bucket" "vault" {
@@ -63,4 +66,7 @@ resource "alicloud_oss_bucket_cors" "vault" {
     allowed_headers = ["*"]
     max_age_seconds = 3600
   }
+
+  # Serialize per-bucket config writes to avoid OSS ConcurrentUpdateBucketFailed (409).
+  depends_on = [alicloud_oss_bucket_acl.vault]
 }
