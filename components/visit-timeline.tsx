@@ -67,43 +67,23 @@ function readImageSize(file: File): Promise<{ width?: number; height?: number }>
 }
 
 async function uploadVisitPhoto(visitId: string, file: File): Promise<VisitImage> {
-  const contentType = file.type || "image/jpeg";
-  const presignRes = await fetch("/api/media/upload/", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ filename: file.name, contentType }),
-  });
-  if (!presignRes.ok) {
-    const body = await presignRes.json().catch(() => ({}));
-    throw new Error(body.error ?? "Failed to prepare upload");
-  }
-
-  const { uploadUrl, objectKey } = (await presignRes.json()) as {
-    uploadUrl: string;
-    objectKey: string;
-  };
-
-  const putRes = await fetch(uploadUrl, {
-    method: "PUT",
-    headers: { "Content-Type": contentType },
-    body: file,
-  });
-  if (!putRes.ok) {
-    throw new Error("Upload to storage failed");
-  }
-
+  // Single atomic call: the server uploads to OSS and records the row.
   const { width, height } = await readImageSize(file);
-  const metaRes = await fetch(`/api/travel/visits/${visitId}/images/`, {
+  const form = new FormData();
+  form.append("file", file);
+  if (width) form.append("width", String(width));
+  if (height) form.append("height", String(height));
+
+  const res = await fetch(`/api/travel/visits/${visitId}/images/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ objectKey, width, height }),
+    body: form,
   });
-  if (!metaRes.ok) {
-    const body = await metaRes.json().catch(() => ({}));
-    throw new Error(body.error ?? "Failed to save photo metadata");
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? "Failed to add photo");
   }
 
-  return metaRes.json() as Promise<VisitImage>;
+  return res.json() as Promise<VisitImage>;
 }
 
 type VisitPatch = {
