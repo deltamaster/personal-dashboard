@@ -18,37 +18,28 @@ Both stacks use the **same** GitHub environment secrets. `auth_url` / `domain` c
 | Singapore | `pd.huhansen.com` | `overseas` (no ICP) |
 | Shanghai | `pd.huhansen.cn` | `domestic` (ICP required) |
 
-## QA / test stack (`terraform/qa/`)
+## QA stack — full hosted clone (`env/qa.tfvars`)
 
-A **separate root** that provisions **OTS + OSS + a media CDN** (no FC — the QA API runs locally) for an isolated test environment. It has its own state (`terraform-state-qa`) and never touches the production Singapore/Shanghai resources.
+QA is a **third stack on this same root** (not a separate root): static frontend on OSS + **FC API** + CDN at `pd-qa.huhansen.com`, with **Microsoft auth enforced** (no bypass). It reuses all prod FC/CDN logic; only the names/domain differ.
 
-| Resource | Name (default) | ARN / notes |
-|---|---|---|
-| OTS | `pd-dash-qa` + 7 tables + 6 search indexes | `acs:ots:ap-southeast-1:<account>:instance/pd-dash-qa` |
-| OSS | `pd-web-qa`, `pd-vault-qa` (**public-read in QA** so photos serve via CDN) | `acs:oss:*:<account>:pd-vault-qa` |
-| CDN | `pd-qa.huhansen.com` → origin `pd-vault-qa` (photos) | output `cdn_cname` |
+| Resource | QA name |
+|---|---|
+| OTS | `pd-dash-qa` (+ tables + indexes) |
+| OSS | `pd-web-qa` (public static + photos), `pd-vault-qa` (private; holds `fc/api-qa.zip`) |
+| FC v3 | `api-qa` + HTTP trigger + custom domain `api.pd-qa.huhansen.com` |
+| CDN | `pd-qa.huhansen.com` → `/*` web bucket, `/api/*` → FC |
 
-Run it (same model as prod): **push to `main`** touching `terraform/qa/**` (e.g. merging this PR) **auto-applies**, or **Actions → Terraform QA → Run workflow → action `apply`** for a manual run. PRs run `plan` only. Uses the same `personal-dashboard` environment secrets; only needs `ALIBABA_CLOUD_*` + `ALIBABA_CLOUD_ROLE_ARN` (no Auth/FC secrets).
+State key: **`terraform-state-qa-hosted`** (distinct from the retired data-only root). Run via **Actions → Terraform → stack `qa` → action `plan`/`apply`** (manual only). The apply job runs `scripts/import-existing.sh` first (`FC_FUNCTION=api-qa`, `CDN_DOMAIN=pd-qa.huhansen.com`) so the OTS instance / buckets / CDN domain already created earlier are **adopted**, then reconfigured (CDN origin → web bucket + `/api/*` rules).
 
-> Note: the **Run workflow** (manual dispatch) button only appears once `terraform-qa.yml` is on the **default branch (`main`)** — a GitHub requirement. So the first apply happens by merging to `main` (auto-apply); after that you can also dispatch manually from any branch.
+> ⚠️ Review the **plan** before apply — confirm it shows adopt/update, not destroy of `pd-dash-qa` (QA data).
 
-After apply:
-1. Copy output `cdn_cname` → add Cloudflare CNAME `pd-qa` → `<cdn_cname>` (**DNS only / grey cloud**).
-2. Seed dummy data: `node scripts/qa-seed.mjs`.
-3. In `.env.local`: point at the outputs (`OTS_ENDPOINT`, `OTS_INSTANCE_NAME`, `OSS_VAULT_BUCKET`), set `MEDIA_PUBLIC_BASE_URL=https://pd-qa.huhansen.com` (so stored photo URLs use the CDN), and `MICROSOFT_AUTH_ENABLED=false`.
+Then deploy + DNS (same pattern as prod, just `pd-qa`):
+1. **Actions → Deploy API → stack `qa`** (builds + ships the API to `api-qa`).
+2. **Actions → Deploy Web → stack `qa`** (builds the static site to `pd-web-qa`, purges CDN). Auth is enforced (the build does not set `NEXT_PUBLIC_MICROSOFT_AUTH_ENABLED=false`).
+3. Cloudflare: `CNAME pd-qa → <cdn_cname output>` and DNS-only `CNAME api.pd-qa → {account_id}.ap-southeast-1.fc.aliyuncs.com`.
+4. Azure: add redirect URI `https://pd-qa.huhansen.com/api/auth/callback/microsoft-entra-id`.
 
-> The QA photo bucket is **public-read** (CDN serves it) — a QA-only relaxation; prod keeps the vault private + presigned URLs. The CDN domain is created by Terraform (`alicloud_cdn_domain_new.media`), exactly like prod's `alicloud_cdn_domain_new.main` — no manual console step. The apply job runs `terraform/qa/import-existing.sh` first (mirrors prod) so an already-existing domain is adopted and re-apply stays idempotent. `huhansen.com` ownership is already verified in the account (prod uses it), so adding the `pd-qa` subdomain normally needs no extra verification.
-
-Local validate/plan (optional, read-only):
-
-```bash
-cd terraform/qa
-terraform init
-ALICLOUD_ACCESS_KEY=... ALICLOUD_SECRET_KEY=... TF_VAR_role_arn=acs:ram::<acct>:role/<role> \
-  terraform plan -var-file=qa.tfvars
-```
-
-> The provision role needs create permissions for OTS (`ots:CreateInstance`/`CreateTable`/`CreateSearchIndex`) and OSS (`oss:PutBucket*`).
+Photos are uploaded server-side by `api-qa` to `pd-web-qa` and served at `https://pd-qa.huhansen.com/travel/images/...` (the FC env sets `OSS_MEDIA_BUCKET=pd-web-qa`). No `MEDIA_PUBLIC_BASE_URL` needed (it falls back to `AUTH_URL`).
 
 ## FC deployment model
 

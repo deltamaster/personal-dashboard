@@ -20,6 +20,7 @@ on:
         options:
           - ap-southeast-1
           - cn-shanghai
+          - qa
       action:
         description: "Terraform action"
         required: true
@@ -237,6 +238,105 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: terraform-state-cn-shanghai-${{ github.run_id }}
+          path: terraform/terraform.tfstate
+          retention-days: 90
+          if-no-files-found: ignore
+
+  terraform-qa:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.stack == 'qa'
+    runs-on: ubuntu-latest
+    environment: personal-dashboard
+    env:
+      TF_STACK: qa
+      TF_WORKING_DIR: terraform
+      TF_VERSION: "1.9.8"
+      TF_VAR_region: ap-southeast-1
+      TFVARS_FILE: env/qa.tfvars
+      # Fresh state key (the retired terraform/qa root used terraform-state-qa).
+      STATE_KEY: terraform-state-qa-hosted
+      OTS_INSTANCE: pd-dash-qa
+      OSS_WEB_BUCKET: pd-web-qa
+      OSS_VAULT_BUCKET: pd-vault-qa
+      CDN_DOMAIN: pd-qa.huhansen.com
+      FC_FUNCTION: api-qa
+      ALICLOUD_ACCESS_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+      ALICLOUD_SECRET_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+      ALICLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
+      TF_VAR_role_arn: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
+      TF_VAR_auth_secret: ${{ secrets.AUTH_SECRET }}
+      TF_VAR_auth_microsoft_entra_id_id: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_ID }}
+      TF_VAR_auth_microsoft_entra_id_secret: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_SECRET }}
+      TF_VAR_runtime_access_key: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+      TF_VAR_runtime_secret_key: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          ALIBABA_CLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          AUTH_MICROSOFT_ENTRA_ID_ID: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_ID }}
+          AUTH_MICROSOFT_ENTRA_ID_SECRET: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_SECRET }}
+        run: |
+          missing=()
+          [ -z "$ALIBABA_CLOUD_ACCESS_KEY_ID" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_ID")
+          [ -z "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
+          [ -z "$ALIBABA_CLOUD_ROLE_ARN" ] && missing+=("ALIBABA_CLOUD_ROLE_ARN")
+          [ -z "$AUTH_SECRET" ] && missing+=("AUTH_SECRET")
+          [ -z "$AUTH_MICROSOFT_ENTRA_ID_ID" ] && missing+=("AUTH_MICROSOFT_ENTRA_ID_ID")
+          [ -z "$AUTH_MICROSOFT_ENTRA_ID_SECRET" ] && missing+=("AUTH_MICROSOFT_ENTRA_ID_SECRET")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing environment secrets (Settings → Environments → personal-dashboard):"
+            printf '  - %s\n' "${missing[@]}"
+            exit 1
+          fi
+
+      - name: Restore Terraform state
+        uses: actions/cache@v4
+        with:
+          path: terraform/terraform.tfstate
+          key: ${{ env.STATE_KEY }}-${{ github.ref_name }}
+          restore-keys: ${{ env.STATE_KEY }}-main
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform init
+        run: terraform init -input=false
+
+      - name: Install aliyun CLI
+        if: github.event.inputs.action == 'apply'
+        run: |
+          wget -q https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
+          tar -xzf aliyun-cli-linux-latest-amd64.tgz
+          sudo mv aliyun /usr/local/bin/
+
+      - name: Import existing resources (adopt the data-only QA resources)
+        if: github.event.inputs.action == 'apply'
+        env:
+          ALICLOUD_REGION: ap-southeast-1
+        run: bash scripts/import-existing.sh
+
+      - name: Terraform plan
+        if: github.event.inputs.action == 'plan'
+        run: terraform plan -var-file="$TFVARS_FILE" -input=false -no-color
+
+      - name: Terraform apply
+        if: github.event.inputs.action == 'apply'
+        run: terraform apply -var-file="$TFVARS_FILE" -input=false -auto-approve
+
+      - name: Upload Terraform state backup
+        if: always() && github.event.inputs.action == 'apply'
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-state-qa-${{ github.run_id }}
           path: terraform/terraform.tfstate
           retention-days: 90
           if-no-files-found: ignore
