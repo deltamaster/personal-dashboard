@@ -33,7 +33,7 @@ Run it: **Actions → Terraform QA → action `apply`** (uses the same `personal
 2. Seed dummy data: `node scripts/qa-seed.mjs`.
 3. In `.env.local`: point at the outputs (`OTS_ENDPOINT`, `OTS_INSTANCE_NAME`, `OSS_VAULT_BUCKET`), set `MEDIA_PUBLIC_BASE_URL=https://pd-qa.huhansen.com` (so stored photo URLs use the CDN), and `MICROSOFT_AUTH_ENABLED=false`.
 
-> The QA photo bucket is **public-read** (CDN serves it) — a QA-only relaxation; prod keeps the vault private + presigned URLs. CDN domain creation requires verifying domain ownership in the Alibaba CDN console (a TXT record) before apply succeeds; set `create_cdn_domain = false` to provision OTS/OSS first, then enable it.
+> The QA photo bucket is **public-read** (CDN serves it) — a QA-only relaxation; prod keeps the vault private + presigned URLs. The CDN domain is created by Terraform (`alicloud_cdn_domain_new.media`), exactly like prod's `alicloud_cdn_domain_new.main` — no manual console step. The apply job runs `terraform/qa/import-existing.sh` first (mirrors prod) so an already-existing domain is adopted and re-apply stays idempotent. `huhansen.com` ownership is already verified in the account (prod uses it), so adding the `pd-qa` subdomain normally needs no extra verification.
 
 Local validate/plan (optional, read-only):
 

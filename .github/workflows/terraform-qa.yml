@@ -71,6 +71,15 @@ jobs:
       - name: Terraform init
         run: terraform init -input=false
 
+      - name: Import existing resources (if created outside state)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply'
+        env:
+          OTS_INSTANCE: pd-dash-qa
+          OSS_WEB_BUCKET: pd-web-qa
+          OSS_VAULT_BUCKET: pd-vault-qa
+          CDN_DOMAIN: pd-qa.huhansen.com
+        run: bash import-existing.sh
+
       - name: Terraform plan
         if: |
           github.event_name == 'pull_request' ||
