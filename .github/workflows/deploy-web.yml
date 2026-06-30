@@ -2,7 +2,6 @@ name: Deploy Web
 
 on:
   push:
-    branches: [main]
     paths-ignore:
       - "**.md"
       - "docs/**"
@@ -19,21 +18,47 @@ on:
           - qa
 
 concurrency:
-  group: deploy-web-${{ github.event.inputs.stack || 'ap-southeast-1' }}
+  group: deploy-web-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.stack || (github.ref == 'refs/heads/main' && 'ap-southeast-1' || 'qa') }}
   cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: personal-dashboard
-    env:
-      STACK: ${{ github.event.inputs.stack || 'ap-southeast-1' }}
-      OSS_ENDPOINT: ${{ github.event.inputs.stack == 'cn-shanghai' && 'oss-cn-shanghai.aliyuncs.com' || 'oss-ap-southeast-1.aliyuncs.com' }}
-      OSS_WEB_BUCKET: ${{ github.event.inputs.stack == 'cn-shanghai' && 'huhansen-web' || github.event.inputs.stack == 'qa' && 'pd-web-qa' || 'pd-web-sg' }}
-      CDN_DOMAIN: ${{ github.event.inputs.stack == 'cn-shanghai' && 'pd.huhansen.cn' || github.event.inputs.stack == 'qa' && 'pd-qa.huhansen.com' || 'pd.huhansen.com' }}
-      ALICLOUD_REGION: ${{ github.event.inputs.stack == 'cn-shanghai' && 'cn-shanghai' || 'ap-southeast-1' }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Resolve deployment stack
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            STACK="${{ github.event.inputs.stack }}"
+          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            STACK="ap-southeast-1"
+          else
+            STACK="qa"
+          fi
+          echo "STACK=$STACK" >> "$GITHUB_ENV"
+          case "$STACK" in
+            cn-shanghai)
+              echo "OSS_ENDPOINT=oss-cn-shanghai.aliyuncs.com" >> "$GITHUB_ENV"
+              echo "OSS_WEB_BUCKET=huhansen-web" >> "$GITHUB_ENV"
+              echo "CDN_DOMAIN=pd.huhansen.cn" >> "$GITHUB_ENV"
+              echo "ALICLOUD_REGION=cn-shanghai" >> "$GITHUB_ENV"
+              ;;
+            qa)
+              echo "OSS_ENDPOINT=oss-ap-southeast-1.aliyuncs.com" >> "$GITHUB_ENV"
+              echo "OSS_WEB_BUCKET=pd-web-qa" >> "$GITHUB_ENV"
+              echo "CDN_DOMAIN=pd-qa.huhansen.com" >> "$GITHUB_ENV"
+              echo "ALICLOUD_REGION=ap-southeast-1" >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "OSS_ENDPOINT=oss-ap-southeast-1.aliyuncs.com" >> "$GITHUB_ENV"
+              echo "OSS_WEB_BUCKET=pd-web-sg" >> "$GITHUB_ENV"
+              echo "CDN_DOMAIN=pd.huhansen.com" >> "$GITHUB_ENV"
+              echo "ALICLOUD_REGION=ap-southeast-1" >> "$GITHUB_ENV"
+              ;;
+          esac
+          echo "Deploying stack=$STACK (ref=${{ github.ref }}, event=${{ github.event_name }})"
 
       - name: Validate required secrets
         env:
