@@ -1,5 +1,5 @@
 # Optional: local Docker run (production uses FC zip deploy, not containers)
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -8,7 +8,7 @@ RUN mkdir -p public
 ENV BUILD_TARGET=api
 RUN npm run build:api
 
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000

@@ -175,7 +175,7 @@ AGENTS.md
 
 ## Cursor Cloud specific instructions
 
-Dev environment is plain Next.js 14 (App Router). Node 22 works fine (CI pins Node 20). Standard commands live in `package.json` `scripts` and `docs/SETUP.md`; key notes below.
+Dev environment is plain Next.js 14 (App Router). **Node 22** (see `.nvmrc`; CI uses `node-version-file`). FC custom runtime still uses Alibaba built-in **Node 20** (`/var/fc/lang/nodejs20`) — FC Debian10 has no nodejs22 image; the API zip is built on 22 and runs on 20. Standard commands live in `package.json` `scripts` and `docs/SETUP.md`; key notes below.
 
 **Local env file (gitignored):** copy `.env.example` → `.env.local`. At minimum set `AUTH_SECRET` (`openssl rand -base64 32`).
 
