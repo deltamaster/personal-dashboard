@@ -33,7 +33,9 @@ Run it (same model as prod): **push to `main`** touching `terraform/qa/**` (e.g.
 > Note: the **Run workflow** (manual dispatch) button only appears once `terraform-qa.yml` is on the **default branch (`main`)** — a GitHub requirement. So the first apply happens by merging to `main` (auto-apply); after that you can also dispatch manually from any branch.
 
 After apply:
-1. Copy output `cdn_cname` → add Cloudflare CNAME `pd-qa` → `<cdn_cname>` (**DNS only / grey cloud**).
+1. Copy output `cdn_cname` → add Cloudflare CNAME `pd-qa` → `<cdn_cname>`. Pick **one** TLS option:
+   - **Proxied (orange cloud) + Cloudflare Flexible SSL** — Cloudflare terminates HTTPS, talks to Alibaba CDN over HTTP. No cert on Alibaba needed. Use this to serve `https://pd-qa.huhansen.com` without configuring an Alibaba CDN cert.
+   - **DNS only (grey cloud)** — traffic goes straight to Alibaba CDN, so you must add an HTTPS cert for `pd-qa.huhansen.com` in the Alibaba CDN console (otherwise only `http://` works).
 2. Seed dummy data: `node scripts/qa-seed.mjs`.
 3. In `.env.local`: point at the outputs (`OTS_ENDPOINT`, `OTS_INSTANCE_NAME`, `OSS_VAULT_BUCKET`), set `MEDIA_PUBLIC_BASE_URL=https://pd-qa.huhansen.com` (so stored photo URLs use the CDN), and `MICROSOFT_AUTH_ENABLED=false`.
 
