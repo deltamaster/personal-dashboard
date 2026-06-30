@@ -25,7 +25,10 @@ export function extractObjectKey(ossUrl: string): string {
 function ossResource(bucket: string, key: string, securityToken?: string): string {
   const base = `/${bucket}/${key}`;
   if (!securityToken) return base;
-  return `${base}?security-token=${encodeURIComponent(securityToken)}`;
+  // OSS canonicalizes the sub-resource using the DECODED token value, so the
+  // string-to-sign must use the raw token (not URL-encoded). The query param in
+  // the final URL is encoded separately for transport.
+  return `${base}?security-token=${securityToken}`;
 }
 
 /** Issue a short-lived presigned GET URL for a vault object. */
