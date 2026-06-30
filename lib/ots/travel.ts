@@ -10,6 +10,7 @@ import {
   nextStartPrimaryKey,
   rowToObject,
   toAttributeColumns,
+  toUpdatePutColumns,
 } from "@/lib/ots";
 import { otsCall, TableStore } from "@/lib/ots-client";
 import type {
@@ -29,16 +30,52 @@ const IMAGES_TABLE = "pd_visit_images";
 const FLIGHTS_TABLE = "pd_flights";
 const TRAINS_TABLE = "pd_trains";
 
+function compareDesc(a?: string, b?: string): number {
+  return (b ?? "").localeCompare(a ?? "");
+}
+
+function compareAsc(a?: string, b?: string): number {
+  return (a ?? "").localeCompare(b ?? "");
+}
+
 function nowIso(): string {
   return new Date().toISOString();
 }
 
 function normalizeVisit(raw: Record<string, unknown>): Visit {
+  const { visit_id, ...rest } = raw as unknown as Visit & Record<string, unknown>;
+  const cleaned: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(rest)) {
+    if (/^\d+$/.test(key)) continue;
+    cleaned[key] = value;
+  }
   return {
-    ...(raw as unknown as Visit),
+    ...(cleaned as unknown as Visit),
+    visit_id: String(visit_id),
     rating: coerceOtsNumber(raw.rating),
     cost: coerceOtsNumber(raw.cost),
     revisit: coerceOtsNumber(raw.revisit),
+  };
+}
+
+function visitAttributes(visit: Visit): Record<string, string | number | undefined> {
+  return {
+    date: visit.date,
+    province: visit.province,
+    city: visit.city,
+    attraction: visit.attraction,
+    attraction_en: visit.attraction_en,
+    type: visit.type,
+    country: visit.country,
+    rating: visit.rating,
+    cost: visit.cost,
+    cost_currency: visit.cost_currency,
+    thoughts: visit.thoughts,
+    highlights: visit.highlights,
+    tips: visit.tips,
+    revisit: visit.revisit,
+    created_at: visit.created_at,
+    updated_at: visit.updated_at,
   };
 }
 
@@ -103,7 +140,7 @@ async function scanTable<T>(
 
 export async function listVisits(): Promise<Visit[]> {
   const visits = await scanTable(VISITS_TABLE, "visit_id", normalizeVisit);
-  return visits.sort((a, b) => b.date.localeCompare(a.date));
+  return visits.sort((a, b) => compareDesc(a.date, b.date));
 }
 
 export async function listVisitImages(): Promise<VisitImage[]> {
@@ -123,7 +160,7 @@ export async function listVisitsWithImages(): Promise<VisitWithImages[]> {
   return visits.map((visit) => ({
     ...visit,
     images: (imagesByVisit.get(visit.visit_id) ?? []).sort((a, b) =>
-      a.created_at.localeCompare(b.created_at)
+      compareAsc(a.created_at, b.created_at)
     ),
   }));
 }
@@ -158,36 +195,43 @@ export async function updateVisit(
     updated_at: nowIso(),
   };
 
-  if (!updated.date) {
-    throw new Error(`Visit ${visitId} is missing date`);
+  if (!updated.created_at) {
+    updated.created_at = updated.updated_at;
   }
+
+  const updateColumns = toUpdatePutColumns(visitAttributes(updated));
+  if (updateColumns.length === 0) {
+    return updated;
+  }
+
+  const client = await getOtsClient();
+  await otsCall(client.updateRow.bind(client), {
+    tableName: VISITS_TABLE,
+    condition: new TableStore.Condition(TableStore.RowExistenceExpectation.IGNORE, null),
+    primaryKey: [{ visit_id: visitId }],
+    updateOfAttributeColumns: updateColumns,
+  });
+
+  return updated;
+}
+
+/** Replace all attribute columns on a visit row (used for recovery / full rewrite). */
+export async function replaceVisit(visit: Visit): Promise<Visit> {
+  const row: Visit = {
+    ...visit,
+    updated_at: visit.updated_at || nowIso(),
+    created_at: visit.created_at || visit.updated_at || nowIso(),
+  };
 
   const client = await getOtsClient();
   await otsCall(client.putRow.bind(client), {
     tableName: VISITS_TABLE,
     condition: new TableStore.Condition(TableStore.RowExistenceExpectation.IGNORE, null),
-    primaryKey: [{ visit_id: visitId }],
-    attributeColumns: toAttributeColumns({
-      date: updated.date,
-      province: updated.province,
-      city: updated.city,
-      attraction: updated.attraction,
-      attraction_en: updated.attraction_en,
-      type: updated.type,
-      country: updated.country,
-      rating: updated.rating,
-      cost: updated.cost,
-      cost_currency: updated.cost_currency,
-      thoughts: updated.thoughts,
-      highlights: updated.highlights,
-      tips: updated.tips,
-      revisit: updated.revisit,
-      created_at: updated.created_at,
-      updated_at: updated.updated_at,
-    }),
+    primaryKey: [{ visit_id: row.visit_id }],
+    attributeColumns: toAttributeColumns(visitAttributes(row)),
   });
 
-  return updated;
+  return row;
 }
 
 export interface VisitImageInput {
@@ -236,19 +280,19 @@ export async function getVisitWithImages(visitId: string): Promise<VisitWithImag
 
   const images = (await listVisitImages())
     .filter((image) => image.visit_id === visitId)
-    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+    .sort((a, b) => compareAsc(a.created_at, b.created_at));
 
   return { ...visit, images };
 }
 
 export async function listFlights(): Promise<Flight[]> {
   const flights = await scanTable(FLIGHTS_TABLE, "flight_id", normalizeFlight);
-  return flights.sort((a, b) => b.flight_date.localeCompare(a.flight_date));
+  return flights.sort((a, b) => compareDesc(a.flight_date, b.flight_date));
 }
 
 export async function listTrains(): Promise<Train[]> {
   const trains = await scanTable(TRAINS_TABLE, "train_id", normalizeTrain);
-  return trains.sort((a, b) => b.train_date.localeCompare(a.train_date));
+  return trains.sort((a, b) => compareDesc(a.train_date, b.train_date));
 }
 
 export function computeTravelStats(

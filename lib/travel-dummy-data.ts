@@ -1,15 +1,13 @@
-import { isOtsConfigured } from "@/lib/ots-config";
 import { computeTravelStats } from "@/lib/ots/travel";
 import type { Flight, Train, Visit, VisitImage, VisitWithImages } from "@/lib/types/travel";
 import { randomUUID } from "node:crypto";
 
 const CREATED = "2024-06-01T00:00:00Z";
 
-/** Dev-only sample data when OTS credentials are absent (local UI / map checks). */
+/** Dev-only sample data — opt in with TRAVEL_DUMMY_DATA=1 (dev only). */
 export function shouldUseTravelDummyData(): boolean {
   if (process.env.NODE_ENV !== "development") return false;
-  if (process.env.TRAVEL_DUMMY_DATA === "1") return true;
-  return !isOtsConfigured();
+  return process.env.TRAVEL_DUMMY_DATA === "1";
 }
 
 const dummyVisits: VisitWithImages[] = [

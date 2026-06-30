@@ -1,4 +1,3 @@
-import { isOtsConfigured } from "@/lib/ots-config";
 import { computePortfolioStats } from "@/lib/ots/portfolio";
 import { filterActiveHoldings, sortHoldingsByCnyValue } from "@/lib/portfolio-format";
 import type { Holding, Snapshot } from "@/lib/types/portfolio";
@@ -9,11 +8,10 @@ const STALE_R4 = "2026-01-15T00:00:00Z";
 const STALE_R3 = "2026-02-01T00:00:00Z";
 const STALE_R5 = "2026-03-10T00:00:00Z";
 
-/** Dev-only sample data when OTS credentials are absent (local UI checks). */
+/** Dev-only sample data — opt in with PORTFOLIO_DUMMY_DATA=1 (dev only). */
 export function shouldUsePortfolioDummyData(): boolean {
   if (process.env.NODE_ENV !== "development") return false;
-  if (process.env.PORTFOLIO_DUMMY_DATA === "1") return true;
-  return !isOtsConfigured();
+  return process.env.PORTFOLIO_DUMMY_DATA === "1";
 }
 
 function mkHolding(

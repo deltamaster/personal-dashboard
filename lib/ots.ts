@@ -84,11 +84,22 @@ export function rowToObject(row: {
   return result;
 }
 
-/** Build OTS attribute columns, skipping undefined/null. */
+/** Build OTS PutRow attribute columns — array of single-key objects per SDK format. */
 export function toAttributeColumns(
   data: Record<string, AttributeValue>
-): [string, AttributeValue][] {
-  return Object.entries(data).filter(([, v]) => v !== undefined && v !== null) as [string, AttributeValue][];
+): Record<string, AttributeValue>[] {
+  return Object.entries(data)
+    .filter(([, v]) => v !== undefined && v !== null)
+    .map(([name, value]) => ({ [name]: value }));
+}
+
+/** Build OTS UpdateRow PUT payload for the given columns. */
+export function toUpdatePutColumns(
+  data: Record<string, AttributeValue>
+): { PUT: Record<string, AttributeValue>[] }[] {
+  const columns = toAttributeColumns(data);
+  if (columns.length === 0) return [];
+  return [{ PUT: columns }];
 }
 
 export { TableStore };

@@ -32,7 +32,7 @@ function randomNonce(): string {
 }
 
 function stsRegion(): string {
-  return process.env.ALIBABA_CLOUD_REGION?.trim() || "cn-shanghai";
+  return process.env.ALIBABA_CLOUD_REGION?.trim() || "ap-southeast-1";
 }
 
 function roleSessionName(): string {

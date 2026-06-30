@@ -33,7 +33,7 @@ Pushes to `main` that touch `terraform/` also auto-apply.
 
 ```bash
 cp .env.example .env.local
-# Fill in AUTH_* and ALIBABA_* values
+# Fill in AUTH_* and ALIBABA_* values (Singapore stack: ap-southeast-1, pd-dash-sg, pd-vault-sg)
 
 npm install
 npm run dev

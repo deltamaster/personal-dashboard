@@ -39,7 +39,7 @@ Launch with **empty/manual data**. SQLite migration is deferred (see [TECHNICAL_
 | Cloud | **Alibaba Cloud only** — no Vercel, no AWS |
 | Compute billing | **No hourly/always-on cost** — FC pay-per-invocation; static UI on OSS |
 | Domain | `huhansen.cn` (registered with Alibaba) |
-| Region | `cn-shanghai` (all services same region) |
+| Region | `ap-southeast-1` (Singapore — active stack; Shanghai paused) |
 | OSS web bucket | **Public read** — static HTML/JS/CSS only |
 | OSS vault bucket | **Private** — presigned URLs only; block all public access |
 | Auth protocol | OAuth 2.0 Authorization Code — **not** Implicit Flow |
@@ -57,12 +57,12 @@ ALLOWED_USER_EMAIL= huhansen318@hotmail.com
 MICROSOFT_ISSUER= https://login.microsoftonline.com/consumers/v2.0
 MICROSOFT_CONSUMER_TENANT_ID= 9188040d-6ce5-4aae-b5-5e4b370a0ae8  # fixed, do not env-var
 
-OTS_INSTANCE= pd-dashboard
-OTS_ENDPOINT= https://pd-dashboard.cn-shanghai.ots.aliyuncs.com
+OTS_INSTANCE= pd-dash-sg
+OTS_ENDPOINT= https://pd-dash-sg.ap-southeast-1.ots.aliyuncs.com
 
-OSS_WEB_BUCKET= huhansen-web          # public static site
-OSS_VAULT_BUCKET= personal-dashboard-vault  # private media
-OSS_REGION= oss-cn-shanghai
+OSS_WEB_BUCKET= pd-web-sg              # public static site
+OSS_VAULT_BUCKET= pd-vault-sg          # private media
+OSS_REGION= oss-ap-southeast-1
 
 FC_SERVICE= personal-dashboard
 FC_FUNCTION= api
@@ -116,18 +116,18 @@ ALIBABA_CLOUD_ACCESS_KEY_SECRET=
 ALIBABA_CLOUD_ROLE_ARN=acs:ram::1197388755513152:role/resourceadmin
 # Local dev session name; FC uses personal-dashboard-fc (set in Terraform / Deploy API)
 ALIBABA_CLOUD_ROLE_SESSION_NAME=personal-dashboard
-ALIBABA_CLOUD_REGION=cn-shanghai
+ALIBABA_CLOUD_REGION=ap-southeast-1
 
 # OTS
-OTS_ENDPOINT=https://pd-dashboard.cn-shanghai.ots.aliyuncs.com
-OTS_INSTANCE_NAME=pd-dashboard
+OTS_ENDPOINT=https://pd-dash-sg.ap-southeast-1.ots.aliyuncs.com
+OTS_INSTANCE_NAME=pd-dash-sg
 
 # OSS
-OSS_WEB_BUCKET=huhansen-web
-OSS_WEB_REGION=oss-cn-shanghai
-OSS_VAULT_BUCKET=personal-dashboard-vault
-OSS_VAULT_REGION=oss-cn-shanghai
-OSS_VAULT_ENDPOINT=oss-cn-shanghai.aliyuncs.com
+OSS_WEB_BUCKET=pd-web-sg
+OSS_WEB_REGION=oss-ap-southeast-1
+OSS_VAULT_BUCKET=pd-vault-sg
+OSS_VAULT_REGION=oss-ap-southeast-1
+OSS_VAULT_ENDPOINT=oss-ap-southeast-1.aliyuncs.com
 ```
 
 ---

@@ -31,7 +31,7 @@ function ossResource(bucket: string, key: string, securityToken?: string): strin
 /** Issue a short-lived presigned GET URL for a vault object. */
 export async function getPresignedGetUrl(objectKey: string, expiresInSec = 3600): Promise<string> {
   const bucket = process.env.OSS_VAULT_BUCKET;
-  const endpoint = process.env.OSS_VAULT_ENDPOINT ?? "oss-cn-shanghai.aliyuncs.com";
+  const endpoint = process.env.OSS_VAULT_ENDPOINT ?? "oss-ap-southeast-1.aliyuncs.com";
   if (!bucket) {
     throw new Error("OSS vault is not configured");
   }
@@ -65,7 +65,7 @@ export async function getPresignedPutUrl(
   expiresInSec = 3600
 ): Promise<string> {
   const bucket = process.env.OSS_VAULT_BUCKET;
-  const endpoint = process.env.OSS_VAULT_ENDPOINT ?? "oss-cn-shanghai.aliyuncs.com";
+  const endpoint = process.env.OSS_VAULT_ENDPOINT ?? "oss-ap-southeast-1.aliyuncs.com";
   if (!bucket) {
     throw new Error("OSS vault is not configured");
   }

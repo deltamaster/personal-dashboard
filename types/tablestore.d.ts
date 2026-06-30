@@ -10,6 +10,7 @@ declare module "tablestore" {
       getRange: (params: Record<string, unknown>, callback: (err: Error | null, data: unknown) => void) => void;
       getRow: (params: Record<string, unknown>, callback: (err: Error | null, data: unknown) => void) => void;
       putRow: (params: Record<string, unknown>, callback: (err: Error | null, data: unknown) => void) => void;
+      updateRow: (params: Record<string, unknown>, callback: (err: Error | null, data: unknown) => void) => void;
     };
     Direction: { FORWARD: string; BACKWARD: string };
     INF_MIN: unknown;
