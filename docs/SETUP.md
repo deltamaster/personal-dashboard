@@ -35,7 +35,7 @@ Pushes to `main` that touch `terraform/` also auto-apply.
 cp .env.example .env.local
 # Fill in AUTH_* and ALIBABA_* values (Singapore stack: ap-southeast-1, pd-dash-sg, pd-vault-sg)
 
-# Node 22 (see .nvmrc)
+# Node 24 (see .nvmrc)
 npm install
 npm run dev
 ```

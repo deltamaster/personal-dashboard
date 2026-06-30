@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Package Next.js standalone API build as an FC custom-runtime zip.
- * Bundles the Linux x64 Node.js binary (same major as .nvmrc / build env) so FC
- * runs Node 22 — Alibaba custom.debian10 only ships built-in Node 18/20.
+ * Bundles the Linux x64 Node.js binary for the major in .nvmrc (FC debian10
+ * only ships built-in Node 18/20 — EOL; we bundle Active LTS Node 24).
  */
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -19,20 +19,45 @@ function run(cmd, args, opts = {}) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
-function readTargetNodeVersion() {
-  if (process.env.FC_NODE_VERSION?.trim()) {
-    const v = process.env.FC_NODE_VERSION.trim();
-    return v.startsWith("v") ? v : `v${v}`;
-  }
+function normalizeVersion(v) {
+  return v.startsWith("v") ? v : `v${v}`;
+}
+
+function readNvmrcMajor() {
   const nvmrc = path.join(root, ".nvmrc");
-  if (fs.existsSync(nvmrc)) {
-    const major = fs.readFileSync(nvmrc, "utf8").trim();
-    if (major) {
-      const buildMajor = process.version.match(/^v(\d+)/)?.[1];
-      if (buildMajor === major) return process.version;
-    }
+  if (!fs.existsSync(nvmrc)) return undefined;
+  const line = fs.readFileSync(nvmrc, "utf8").trim().split(/\s+/)[0];
+  if (!line) return undefined;
+  if (line.startsWith("v")) return line.match(/^v(\d+)/)?.[1];
+  return line.match(/^\d+/)?.[0];
+}
+
+/** Latest stable release for a major line (from nodejs.org dist index). */
+async function resolveLatestForMajor(major) {
+  const res = await fetch("https://nodejs.org/dist/index.json");
+  if (!res.ok) throw new Error(`Failed to fetch Node dist index (HTTP ${res.status})`);
+  const releases = await res.json();
+  const match = releases.find(
+    (r) => r.version.startsWith(`v${major}.`) && !r.version.includes("-")
+  );
+  if (!match) throw new Error(`No stable Node.js v${major}.x found in dist index`);
+  return match.version;
+}
+
+async function readTargetNodeVersion() {
+  if (process.env.FC_NODE_VERSION?.trim()) {
+    return normalizeVersion(process.env.FC_NODE_VERSION.trim());
   }
-  return process.version;
+  const major = readNvmrcMajor();
+  if (!major) return process.version;
+
+  const buildMajor = process.version.match(/^v(\d+)/)?.[1];
+  if (buildMajor === major) return process.version;
+
+  console.log(
+    `Build Node ${process.version} != .nvmrc major ${major}; resolving latest v${major}.x for FC bundle…`
+  );
+  return resolveLatestForMajor(major);
 }
 
 async function downloadFile(url, dest) {
@@ -42,7 +67,7 @@ async function downloadFile(url, dest) {
 }
 
 async function bundleLinuxNode(stageDir) {
-  const version = readTargetNodeVersion();
+  const version = await readTargetNodeVersion();
   const tarball = `node-${version}-linux-x64.tar.xz`;
   const url = `https://nodejs.org/dist/${version}/${tarball}`;
   fs.mkdirSync(nodeCacheDir, { recursive: true });
