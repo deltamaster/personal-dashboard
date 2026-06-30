@@ -6,6 +6,7 @@ const CREATED = "2024-06-01T00:00:00Z";
 
 /** Dev-only sample data — opt in with TRAVEL_DUMMY_DATA=1 (dev only). */
 export function shouldUseTravelDummyData(): boolean {
+  if (process.env.QA_DUMMY_DATA === "1") return true;
   if (process.env.NODE_ENV !== "development") return false;
   return process.env.TRAVEL_DUMMY_DATA === "1";
 }

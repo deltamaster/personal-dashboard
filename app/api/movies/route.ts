@@ -2,11 +2,16 @@ import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/api-auth";
 import { createMovie, listMovies, computeMovieStats } from "@/lib/ots/movies";
 import { emptyMovieStats, isOtsConfigured } from "@/lib/ots-config";
+import { getDummyMoviesData, shouldUseMoviesDummyData } from "@/lib/movies-dummy-data";
 import type { MovieInput } from "@/lib/types/movie";
 
 export async function GET() {
   const { error } = await requireSession();
   if (error) return error;
+
+  if (shouldUseMoviesDummyData()) {
+    return NextResponse.json(getDummyMoviesData());
+  }
 
   if (!isOtsConfigured()) {
     if (process.env.NODE_ENV === "development") {
