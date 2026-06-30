@@ -20,14 +20,20 @@ Both stacks use the **same** GitHub environment secrets. `auth_url` / `domain` c
 
 ## QA / test stack (`terraform/qa/`)
 
-A **separate root** that provisions only **OTS + OSS** (no FC/CDN) for an isolated test environment. It has its own state (`terraform-state-qa`) and never touches the production Singapore/Shanghai resources.
+A **separate root** that provisions **OTS + OSS + a media CDN** (no FC — the QA API runs locally) for an isolated test environment. It has its own state (`terraform-state-qa`) and never touches the production Singapore/Shanghai resources.
 
-| Resource | Name (default) | ARN |
+| Resource | Name (default) | ARN / notes |
 |---|---|---|
 | OTS | `pd-dash-qa` + 7 tables + 6 search indexes | `acs:ots:ap-southeast-1:<account>:instance/pd-dash-qa` |
-| OSS | `pd-web-qa` (public), `pd-vault-qa` (private) | `acs:oss:*:<account>:pd-vault-qa` |
+| OSS | `pd-web-qa`, `pd-vault-qa` (**public-read in QA** so photos serve via CDN) | `acs:oss:*:<account>:pd-vault-qa` |
+| CDN | `pd-qa.huhansen.com` → origin `pd-vault-qa` (photos) | output `cdn_cname` |
 
-Run it: **Actions → Terraform QA → action `apply`** (uses the same `personal-dashboard` environment secrets; only needs `ALIBABA_CLOUD_*` + `ALIBABA_CLOUD_ROLE_ARN` — no Auth/FC secrets). PRs touching `terraform/qa/**` run `plan` automatically. After apply, seed dummy data with `node scripts/qa-seed.mjs` and point `.env.local` at the outputs (`ots_endpoint`, `ots_instance_name`, `oss_vault_bucket`) with `MICROSOFT_AUTH_ENABLED=false`.
+Run it: **Actions → Terraform QA → action `apply`** (uses the same `personal-dashboard` environment secrets; only needs `ALIBABA_CLOUD_*` + `ALIBABA_CLOUD_ROLE_ARN` — no Auth/FC secrets). PRs touching `terraform/qa/**` run `plan` automatically. After apply:
+1. Copy output `cdn_cname` → add Cloudflare CNAME `pd-qa` → `<cdn_cname>` (**DNS only / grey cloud**).
+2. Seed dummy data: `node scripts/qa-seed.mjs`.
+3. In `.env.local`: point at the outputs (`OTS_ENDPOINT`, `OTS_INSTANCE_NAME`, `OSS_VAULT_BUCKET`), set `MEDIA_PUBLIC_BASE_URL=https://pd-qa.huhansen.com` (so stored photo URLs use the CDN), and `MICROSOFT_AUTH_ENABLED=false`.
+
+> The QA photo bucket is **public-read** (CDN serves it) — a QA-only relaxation; prod keeps the vault private + presigned URLs. CDN domain creation requires verifying domain ownership in the Alibaba CDN console (a TXT record) before apply succeeds; set `create_cdn_domain = false` to provision OTS/OSS first, then enable it.
 
 Local validate/plan (optional, read-only):
 
