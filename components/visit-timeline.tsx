@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { VisitImage, VisitWithImages } from "@/lib/types/travel";
 
 function starCount(rating?: number): number {
@@ -509,22 +510,28 @@ function VisitCard({
 
       {saveError && <p className="mt-2 text-sm text-red-400">{saveError}</p>}
 
-      {expandedPhoto && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4"
-          onClick={() => setExpandedPhoto(null)}
-          role="dialog"
-          aria-modal="true"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={expandedPhoto}
-            alt=""
-            className="max-h-[90vh] max-w-full rounded-lg object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
+      {expandedPhoto &&
+        typeof document !== "undefined" &&
+        // Portal to <body>: the card uses `content-visibility:auto` (CSS
+        // containment), which would otherwise make `position: fixed` resolve
+        // against the card instead of the viewport, shrinking the lightbox.
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4"
+            onClick={() => setExpandedPhoto(null)}
+            role="dialog"
+            aria-modal="true"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={expandedPhoto}
+              alt=""
+              className="max-h-[90vh] max-w-full rounded-lg object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>,
+          document.body
+        )}
     </article>
   );
 }
