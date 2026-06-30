@@ -198,7 +198,14 @@ jobs:
               OTS_INSTANCE_NAME: $ots_instance,
               OSS_VAULT_BUCKET: $oss_bucket,
               OSS_VAULT_REGION: $oss_region,
-              OSS_VAULT_ENDPOINT: $oss_endpoint
-            }) | { environmentVariables: .environmentVariables }')
+              OSS_VAULT_ENDPOINT: $oss_endpoint,
+              PATH: "/code/node/bin:/usr/local/bin:/usr/bin:/bin"
+            })
+            | .customRuntimeConfig = {
+                command: ["./node/bin/node"],
+                args: ["server.js"],
+                port: 9000
+              }
+            | { environmentVariables: .environmentVariables, customRuntimeConfig: .customRuntimeConfig }')
 
           aliyun fc PUT "/2023-03-30/functions/${FC_FUNCTION}" --body "$MERGED"
