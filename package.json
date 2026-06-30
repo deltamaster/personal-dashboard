@@ -9,7 +9,8 @@
     "package:api": "node scripts/package-api.mjs",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "qa-seed": "node scripts/qa-seed.mjs"
   },
   "dependencies": {
     "@svg-maps/china": "^2.0.0",
