@@ -31,6 +31,8 @@ export interface Holding {
   strike_level?: number;
   maturity?: string;
   purchase_date?: string;
+  /** When set (YYYY-MM-DD), holding stays visible until this date then auto-zeros on read. */
+  scheduled_redeem_at?: string;
   notes?: string;
   created_at: string;
   updated_at: string;

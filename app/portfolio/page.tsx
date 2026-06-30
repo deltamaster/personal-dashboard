@@ -47,7 +47,7 @@ export default function PortfolioPage() {
     };
   }, []);
 
-  const { data, loading, error } = useOtsCache("portfolio", fetchPortfolio);
+  const { data, loading, error, refresh } = useOtsCache("portfolio", fetchPortfolio);
 
   const holdings = data?.holdings ?? [];
   const stats = data?.stats ?? null;
@@ -84,6 +84,7 @@ export default function PortfolioPage() {
             <HoldingsTable
               holdings={holdings}
               staleHoldingIds={stats?.staleHoldingIds ?? []}
+              onRedeemed={refresh}
             />
           </div>
         )}

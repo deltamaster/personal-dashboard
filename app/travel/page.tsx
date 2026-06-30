@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { AuthGuard } from "@/components/auth-guard";
 import { TravelMap } from "@/components/travel-map";
 import { TravelStatsPanel } from "@/components/travel-stats-panel";
 import { VisitTimeline } from "@/components/visit-timeline";
+import { filterVisitsBySearch } from "@/lib/travel-search";
 import type { Flight, Train, TravelStats, VisitWithImages } from "@/lib/types/travel";
 import { useOtsCache } from "@/lib/use-ots-cache";
 
@@ -16,6 +17,8 @@ interface TravelCache {
 }
 
 export default function TravelPage() {
+  const [searchQuery, setSearchQuery] = useState("");
+
   const fetchTravel = useCallback(async (): Promise<TravelCache> => {
     const res = await fetch("/api/travel/visits/");
     if (!res.ok) {
@@ -51,6 +54,12 @@ export default function TravelPage() {
   const trains = data?.trains ?? [];
   const stats = data?.stats ?? null;
 
+  const isSearching = searchQuery.trim().length > 0;
+  const filteredVisits = useMemo(
+    () => filterVisitsBySearch(data?.visits ?? [], searchQuery),
+    [data?.visits, searchQuery]
+  );
+
   return (
     <AuthGuard>
       <div className="space-y-8">
@@ -68,7 +77,7 @@ export default function TravelPage() {
           </div>
         )}
 
-        {stats && (
+        {stats && !isSearching && (
           <>
             <TravelStatsPanel stats={stats} />
             <TravelMap
@@ -80,9 +89,31 @@ export default function TravelPage() {
         )}
 
         {!loading && !error && (
-          <div>
-            <h2 className="mb-4 text-lg font-semibold">Timeline</h2>
-            <VisitTimeline visits={visits} onVisitUpdated={handleVisitUpdated} />
+          <div className="space-y-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <h2 className="text-lg font-semibold">Timeline</h2>
+              <label className="w-full sm:max-w-sm">
+                <span className="sr-only">Search visits</span>
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search country, province, city, attraction…"
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+                />
+              </label>
+            </div>
+            {isSearching && (
+              <p className="text-sm text-[var(--muted)]">
+                {filteredVisits.length} visit{filteredVisits.length === 1 ? "" : "s"} matching
+                &ldquo;{searchQuery.trim()}&rdquo;
+              </p>
+            )}
+            {isSearching && filteredVisits.length === 0 ? (
+              <p className="text-[var(--muted)]">No visits match your search.</p>
+            ) : (
+              <VisitTimeline visits={filteredVisits} onVisitUpdated={handleVisitUpdated} />
+            )}
           </div>
         )}
       </div>

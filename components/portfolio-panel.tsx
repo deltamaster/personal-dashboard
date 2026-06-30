@@ -14,6 +14,10 @@ import {
   type NavHistoryPoint,
 } from "@/lib/portfolio-format";
 import { usePortfolioPrivacy } from "@/components/portfolio-privacy";
+import {
+  RedeemHoldingButton,
+  ScheduledRedeemBadge,
+} from "@/components/portfolio-redeem-control";
 
 const RISK_COLORS: Record<number, string> = {
   1: "#22c55e",
@@ -381,9 +385,11 @@ export function PortfolioStatsPanel({
 export function HoldingsTable({
   holdings,
   staleHoldingIds,
+  onRedeemed,
 }: {
   holdings: Holding[];
   staleHoldingIds: string[];
+  onRedeemed?: () => void | Promise<void>;
 }) {
   const staleSet = new Set(staleHoldingIds);
 
@@ -443,9 +449,13 @@ export function HoldingsTable({
                     />
                     <RiskBadge risk={risk} />
                     <PnlCell pnlPct={pnlPct} />
+                    {onRedeemed && (
+                      <RedeemHoldingButton holding={holding} onRedeemed={onRedeemed} />
+                    )}
                   </div>
                 </div>
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--muted)]">
+                  <ScheduledRedeemBadge holding={holding} />
                   <span>{typeLabel}</span>
                   <span>{bankLabel}</span>
                   <span className="tabular-nums">{updatedLabel}</span>
@@ -453,7 +463,10 @@ export function HoldingsTable({
               </div>
 
               <div className={`hidden md:grid ${rowGrid} ${rowClass}`}>
-                <HoldingNameCell holding={holding} className="min-w-0" />
+                <div className="min-w-0 space-y-1">
+                  <HoldingNameCell holding={holding} className="min-w-0" />
+                  <ScheduledRedeemBadge holding={holding} />
+                </div>
                 <div className="text-right">
                   <MoneyAmount value={value} currency={currency} className="font-medium" />
                 </div>
@@ -461,9 +474,12 @@ export function HoldingsTable({
                 <PnlCell pnlPct={pnlPct} className="text-right" />
                 <span className={`truncate ${secondaryMeta}`}>{typeLabel}</span>
                 <span className={`truncate ${secondaryMeta}`}>{bankLabel}</span>
-                <span className={`text-right tabular-nums ${secondaryMeta}`}>
-                  {updatedLabel}
-                </span>
+                <div className="flex items-center justify-end gap-2">
+                  <span className={`tabular-nums ${secondaryMeta}`}>{updatedLabel}</span>
+                  {onRedeemed && (
+                    <RedeemHoldingButton holding={holding} onRedeemed={onRedeemed} />
+                  )}
+                </div>
               </div>
             </li>
           );
