@@ -32,6 +32,7 @@ jobs:
       FC_CODE_KEY: fc/api.zip
       OSS_ENDPOINT: ${{ github.event.inputs.stack == 'cn-shanghai' && 'oss-cn-shanghai.aliyuncs.com' || 'oss-ap-southeast-1.aliyuncs.com' }}
       OSS_VAULT_BUCKET: ${{ github.event.inputs.stack == 'cn-shanghai' && 'personal-dashboard-vault' || 'pd-vault-sg' }}
+      OTS_INSTANCE_NAME: ${{ github.event.inputs.stack == 'cn-shanghai' && 'pd-dashboard' || 'pd-dash-sg' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -124,3 +125,50 @@ jobs:
                 \"ossObjectName\": \"${FC_CODE_KEY}\"
               }
             }"
+
+      - name: Sync FC runtime env (AssumeRole + OTS/OSS)
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          ALIBABA_CLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
+          ALIBABA_CLOUD_ACCESS_KEY_ID_STS: ${{ steps.sts.outputs.access_key_id }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET_STS: ${{ steps.sts.outputs.access_key_secret }}
+          ALIBABA_CLOUD_SECURITY_TOKEN: ${{ steps.sts.outputs.security_token }}
+        run: |
+          aliyun configure set \
+            --profile default \
+            --mode StsToken \
+            --access-key-id "$ALIBABA_CLOUD_ACCESS_KEY_ID_STS" \
+            --access-key-secret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET_STS" \
+            --sts-token "$ALIBABA_CLOUD_SECURITY_TOKEN" \
+            --region "$FC_REGION"
+
+          OTS_ENDPOINT="https://${OTS_INSTANCE_NAME}.${FC_REGION}.ots.aliyuncs.com"
+          OSS_VAULT_REGION="oss-${FC_REGION}"
+
+          CURRENT=$(aliyun fc GET "/2023-03-30/functions/${FC_FUNCTION}")
+          MERGED=$(echo "$CURRENT" | jq \
+            --arg ak "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
+            --arg sk "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
+            --arg role "$ALIBABA_CLOUD_ROLE_ARN" \
+            --arg session "personal-dashboard-fc" \
+            --arg region "$FC_REGION" \
+            --arg ots_endpoint "$OTS_ENDPOINT" \
+            --arg ots_instance "$OTS_INSTANCE_NAME" \
+            --arg oss_bucket "$OSS_VAULT_BUCKET" \
+            --arg oss_region "$OSS_VAULT_REGION" \
+            --arg oss_endpoint "$OSS_ENDPOINT" \
+            '.environmentVariables = ((.environmentVariables // {}) + {
+              ALIBABA_CLOUD_ACCESS_KEY_ID: $ak,
+              ALIBABA_CLOUD_ACCESS_KEY_SECRET: $sk,
+              ALIBABA_CLOUD_ROLE_ARN: $role,
+              ALIBABA_CLOUD_ROLE_SESSION_NAME: $session,
+              ALIBABA_CLOUD_REGION: $region,
+              OTS_ENDPOINT: $ots_endpoint,
+              OTS_INSTANCE_NAME: $ots_instance,
+              OSS_VAULT_BUCKET: $oss_bucket,
+              OSS_VAULT_REGION: $oss_region,
+              OSS_VAULT_ENDPOINT: $oss_endpoint
+            }) | { environmentVariables: .environmentVariables }')
+
+          aliyun fc PUT "/2023-03-30/functions/${FC_FUNCTION}" --body "$MERGED"

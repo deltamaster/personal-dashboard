@@ -1,28 +1,44 @@
 import TableStore from "tablestore";
+import { getAlibabaCredentials, type AlibabaCredentials } from "@/lib/alibaba-credentials";
 
-let client: InstanceType<typeof TableStore.Client> | null = null;
+let cachedClient: {
+  key: string;
+  client: InstanceType<typeof TableStore.Client>;
+} | null = null;
 
-export function getOtsClient(): InstanceType<typeof TableStore.Client> {
-  if (client) return client;
+function clientCacheKey(creds: AlibabaCredentials, endpoint: string, instancename: string): string {
+  return [
+    creds.accessKeyId,
+    creds.securityToken ?? "",
+    creds.expiration?.toISOString() ?? "",
+    endpoint,
+    instancename,
+  ].join("|");
+}
 
-  const accessKeyId = process.env.ALIBABA_CLOUD_ACCESS_KEY_ID;
-  const accessKeySecret = process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET;
+export async function getOtsClient(): Promise<InstanceType<typeof TableStore.Client>> {
   const endpoint = process.env.OTS_ENDPOINT;
   const instancename = process.env.OTS_INSTANCE_NAME;
 
-  if (!accessKeyId || !accessKeySecret || !endpoint || !instancename) {
-    throw new Error(
-      "Missing OTS configuration. Set ALIBABA_CLOUD_ACCESS_KEY_ID, ALIBABA_CLOUD_ACCESS_KEY_SECRET, OTS_ENDPOINT, OTS_INSTANCE_NAME."
-    );
+  if (!endpoint || !instancename) {
+    throw new Error("Missing OTS configuration. Set OTS_ENDPOINT and OTS_INSTANCE_NAME.");
   }
 
-  client = new TableStore.Client({
-    accessKeyId,
-    secretAccessKey: accessKeySecret,
+  const creds = await getAlibabaCredentials();
+  const key = clientCacheKey(creds, endpoint, instancename);
+  if (cachedClient?.key === key) {
+    return cachedClient.client;
+  }
+
+  const client = new TableStore.Client({
+    accessKeyId: creds.accessKeyId,
+    secretAccessKey: creds.accessKeySecret,
+    stsToken: creds.securityToken,
     endpoint,
     instancename,
   });
 
+  cachedClient = { key, client };
   return client;
 }
 

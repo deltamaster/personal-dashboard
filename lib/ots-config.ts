@@ -1,11 +1,12 @@
 import type { MovieStats } from "@/lib/types/movie";
 import type { PortfolioStats } from "@/lib/types/portfolio";
 import type { TravelStats } from "@/lib/types/travel";
+import { isAlibabaBaseConfigured, isAlibabaRoleConfigured } from "@/lib/alibaba-credentials";
 
 export function isOtsConfigured(): boolean {
   return !!(
-    process.env.ALIBABA_CLOUD_ACCESS_KEY_ID &&
-    process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET &&
+    isAlibabaBaseConfigured() &&
+    isAlibabaRoleConfigured() &&
     process.env.OTS_ENDPOINT &&
     process.env.OTS_INSTANCE_NAME
   );

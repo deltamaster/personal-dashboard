@@ -1,13 +1,10 @@
 import crypto from "crypto";
+import { getAlibabaCredentials, isAlibabaBaseConfigured } from "@/lib/alibaba-credentials";
 
 const TRAVEL_IMAGE_PREFIX = "travel_images/";
 
 export function isOssConfigured(): boolean {
-  return !!(
-    process.env.ALIBABA_CLOUD_ACCESS_KEY_ID &&
-    process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET &&
-    process.env.OSS_VAULT_BUCKET
-  );
+  return !!(isAlibabaBaseConfigured() && process.env.OSS_VAULT_BUCKET);
 }
 
 /** Strip bucket URL prefix or return bare object key. */
@@ -25,54 +22,74 @@ export function extractObjectKey(ossUrl: string): string {
   }
 }
 
+function ossResource(bucket: string, key: string, securityToken?: string): string {
+  const base = `/${bucket}/${key}`;
+  if (!securityToken) return base;
+  return `${base}?security-token=${encodeURIComponent(securityToken)}`;
+}
+
 /** Issue a short-lived presigned GET URL for a vault object. */
-export function getPresignedGetUrl(objectKey: string, expiresInSec = 3600): string {
+export async function getPresignedGetUrl(objectKey: string, expiresInSec = 3600): Promise<string> {
   const bucket = process.env.OSS_VAULT_BUCKET;
   const endpoint = process.env.OSS_VAULT_ENDPOINT ?? "oss-cn-shanghai.aliyuncs.com";
-  const accessKeyId = process.env.ALIBABA_CLOUD_ACCESS_KEY_ID;
-  const accessKeySecret = process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET;
-
-  if (!bucket || !accessKeyId || !accessKeySecret) {
+  if (!bucket) {
     throw new Error("OSS vault is not configured");
   }
 
+  const creds = await getAlibabaCredentials();
   const key = extractObjectKey(objectKey);
   const expires = Math.floor(Date.now() / 1000) + expiresInSec;
-  const resource = `/${bucket}/${key}`;
+  const resource = ossResource(bucket, key, creds.securityToken);
   const stringToSign = `GET\n\n\n${expires}\n${resource}`;
   const signature = crypto
-    .createHmac("sha1", accessKeySecret)
+    .createHmac("sha1", creds.accessKeySecret)
     .update(stringToSign)
     .digest("base64");
 
-  return `https://${bucket}.${endpoint}/${key}?OSSAccessKeyId=${encodeURIComponent(accessKeyId)}&Expires=${expires}&Signature=${encodeURIComponent(signature)}`;
+  const params = new URLSearchParams({
+    OSSAccessKeyId: creds.accessKeyId,
+    Expires: String(expires),
+    Signature: signature,
+  });
+  if (creds.securityToken) {
+    params.set("security-token", creds.securityToken);
+  }
+
+  return `https://${bucket}.${endpoint}/${key}?${params.toString()}`;
 }
 
 /** Issue a short-lived presigned PUT URL for direct browser upload to the vault. */
-export function getPresignedPutUrl(
+export async function getPresignedPutUrl(
   objectKey: string,
   contentType: string,
   expiresInSec = 3600
-): string {
+): Promise<string> {
   const bucket = process.env.OSS_VAULT_BUCKET;
   const endpoint = process.env.OSS_VAULT_ENDPOINT ?? "oss-cn-shanghai.aliyuncs.com";
-  const accessKeyId = process.env.ALIBABA_CLOUD_ACCESS_KEY_ID;
-  const accessKeySecret = process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET;
-
-  if (!bucket || !accessKeyId || !accessKeySecret) {
+  if (!bucket) {
     throw new Error("OSS vault is not configured");
   }
 
+  const creds = await getAlibabaCredentials();
   const key = extractObjectKey(objectKey);
   const expires = Math.floor(Date.now() / 1000) + expiresInSec;
-  const resource = `/${bucket}/${key}`;
+  const resource = ossResource(bucket, key, creds.securityToken);
   const stringToSign = `PUT\n\n${contentType}\n${expires}\n${resource}`;
   const signature = crypto
-    .createHmac("sha1", accessKeySecret)
+    .createHmac("sha1", creds.accessKeySecret)
     .update(stringToSign)
     .digest("base64");
 
-  return `https://${bucket}.${endpoint}/${key}?OSSAccessKeyId=${encodeURIComponent(accessKeyId)}&Expires=${expires}&Signature=${encodeURIComponent(signature)}`;
+  const params = new URLSearchParams({
+    OSSAccessKeyId: creds.accessKeyId,
+    Expires: String(expires),
+    Signature: signature,
+  });
+  if (creds.securityToken) {
+    params.set("security-token", creds.securityToken);
+  }
+
+  return `https://${bucket}.${endpoint}/${key}?${params.toString()}`;
 }
 
 /** New vault object key for a visit photo. */

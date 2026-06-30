@@ -3,6 +3,7 @@ declare module "tablestore" {
     Client: new (config: {
       accessKeyId: string;
       secretAccessKey: string;
+      stsToken?: string;
       endpoint: string;
       instancename: string;
     }) => {

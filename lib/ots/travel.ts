@@ -69,7 +69,7 @@ async function scanTable<T>(
   pkName: string,
   normalize: (raw: Record<string, unknown>) => T
 ): Promise<T[]> {
-  const client = getOtsClient();
+  const client = await getOtsClient();
   const rows: T[] = [];
   let startKey: Record<string, unknown>[] = [{ [pkName]: TableStore.INF_MIN }];
   let done = false;
@@ -129,7 +129,7 @@ export async function listVisitsWithImages(): Promise<VisitWithImages[]> {
 }
 
 export async function getVisit(visitId: string): Promise<Visit | null> {
-  const client = getOtsClient();
+  const client = await getOtsClient();
   try {
     const result = await otsCall<{ row?: unknown }>(client.getRow.bind(client), {
       tableName: VISITS_TABLE,
@@ -158,7 +158,7 @@ export async function updateVisit(
     updated_at: nowIso(),
   };
 
-  const client = getOtsClient();
+  const client = await getOtsClient();
   await otsCall(client.putRow.bind(client), {
     tableName: VISITS_TABLE,
     condition: new TableStore.Condition(TableStore.RowExistenceExpectation.IGNORE, null),
@@ -196,7 +196,7 @@ export interface VisitImageInput {
 }
 
 export async function createVisitImage(input: VisitImageInput): Promise<VisitImage> {
-  const client = getOtsClient();
+  const client = await getOtsClient();
   const ts = nowIso();
   const imageId = input.image_id?.trim() || randomUUID();
   const image: VisitImage = {

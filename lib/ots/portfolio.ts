@@ -138,7 +138,7 @@ async function scanTable<T>(
   pkName: string,
   normalize: (raw: Record<string, unknown>) => T
 ): Promise<T[]> {
-  const client = getOtsClient();
+  const client = await getOtsClient();
   const rows: T[] = [];
   let startKey: Record<string, unknown>[] = [{ [pkName]: TableStore.INF_MIN }];
   let done = false;
@@ -176,7 +176,7 @@ export async function listHoldings(): Promise<Holding[]> {
 }
 
 export async function getHolding(holdingId: string): Promise<Holding | null> {
-  const client = getOtsClient();
+  const client = await getOtsClient();
   try {
     const result = await otsCall<{ row?: unknown }>(client.getRow.bind(client), {
       tableName: HOLDINGS_TABLE,
@@ -192,7 +192,7 @@ export async function getHolding(holdingId: string): Promise<Holding | null> {
 }
 
 export async function createHolding(input: HoldingInput): Promise<Holding> {
-  const client = getOtsClient();
+  const client = await getOtsClient();
   const ts = nowIso();
   const holdingId = input.holding_id?.trim() || randomUUID();
   let holding: Holding = {
@@ -231,7 +231,7 @@ export async function updateHolding(
   };
   updated = applyComputedFields(updated);
 
-  const client = getOtsClient();
+  const client = await getOtsClient();
   await otsCall(client.putRow.bind(client), {
     tableName: HOLDINGS_TABLE,
     condition: new TableStore.Condition(TableStore.RowExistenceExpectation.IGNORE, null),
@@ -246,7 +246,7 @@ export async function deleteHolding(holdingId: string): Promise<boolean> {
   const existing = await getHolding(holdingId);
   if (!existing) return false;
 
-  const client = getOtsClient() as unknown as {
+  const client = (await getOtsClient()) as unknown as {
     deleteRow: (
       params: Record<string, unknown>,
       callback: (err: Error | null, data?: unknown) => void
@@ -267,7 +267,7 @@ export async function listSnapshots(): Promise<Snapshot[]> {
 }
 
 export async function createSnapshot(input: SnapshotInput): Promise<Snapshot> {
-  const client = getOtsClient();
+  const client = await getOtsClient();
   const snapshot: Snapshot = {
     ...input,
     created_at: input.created_at ?? nowIso(),

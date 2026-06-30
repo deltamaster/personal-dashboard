@@ -35,7 +35,7 @@ Add these to the **`personal-dashboard`** environment:
 
 | Secret | Description |
 |---|---|
-| `ALIBABA_CLOUD_*`, `ALIBABA_CLOUD_ROLE_ARN` | RAM user + provision role |
+| `ALIBABA_CLOUD_*`, `ALIBABA_CLOUD_ROLE_ARN` | RAM user (AssumeRole only) + `resourceadmin` role — used by Terraform, FC runtime, and local `.env.local` |
 | `AUTH_*` | Auth.js + Azure OAuth |
 | `AUTH_URL` | Shanghai only — `https://pd.huhansen.cn` (overrides tfvars on cn-shanghai apply) |
 

@@ -111,6 +111,9 @@ locals {
     ALLOWED_USER_EMAIL               = var.allowed_user_email
     ALIBABA_CLOUD_ACCESS_KEY_ID      = var.runtime_access_key
     ALIBABA_CLOUD_ACCESS_KEY_SECRET  = var.runtime_secret_key
+    ALIBABA_CLOUD_ROLE_ARN           = var.role_arn
+    ALIBABA_CLOUD_ROLE_SESSION_NAME  = "personal-dashboard-fc"
+    ALIBABA_CLOUD_REGION             = var.region
     OTS_ENDPOINT                     = local.ots_endpoint
     OTS_INSTANCE_NAME                = var.ots_instance_name
     OSS_VAULT_BUCKET                 = var.oss_vault_bucket

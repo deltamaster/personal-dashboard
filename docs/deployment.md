@@ -44,7 +44,7 @@ Cache: long TTL on hashed static assets; no cache on `/api/*`; short/no cache on
 - FC v3 function `api`, custom container, port 3000, 512 MB
 - **`minInstances: 0`** — required
 - HTTP trigger → CDN `/api/*` origin
-- FC env vars: see [AGENTS.md § Environment variables](../AGENTS.md#environment-variables). Set `AUTH_URL=https://huhansen.cn`.
+- FC env vars: see [AGENTS.md § Environment variables](../AGENTS.md#environment-variables). Set `AUTH_URL=https://huhansen.cn`. FC uses the same `ALIBABA_CLOUD_ROLE_ARN` AssumeRole flow as local dev (`ALIBABA_CLOUD_*` base AK + `resourceadmin` role); Terraform `fc_env` and **Deploy API** workflow both sync these vars.
 
 ---
 

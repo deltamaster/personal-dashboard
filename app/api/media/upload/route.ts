@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     }
 
     const objectKey = buildTravelImageKey(filename);
-    const uploadUrl = getPresignedPutUrl(objectKey, contentType);
+    const uploadUrl = await getPresignedPutUrl(objectKey, contentType);
 
     return NextResponse.json({ uploadUrl, objectKey });
   } catch (e) {

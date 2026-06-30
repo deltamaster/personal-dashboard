@@ -28,7 +28,7 @@ function rowToMovie(row: Parameters<typeof rowToObject>[0]): Movie {
 }
 
 export async function listMovies(): Promise<Movie[]> {
-  const client = getOtsClient();
+  const client = await getOtsClient();
   const movies: Movie[] = [];
   let startKey: Record<string, unknown>[] = [{ douban_subject_id: TableStore.INF_MIN }];
   let done = false;
@@ -61,7 +61,7 @@ export async function listMovies(): Promise<Movie[]> {
 }
 
 export async function getMovie(doubanSubjectId: string): Promise<Movie | null> {
-  const client = getOtsClient();
+  const client = await getOtsClient();
   try {
     const result = await otsCall<{ row?: unknown }>(client.getRow.bind(client), {
       tableName: TABLE,
@@ -75,7 +75,7 @@ export async function getMovie(doubanSubjectId: string): Promise<Movie | null> {
 }
 
 export async function createMovie(input: MovieInput): Promise<Movie> {
-  const client = getOtsClient();
+  const client = await getOtsClient();
   const ts = nowIso();
   const movie: Movie = {
     ...input,
@@ -125,7 +125,7 @@ export async function updateMovie(
     updated_at: nowIso(),
   };
 
-  const client = getOtsClient();
+  const client = await getOtsClient();
   await otsCall(client.putRow.bind(client), {
     tableName: TABLE,
     condition: new TableStore.Condition(TableStore.RowExistenceExpectation.IGNORE, null),

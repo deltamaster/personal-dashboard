@@ -110,9 +110,13 @@ AUTH_MICROSOFT_ENTRA_ID_ID=
 AUTH_MICROSOFT_ENTRA_ID_SECRET=
 ALLOWED_USER_EMAIL=huhansen318@hotmail.com
 
-# Alibaba RAM user (OTS + both OSS buckets)
+# Alibaba RAM user (AssumeRole only) + role for OTS/OSS (local + FC runtime)
 ALIBABA_CLOUD_ACCESS_KEY_ID=
 ALIBABA_CLOUD_ACCESS_KEY_SECRET=
+ALIBABA_CLOUD_ROLE_ARN=acs:ram::1197388755513152:role/resourceadmin
+# Local dev session name; FC uses personal-dashboard-fc (set in Terraform / Deploy API)
+ALIBABA_CLOUD_ROLE_SESSION_NAME=personal-dashboard
+ALIBABA_CLOUD_REGION=cn-shanghai
 
 # OTS
 OTS_ENDPOINT=https://pd-dashboard.cn-shanghai.ots.aliyuncs.com
