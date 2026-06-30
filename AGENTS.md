@@ -170,3 +170,21 @@ AGENTS.md
 - [ ] `AUTH_URL` in prod is `https://huhansen.cn`, not FC trigger URL
 - [ ] FC `minInstances` = 0
 - [ ] Portfolio `updated_at` only changes on valuation edits (see spec § Computed fields)
+
+---
+
+## Cursor Cloud specific instructions
+
+Dev environment is plain Next.js 14 (App Router). Node 22 works fine (CI pins Node 20). Standard commands live in `package.json` `scripts` and `docs/SETUP.md`; key notes below.
+
+**Local env file (gitignored):** copy `.env.example` → `.env.local`. At minimum set `AUTH_SECRET` (`openssl rand -base64 32`).
+
+**Critical gotcha — API routes need OAuth vars to even load:** `auth.ts` calls `getOAuthCredentials()` at module load and *throws* if `AUTH_MICROSOFT_ENTRA_ID_ID` / `AUTH_MICROSOFT_ENTRA_ID_SECRET` are missing (outside production build). Because every `app/api/**` route imports `@/auth`, a missing pair makes **all** API routes (including `/api/auth/session`) return HTTP 500, not 401. For any local API work set both vars — placeholder strings are enough to load the modules and exercise the 401 auth-gate; real Azure values are only needed for an actual Microsoft login.
+
+**Running without cloud backends:** set `PORTFOLIO_DUMMY_DATA=1` and `TRAVEL_DUMMY_DATA=1` in `.env.local` to serve built-in sample data for the Portfolio/Travel APIs without Alibaba OTS. Movies has **no** dummy mode: `GET /api/movies` returns an empty list in `NODE_ENV=development` when OTS is unset, and `POST /api/movies` returns 503. All routes still require a valid session.
+
+**Region — use Singapore (`ap-southeast-1`), not Shanghai:** the Shanghai stack is not deployed yet. For local dev pointing at the live backend, use the Singapore OTS instance (see `terraform/env/ap-southeast-1.tfvars`): `OTS_INSTANCE_NAME=pd-dash-sg`, `OTS_ENDPOINT=https://pd-dash-sg.ap-southeast-1.ots.aliyuncs.com` (vault: `pd-vault-sg`, `oss-ap-southeast-1`). The `cn-shanghai` endpoint/instance in `.env.example`/Constants is the future production target. The Singapore instance holds real data (hundreds of movies) and reads work; **writes need the RAM user to have `ots:PutRow`/`UpdateRow`/`DeleteRow`** — a read-only key returns `OTSNoPermissionAccess` (ImplicitDeny) on create/edit.
+
+**What true end-to-end needs (external secrets):** a real Microsoft Entra *consumer* OAuth app (`AUTH_MICROSOFT_ENTRA_ID_ID/SECRET`) plus the allowlisted account (`huhansen318@hotmail.com`) to sign in, and Alibaba OTS creds (`ALIBABA_CLOUD_ACCESS_KEY_ID/SECRET`, `OTS_ENDPOINT`, `OTS_INSTANCE_NAME`) for movie reads/writes. Without these you can still run/lint/build everything and exercise the authenticated UI against dummy Portfolio/Travel data.
+
+**Commands:** `npm run dev` (port 3000, via `scripts/dev.mjs`), `npm run lint`, `npm run typecheck`, `npm run build` (static export — temporarily stashes `app/api` into `.api-stash/`), `npm run build:api` (standalone — temporarily stashes UI pages into `.ui-stash/` and writes a throwaway `pages/`). If a build is interrupted, restore stashed dirs before retrying. `npm run lint` emits non-blocking `react-hooks/exhaustive-deps` warnings in `app/movies/page.tsx`.
