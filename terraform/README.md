@@ -18,6 +18,28 @@ Both stacks use the **same** GitHub environment secrets. `auth_url` / `domain` c
 | Singapore | `pd.huhansen.com` | `overseas` (no ICP) |
 | Shanghai | `pd.huhansen.cn` | `domestic` (ICP required) |
 
+## QA / test stack (`terraform/qa/`)
+
+A **separate root** that provisions only **OTS + OSS** (no FC/CDN) for an isolated test environment. It has its own state (`terraform-state-qa`) and never touches the production Singapore/Shanghai resources.
+
+| Resource | Name (default) | ARN |
+|---|---|---|
+| OTS | `pd-dash-qa` + 7 tables + 6 search indexes | `acs:ots:ap-southeast-1:<account>:instance/pd-dash-qa` |
+| OSS | `pd-web-qa` (public), `pd-vault-qa` (private) | `acs:oss:*:<account>:pd-vault-qa` |
+
+Run it: **Actions → Terraform QA → action `apply`** (uses the same `personal-dashboard` environment secrets; only needs `ALIBABA_CLOUD_*` + `ALIBABA_CLOUD_ROLE_ARN` — no Auth/FC secrets). PRs touching `terraform/qa/**` run `plan` automatically. After apply, seed dummy data with `node scripts/qa-seed.mjs` and point `.env.local` at the outputs (`ots_endpoint`, `ots_instance_name`, `oss_vault_bucket`) with `MICROSOFT_AUTH_ENABLED=false`.
+
+Local validate/plan (optional, read-only):
+
+```bash
+cd terraform/qa
+terraform init
+ALICLOUD_ACCESS_KEY=... ALICLOUD_SECRET_KEY=... TF_VAR_role_arn=acs:ram::<acct>:role/<role> \
+  terraform plan -var-file=qa.tfvars
+```
+
+> The provision role needs create permissions for OTS (`ots:CreateInstance`/`CreateTable`/`CreateSearchIndex`) and OSS (`oss:PutBucket*`).
+
 ## FC deployment model
 
 API runs as **FC Custom Runtime** — no ACR or Docker required. **CDN** (when `create_cdn_domain = true`) is managed in Terraform:
