@@ -144,7 +144,9 @@ export async function getVisit(visitId: string): Promise<Visit | null> {
 
 export async function updateVisit(
   visitId: string,
-  patch: Partial<Pick<Visit, "date" | "rating" | "thoughts" | "highlights" | "tips" | "revisit">>
+  patch: Partial<
+    Pick<Visit, "date" | "attraction" | "city" | "province" | "rating" | "thoughts" | "highlights" | "tips" | "revisit">
+  >
 ): Promise<Visit | null> {
   const existing = await getVisit(visitId);
   if (!existing) return null;

@@ -109,6 +109,10 @@ async function uploadVisitPhoto(visitId: string, file: File): Promise<VisitImage
 type VisitPatch = {
   rating?: number;
   date?: string;
+  attraction?: string;
+  city?: string;
+  province?: string;
+  thoughts?: string;
   highlights?: string;
 };
 
@@ -161,8 +165,12 @@ function VisitCard({
   onVisitUpdated?: (visit: VisitWithImages) => void;
 }) {
   const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null);
-  const [editingField, setEditingField] = useState<"date" | "highlights" | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [attraction, setAttraction] = useState(visit.attraction);
+  const [city, setCity] = useState(visit.city);
+  const [province, setProvince] = useState(visit.province);
   const [date, setDate] = useState(visit.date);
+  const [thoughts, setThoughts] = useState(visit.thoughts ?? "");
   const [highlights, setHighlights] = useState(visit.highlights ?? "");
   const [rating, setRating] = useState(visit.rating);
   const [images, setImages] = useState(visit.images);
@@ -170,39 +178,59 @@ function VisitCard({
   const [uploading, setUploading] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const dateInputRef = useRef<HTMLInputElement>(null);
-  const highlightsRef = useRef<HTMLTextAreaElement>(null);
+  const attractionInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    setAttraction(visit.attraction);
+    setCity(visit.city);
+    setProvince(visit.province);
     setDate(visit.date);
+    setThoughts(visit.thoughts ?? "");
     setHighlights(visit.highlights ?? "");
     setRating(visit.rating);
     setImages(visit.images);
-    setEditingField(null);
+    setEditing(false);
   }, [visit]);
 
   useEffect(() => {
-    if (editingField === "date") dateInputRef.current?.focus();
-    if (editingField === "highlights") highlightsRef.current?.focus();
-  }, [editingField]);
+    if (editing) attractionInputRef.current?.focus();
+  }, [editing]);
 
   const location = [visit.city, visit.province, visit.country !== "中国" ? visit.country : null]
     .filter(Boolean)
     .join(" · ");
+
+  function resetDrafts() {
+    setAttraction(visit.attraction);
+    setCity(visit.city);
+    setProvince(visit.province);
+    setDate(visit.date);
+    setThoughts(visit.thoughts ?? "");
+    setHighlights(visit.highlights ?? "");
+  }
+
+  function applyUpdated(updated: VisitWithImages) {
+    setAttraction(updated.attraction);
+    setCity(updated.city);
+    setProvince(updated.province);
+    setDate(updated.date);
+    setThoughts(updated.thoughts ?? "");
+    setHighlights(updated.highlights ?? "");
+    setRating(updated.rating);
+    setImages(updated.images);
+    onVisitUpdated?.(updated);
+  }
 
   async function savePatch(patch: VisitPatch, rollback?: () => void) {
     setSaveError(null);
     setSaving(true);
     try {
       const updated = await patchVisit(visit.visit_id, patch);
-      setDate(updated.date);
-      setHighlights(updated.highlights ?? "");
-      setRating(updated.rating);
-      setImages(updated.images);
-      onVisitUpdated?.(updated);
+      applyUpdated(updated);
     } catch (e) {
       rollback?.();
       setSaveError(e instanceof Error ? e.message : "Failed to save");
+      throw e;
     } finally {
       setSaving(false);
     }
@@ -214,32 +242,66 @@ function VisitCard({
     await savePatch({ rating: value }, () => setRating(previous));
   }
 
-  function startEdit(field: "date" | "highlights") {
-    setDate(visit.date);
-    setHighlights(visit.highlights ?? "");
-    setEditingField(field);
+  function startEdit() {
+    resetDrafts();
+    setSaveError(null);
+    setEditing(true);
   }
 
   function cancelEdit() {
-    setDate(visit.date);
-    setHighlights(visit.highlights ?? "");
-    setEditingField(null);
+    resetDrafts();
+    setSaveError(null);
+    setEditing(false);
   }
 
-  async function commitDateEdit() {
-    setEditingField(null);
-    if (date === visit.date) return;
-    const previous = visit.date;
-    await savePatch({ date }, () => setDate(previous));
+  function buildEditPatch(): VisitPatch {
+    const patch: VisitPatch = {};
+    const name = attraction.trim();
+    const cityValue = city.trim();
+    const provinceValue = province.trim();
+    const dateValue = date.trim();
+    const thoughtsValue = thoughts.trim();
+    const highlightsValue = highlights.trim();
+
+    if (name !== visit.attraction) patch.attraction = name;
+    if (cityValue !== visit.city) patch.city = cityValue;
+    if (provinceValue !== visit.province) patch.province = provinceValue;
+    if (dateValue !== visit.date) patch.date = dateValue;
+    if (thoughtsValue !== (visit.thoughts ?? "")) patch.thoughts = thoughtsValue;
+    if (highlightsValue !== (visit.highlights ?? "")) patch.highlights = highlightsValue;
+
+    return patch;
   }
 
-  async function commitHighlightsEdit() {
-    setEditingField(null);
-    const trimmed = highlights.trim();
-    const current = visit.highlights ?? "";
-    if (trimmed === current) return;
-    const previous = current;
-    await savePatch({ highlights: trimmed }, () => setHighlights(previous));
+  async function saveEdit() {
+    const name = attraction.trim();
+    const cityValue = city.trim();
+    const provinceValue = province.trim();
+    if (!name) {
+      setSaveError("Name is required");
+      return;
+    }
+    if (!cityValue) {
+      setSaveError("City is required");
+      return;
+    }
+    if (!provinceValue) {
+      setSaveError("Province is required");
+      return;
+    }
+
+    const patch = buildEditPatch();
+    if (Object.keys(patch).length === 0) {
+      setEditing(false);
+      return;
+    }
+
+    try {
+      await savePatch(patch, resetDrafts);
+      setEditing(false);
+    } catch {
+      // savePatch sets saveError
+    }
   }
 
   async function handleFilesSelected(fileList: FileList | null) {
@@ -275,38 +337,119 @@ function VisitCard({
   return (
     <article className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 [content-visibility:auto] [contain-intrinsic-size:auto_12rem]">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <div className="flex items-center gap-1.5">
-            {editingField === "date" ? (
-              <input
-                ref={dateInputRef}
-                type="date"
-                value={date}
-                disabled={saving}
-                onChange={(e) => setDate(e.target.value)}
-                onBlur={() => void commitDateEdit()}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") void commitDateEdit();
-                  if (e.key === "Escape") cancelEdit();
-                }}
-                className={fieldInputClass}
-              />
-            ) : (
-              <>
-                <p className="text-xs text-[var(--muted)]">{date}</p>
-                <EditPencilButton
-                  label="Edit date"
-                  disabled={saving || editingField !== null}
-                  onClick={() => startEdit("date")}
+        <div className="min-w-0 flex-1">
+          {editing ? (
+            <div className="space-y-3">
+              <label className="block text-xs text-[var(--muted)]">
+                Date
+                <input
+                  type="date"
+                  value={date}
+                  disabled={saving}
+                  onChange={(e) => setDate(e.target.value)}
+                  className={`${fieldInputClass} mt-0.5 block w-full max-w-[11rem]`}
                 />
-              </>
-            )}
-          </div>
-          <h3 className="mt-1 font-semibold">{visit.attraction}</h3>
-          {visit.attraction_en && (
-            <p className="text-sm text-[var(--muted)]">{visit.attraction_en}</p>
+              </label>
+              <label className="block text-xs text-[var(--muted)]">
+                Name
+                <input
+                  ref={attractionInputRef}
+                  type="text"
+                  value={attraction}
+                  disabled={saving}
+                  onChange={(e) => setAttraction(e.target.value)}
+                  className={`${fieldInputClass} mt-0.5 block w-full`}
+                />
+              </label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block text-xs text-[var(--muted)]">
+                  City
+                  <input
+                    type="text"
+                    value={city}
+                    disabled={saving}
+                    onChange={(e) => setCity(e.target.value)}
+                    className={`${fieldInputClass} mt-0.5 block w-full`}
+                  />
+                </label>
+                <label className="block text-xs text-[var(--muted)]">
+                  Province
+                  <input
+                    type="text"
+                    value={province}
+                    disabled={saving}
+                    onChange={(e) => setProvince(e.target.value)}
+                    className={`${fieldInputClass} mt-0.5 block w-full`}
+                  />
+                </label>
+              </div>
+              <label className="block text-xs text-[var(--muted)]">
+                Description
+                <textarea
+                  value={thoughts}
+                  disabled={saving}
+                  rows={3}
+                  placeholder="Your notes…"
+                  onChange={(e) => setThoughts(e.target.value)}
+                  className={`${fieldInputClass} mt-0.5 w-full resize-y`}
+                />
+              </label>
+              <label className="block text-xs text-[var(--muted)]">
+                Highlights
+                <textarea
+                  value={highlights}
+                  disabled={saving}
+                  rows={2}
+                  placeholder="What stood out?"
+                  onChange={(e) => setHighlights(e.target.value)}
+                  className={`${fieldInputClass} mt-0.5 w-full resize-y`}
+                />
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => void saveEdit()}
+                  className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-sm text-white disabled:opacity-50"
+                >
+                  {saving ? "Saving…" : "Save"}
+                </button>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={cancelEdit}
+                  className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm hover:bg-[var(--background)] disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-[var(--muted)]">{visit.date}</p>
+              <div className="mt-1 flex items-center gap-1.5">
+                <h3 className="font-semibold">{visit.attraction}</h3>
+                <EditPencilButton
+                  label="Edit visit"
+                  disabled={saving}
+                  onClick={startEdit}
+                />
+              </div>
+              {visit.attraction_en && (
+                <p className="text-sm text-[var(--muted)]">{visit.attraction_en}</p>
+              )}
+              <p className="mt-1 text-sm text-[var(--muted)]">{location}</p>
+              {visit.thoughts && (
+                <p className="mt-2 text-sm text-[var(--muted)]">{visit.thoughts}</p>
+              )}
+              {visit.highlights && (
+                <p className="mt-2 text-sm">
+                  <span className="text-[var(--muted)]">Highlights: </span>
+                  {visit.highlights}
+                </p>
+              )}
+            </>
           )}
-          <p className="mt-1 text-sm text-[var(--muted)]">{location}</p>
         </div>
         <div className="flex flex-col items-end gap-2 text-sm">
           <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-xs">
@@ -321,41 +464,7 @@ function VisitCard({
         </div>
       </div>
 
-      {editingField === "highlights" ? (
-        <textarea
-          ref={highlightsRef}
-          value={highlights}
-          disabled={saving}
-          rows={2}
-          placeholder="What stood out?"
-          onChange={(e) => setHighlights(e.target.value)}
-          onBlur={() => void commitHighlightsEdit()}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") cancelEdit();
-          }}
-          className={`${fieldInputClass} mt-3 w-full resize-y`}
-        />
-      ) : (
-        <div className="mt-3 flex items-start gap-1.5 text-sm">
-          {highlights ? (
-            <p>
-              <span className="text-[var(--muted)]">Highlights: </span>
-              {highlights}
-            </p>
-          ) : (
-            <p className="text-[var(--muted)]">No highlights yet</p>
-          )}
-          <EditPencilButton
-            label="Edit highlights"
-            disabled={saving || editingField !== null}
-            onClick={() => startEdit("highlights")}
-          />
-        </div>
-      )}
-      {visit.thoughts && (
-        <p className="mt-2 text-sm text-[var(--muted)]">{visit.thoughts}</p>
-      )}
-      {visit.tips && (
+      {!editing && visit.tips && (
         <p className="mt-2 text-sm">
           <span className="text-[var(--muted)]">Tips: </span>
           {visit.tips}

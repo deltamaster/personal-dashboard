@@ -488,7 +488,7 @@ const dummyTrains: Train[] = [
 ];
 
 type DummyVisitPatch = Partial<
-  Pick<Visit, "date" | "rating" | "thoughts" | "highlights" | "tips" | "revisit">
+  Pick<Visit, "date" | "attraction" | "city" | "province" | "rating" | "thoughts" | "highlights" | "tips" | "revisit">
 > & {
   extraImages?: VisitImage[];
 };
@@ -512,7 +512,9 @@ function getDummyVisitsMerged(): VisitWithImages[] {
 
 export function updateDummyVisit(
   visitId: string,
-  patch: Partial<Pick<Visit, "date" | "rating" | "thoughts" | "highlights" | "tips" | "revisit">>
+  patch: Partial<
+    Pick<Visit, "date" | "attraction" | "city" | "province" | "rating" | "thoughts" | "highlights" | "tips" | "revisit">
+  >
 ): VisitWithImages | null {
   const base = dummyVisits.find((visit) => visit.visit_id === visitId);
   if (!base) return null;

@@ -9,6 +9,10 @@ type RouteContext = { params: { id: string } };
 type VisitUpdateBody = {
   rating?: number;
   date?: string;
+  attraction?: string;
+  city?: string;
+  province?: string;
+  thoughts?: string;
   highlights?: string;
 };
 
@@ -35,13 +39,45 @@ function parseVisitUpdate(body: VisitUpdateBody): { patch: VisitUpdateBody; erro
     count += 1;
   }
 
+  if (body.attraction !== undefined) {
+    const attraction = body.attraction.trim();
+    if (!attraction) {
+      return { patch, error: "attraction is required" };
+    }
+    patch.attraction = attraction;
+    count += 1;
+  }
+
+  if (body.city !== undefined) {
+    const city = body.city.trim();
+    if (!city) {
+      return { patch, error: "city is required" };
+    }
+    patch.city = city;
+    count += 1;
+  }
+
+  if (body.province !== undefined) {
+    const province = body.province.trim();
+    if (!province) {
+      return { patch, error: "province is required" };
+    }
+    patch.province = province;
+    count += 1;
+  }
+
+  if (body.thoughts !== undefined) {
+    patch.thoughts = body.thoughts.trim();
+    count += 1;
+  }
+
   if (body.highlights !== undefined) {
     patch.highlights = body.highlights.trim();
     count += 1;
   }
 
   if (count === 0) {
-    return { patch, error: "At least one of rating, date, or highlights is required" };
+    return { patch, error: "At least one field is required" };
   }
 
   return { patch };
