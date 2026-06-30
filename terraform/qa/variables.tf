@@ -58,3 +58,21 @@ variable "vault_cors_allowed_origin" {
   type        = string
   default     = "http://localhost:3000"
 }
+
+variable "media_domain" {
+  description = "CDN custom domain that fronts the QA photo bucket (set MEDIA_PUBLIC_BASE_URL=https://<this> in .env.local)."
+  type        = string
+  default     = "pd-qa.huhansen.com"
+}
+
+variable "cdn_scope" {
+  description = "CDN acceleration scope: overseas (no ICP) / domestic / global."
+  type        = string
+  default     = "overseas"
+}
+
+variable "create_cdn_domain" {
+  description = "Create the CDN domain via Terraform. Set false until the domain is verified in the Alibaba CDN console."
+  type        = bool
+  default     = true
+}

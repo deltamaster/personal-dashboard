@@ -39,9 +39,19 @@ resource "alicloud_oss_bucket" "vault" {
   tags   = local.tags
 }
 
+# QA-only: the photo bucket is served through CDN for local image loading, so it
+# is public-read (uploads still require a signed PUT). Production keeps the vault
+# private + presigned URLs — do NOT copy this to prod.
+resource "alicloud_oss_bucket_public_access_block" "vault" {
+  bucket              = alicloud_oss_bucket.vault.id
+  block_public_access = false
+}
+
 resource "alicloud_oss_bucket_acl" "vault" {
   bucket = alicloud_oss_bucket.vault.id
-  acl    = "private"
+  acl    = "public-read"
+
+  depends_on = [alicloud_oss_bucket_public_access_block.vault]
 }
 
 resource "alicloud_oss_bucket_cors" "vault" {
