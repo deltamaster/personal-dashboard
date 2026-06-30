@@ -87,6 +87,16 @@ async function uploadVisitPhoto(visitId: string, file: File): Promise<VisitImage
   return res.json() as Promise<VisitImage>;
 }
 
+async function deleteVisitPhoto(visitId: string, imageId: string): Promise<void> {
+  const res = await fetch(`/api/travel/visits/${visitId}/images/${imageId}/`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? "Failed to delete photo");
+  }
+}
+
 type VisitPatch = {
   rating?: number;
   date?: string;
@@ -157,6 +167,7 @@ function VisitCard({
   const [images, setImages] = useState(visit.images);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const attractionInputRef = useRef<HTMLInputElement>(null);
@@ -320,6 +331,22 @@ function VisitCard({
     }
   }
 
+  async function handleDeletePhoto(imageId: string) {
+    if (typeof window !== "undefined" && !window.confirm("Delete this photo?")) return;
+    setSaveError(null);
+    setDeletingId(imageId);
+    try {
+      await deleteVisitPhoto(visit.visit_id, imageId);
+      const next = images.filter((img) => img.image_id !== imageId);
+      setImages(next);
+      onVisitUpdated?.({ ...visit, rating, images: next });
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "Failed to delete photo");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return (
     <article className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 [content-visibility:auto] [contain-intrinsic-size:auto_12rem]">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -461,21 +488,42 @@ function VisitCard({
         <div className="mt-4 grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(7.5rem,1fr))]">
           {images.map((image) =>
             image.oss_url ? (
-              <button
+              <div
                 key={image.image_id}
-                type="button"
-                onClick={() => setExpandedPhoto(image.oss_url)}
                 className="group relative aspect-[4/3] overflow-hidden rounded-lg bg-[var(--border)]"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={image.oss_url}
-                  alt={image.description ?? visit.attraction}
-                  loading="lazy"
-                  decoding="async"
-                  className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setExpandedPhoto(image.oss_url)}
+                  className="block h-full w-full"
+                  aria-label="View photo"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={image.oss_url}
+                    alt={image.description ?? visit.attraction}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                  />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleDeletePhoto(image.image_id)}
+                  disabled={deletingId === image.image_id}
+                  aria-label="Delete photo"
+                  title="Delete photo"
+                  className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity hover:bg-red-600 focus:opacity-100 group-hover:opacity-100 disabled:opacity-50"
+                >
+                  {deletingId === image.image_id ? (
+                    <span className="text-[10px]">…</span>
+                  ) : (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+                      <path d="M18 6 6 18M6 6l12 12" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             ) : (
               <div
                 key={image.image_id}

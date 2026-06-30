@@ -63,7 +63,26 @@ const dummyVisits: VisitWithImages[] = [
     rating: 4,
     created_at: CREATED,
     updated_at: CREATED,
-    images: [],
+    images: [
+      {
+        image_id: "test-img-001",
+        visit_id: "dummy-visit-shanghai",
+        oss_url: "mock://bund-photo1.jpg",
+        width: 800,
+        height: 600,
+        description: "Test photo 1",
+        created_at: CREATED,
+      },
+      {
+        image_id: "test-img-002",
+        visit_id: "dummy-visit-shanghai",
+        oss_url: "mock://bund-photo2.jpg",
+        width: 800,
+        height: 600,
+        description: "Test photo 2",
+        created_at: CREATED,
+      },
+    ],
   },
   {
     visit_id: "dummy-visit-guangzhou",
@@ -529,6 +548,14 @@ export function addDummyVisitImage(visitId: string, image: VisitImage): VisitWit
   const extraImages = [...(patch.extraImages ?? []), image];
   dummyVisitPatches.set(visitId, { ...patch, extraImages });
   return mergeDummyVisit(base, dummyVisitPatches.get(visitId));
+}
+
+export function deleteDummyVisitImage(visitId: string, imageId: string): boolean {
+  const patch = dummyVisitPatches.get(visitId);
+  if (!patch?.extraImages) return false;
+  const remaining = patch.extraImages.filter((img) => img.image_id !== imageId);
+  dummyVisitPatches.set(visitId, { ...patch, extraImages: remaining });
+  return true;
 }
 
 export function createDummyVisitImageRecord(

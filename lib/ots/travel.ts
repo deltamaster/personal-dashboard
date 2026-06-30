@@ -146,7 +146,22 @@ export async function listVisits(): Promise<Visit[]> {
 }
 
 export async function listVisitImages(): Promise<VisitImage[]> {
-  return scanTable(IMAGES_TABLE, "image_id", normalizeImage);
+  const images = await scanTable(IMAGES_TABLE, "image_id", normalizeImage);
+  // Soft-deleted rows are retained in OTS but hidden from listings.
+  return images.filter((image) => !image.deleted_at);
+}
+
+/** Soft-delete: mark the image row deleted in OTS (keeps the row and OSS object). */
+export async function softDeleteVisitImage(imageId: string): Promise<boolean> {
+  const updateColumns = toUpdatePutColumns({ deleted_at: nowIso() });
+  const client = await getOtsClient();
+  await otsCall(client.updateRow.bind(client), {
+    tableName: IMAGES_TABLE,
+    condition: new TableStore.Condition(TableStore.RowExistenceExpectation.IGNORE, null),
+    primaryKey: [{ image_id: imageId }],
+    updateOfAttributeColumns: updateColumns,
+  });
+  return true;
 }
 
 export async function listVisitsWithImages(): Promise<VisitWithImages[]> {
