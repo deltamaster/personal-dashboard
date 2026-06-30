@@ -41,12 +41,23 @@ function addCalendarDays(from: Date, days: number): string {
   return formatDateOnly(d);
 }
 
+/** Why the modal pre-fills a date (for UI hint). */
+export function redeemDateDefaultHint(holding: Holding): string | null {
+  const type = (holding.asset_type ?? "").toLowerCase();
+  if (holding.maturity?.trim()) {
+    return `Default from maturity (${holding.maturity.trim().slice(0, 10)})`;
+  }
+  if (type === "fund") return "Default: T+3 trading days (calendar +3)";
+  if (!canRedeemImmediately(holding)) return "Default: T+1 (calendar +1)";
+  return null;
+}
+
 /** Default expected redemption date when immediate redeem is not available. */
 export function suggestRedeemDate(holding: Holding, from = new Date()): string {
   const type = (holding.asset_type ?? "").toLowerCase();
   const today = formatDateOnly(from);
 
-  if (type === "structured_deposit" && holding.maturity?.trim()) {
+  if (holding.maturity?.trim()) {
     const maturity = holding.maturity.trim().slice(0, 10);
     return maturity >= today ? maturity : today;
   }
