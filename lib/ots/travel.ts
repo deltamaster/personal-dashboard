@@ -158,6 +158,10 @@ export async function updateVisit(
     updated_at: nowIso(),
   };
 
+  if (!updated.date) {
+    throw new Error(`Visit ${visitId} is missing date`);
+  }
+
   const client = await getOtsClient();
   await otsCall(client.putRow.bind(client), {
     tableName: VISITS_TABLE,

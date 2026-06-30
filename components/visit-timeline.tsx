@@ -209,16 +209,21 @@ function VisitCard({
     setHighlights(visit.highlights ?? "");
   }
 
-  function applyUpdated(updated: VisitWithImages) {
-    setAttraction(updated.attraction);
-    setCity(updated.city);
-    setProvince(updated.province);
-    setDate(updated.date);
-    setThoughts(updated.thoughts ?? "");
-    setHighlights(updated.highlights ?? "");
-    setRating(updated.rating);
-    setImages(updated.images);
-    onVisitUpdated?.(updated);
+  function applyUpdated(apiVisit: VisitWithImages) {
+    const merged: VisitWithImages = {
+      ...visit,
+      ...apiVisit,
+      images: apiVisit.images ?? visit.images,
+    };
+    setAttraction(merged.attraction);
+    setCity(merged.city);
+    setProvince(merged.province);
+    setDate(merged.date);
+    setThoughts(merged.thoughts ?? "");
+    setHighlights(merged.highlights ?? "");
+    setRating(merged.rating);
+    setImages(merged.images);
+    onVisitUpdated?.(merged);
   }
 
   async function savePatch(patch: VisitPatch, rollback?: () => void) {
@@ -554,7 +559,7 @@ export function VisitTimeline({
   const grouped = useMemo(() => {
     const map = new Map<string, VisitWithImages[]>();
     for (const visit of visits) {
-      const year = visit.date.slice(0, 4);
+      const year = (visit.date ?? "").slice(0, 4) || "0000";
       const list = map.get(year) ?? [];
       list.push(visit);
       map.set(year, list);

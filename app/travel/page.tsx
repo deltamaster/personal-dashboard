@@ -37,8 +37,12 @@ export default function TravelPage() {
     patchData((current) => ({
       ...current,
       visits: current.visits
-        .map((visit) => (visit.visit_id === updated.visit_id ? updated : visit))
-        .sort((a, b) => b.date.localeCompare(a.date)),
+        .map((visit) =>
+          visit.visit_id === updated.visit_id
+            ? { ...visit, ...updated, images: updated.images ?? visit.images }
+            : visit
+        )
+        .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? "")),
     }));
   }, [patchData]);
 
