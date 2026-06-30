@@ -16,6 +16,7 @@ on:
         options:
           - ap-southeast-1
           - cn-shanghai
+          - qa
 
 concurrency:
   group: deploy-api-${{ github.event.inputs.stack || 'ap-southeast-1' }}
@@ -28,11 +29,11 @@ jobs:
     env:
       STACK: ${{ github.event.inputs.stack || 'ap-southeast-1' }}
       FC_REGION: ${{ github.event.inputs.stack == 'cn-shanghai' && 'cn-shanghai' || 'ap-southeast-1' }}
-      FC_FUNCTION: api
-      FC_CODE_KEY: fc/api.zip
+      FC_FUNCTION: ${{ github.event.inputs.stack == 'qa' && 'api-qa' || 'api' }}
+      FC_CODE_KEY: ${{ github.event.inputs.stack == 'qa' && 'fc/api-qa.zip' || 'fc/api.zip' }}
       OSS_ENDPOINT: ${{ github.event.inputs.stack == 'cn-shanghai' && 'oss-cn-shanghai.aliyuncs.com' || 'oss-ap-southeast-1.aliyuncs.com' }}
-      OSS_VAULT_BUCKET: ${{ github.event.inputs.stack == 'cn-shanghai' && 'personal-dashboard-vault' || 'pd-vault-sg' }}
-      OTS_INSTANCE_NAME: ${{ github.event.inputs.stack == 'cn-shanghai' && 'pd-dashboard' || 'pd-dash-sg' }}
+      OSS_VAULT_BUCKET: ${{ github.event.inputs.stack == 'cn-shanghai' && 'personal-dashboard-vault' || github.event.inputs.stack == 'qa' && 'pd-vault-qa' || 'pd-vault-sg' }}
+      OTS_INSTANCE_NAME: ${{ github.event.inputs.stack == 'cn-shanghai' && 'pd-dashboard' || github.event.inputs.stack == 'qa' && 'pd-dash-qa' || 'pd-dash-sg' }}
     steps:
       - uses: actions/checkout@v4
 
