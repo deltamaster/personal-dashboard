@@ -82,8 +82,3 @@ export function buildTravelImageKey(filename: string): string {
   const id = crypto.randomBytes(8).toString("hex");
   return `${TRAVEL_IMAGE_PREFIX}img_${id}${safeExt}`;
 }
-
-export function presignVisitImageUrl(objectKey: string): string {
-  if (!objectKey) return "";
-  return getPresignedGetUrl(objectKey);
-}

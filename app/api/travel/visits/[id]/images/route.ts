@@ -3,7 +3,6 @@ import { requireSession } from "@/lib/api-auth";
 import { isOtsConfigured } from "@/lib/ots-config";
 import { createVisitImage, getVisitWithImages } from "@/lib/ots/travel";
 import { extractObjectKey } from "@/lib/oss";
-import { presignVisitImage } from "@/lib/travel-presign";
 import {
   addDummyVisitImage,
   createDummyVisitImageRecord,
@@ -47,7 +46,7 @@ export async function POST(request: Request, context: RouteContext) {
         return NextResponse.json({ error: "Visit not found" }, { status: 404 });
       }
       addDummyVisitImage(visitId, record);
-      return NextResponse.json(presignVisitImage(record), { status: 201 });
+      return NextResponse.json(record, { status: 201 });
     }
 
     if (!isOtsConfigured()) {
@@ -67,7 +66,7 @@ export async function POST(request: Request, context: RouteContext) {
       description: body.description?.trim(),
     });
 
-    return NextResponse.json(presignVisitImage(image), { status: 201 });
+    return NextResponse.json(image, { status: 201 });
   } catch (e) {
     console.error(`POST /api/travel/visits/${visitId}/images`, e);
     return NextResponse.json(

@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/api-auth";
 import { isOtsConfigured } from "@/lib/ots-config";
 import { computeTravelStats, listFlights, listTrains, listVisitsWithImages } from "@/lib/ots/travel";
-import { withPresignedVisitImages } from "@/lib/travel-presign";
 import { getDummyTravelData, shouldUseTravelDummyData } from "@/lib/travel-dummy-data";
 
 export async function GET() {
@@ -10,11 +9,7 @@ export async function GET() {
   if (error) return error;
 
   if (shouldUseTravelDummyData()) {
-    const data = getDummyTravelData();
-    return NextResponse.json({
-      ...data,
-      visits: withPresignedVisitImages(data.visits),
-    });
+    return NextResponse.json(getDummyTravelData());
   }
 
   if (!isOtsConfigured()) {
@@ -22,7 +17,7 @@ export async function GET() {
   }
 
   try {
-    const visits = withPresignedVisitImages(await listVisitsWithImages());
+    const visits = await listVisitsWithImages();
     const [flights, trains] = await Promise.all([listFlights(), listTrains()]);
     const stats = computeTravelStats(visits, flights, trains);
     return NextResponse.json({ visits, flights, trains, stats });

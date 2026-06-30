@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/api-auth";
 import { isOtsConfigured } from "@/lib/ots-config";
 import { getVisitWithImages, updateVisit } from "@/lib/ots/travel";
-import { withPresignedVisitImages } from "@/lib/travel-presign";
 import { shouldUseTravelDummyData, updateDummyVisit } from "@/lib/travel-dummy-data";
 
 type RouteContext = { params: { id: string } };
@@ -66,8 +65,7 @@ export async function PUT(request: Request, context: RouteContext) {
       if (!visit) {
         return NextResponse.json({ error: "Visit not found" }, { status: 404 });
       }
-      const [presigned] = withPresignedVisitImages([visit]);
-      return NextResponse.json(presigned);
+      return NextResponse.json(visit);
     }
 
     if (!isOtsConfigured()) {
@@ -84,8 +82,7 @@ export async function PUT(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Visit not found" }, { status: 404 });
     }
 
-    const [presigned] = withPresignedVisitImages([visit]);
-    return NextResponse.json(presigned);
+    return NextResponse.json(visit);
   } catch (e) {
     console.error(`PUT /api/travel/visits/${visitId}`, e);
     return NextResponse.json(
