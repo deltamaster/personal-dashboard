@@ -28,7 +28,11 @@ A **separate root** that provisions **OTS + OSS + a media CDN** (no FC — the Q
 | OSS | `pd-web-qa`, `pd-vault-qa` (**public-read in QA** so photos serve via CDN) | `acs:oss:*:<account>:pd-vault-qa` |
 | CDN | `pd-qa.huhansen.com` → origin `pd-vault-qa` (photos) | output `cdn_cname` |
 
-Run it: **Actions → Terraform QA → action `apply`** (uses the same `personal-dashboard` environment secrets; only needs `ALIBABA_CLOUD_*` + `ALIBABA_CLOUD_ROLE_ARN` — no Auth/FC secrets). PRs touching `terraform/qa/**` run `plan` automatically. After apply:
+Run it (same model as prod): **push to `main`** touching `terraform/qa/**` (e.g. merging this PR) **auto-applies**, or **Actions → Terraform QA → Run workflow → action `apply`** for a manual run. PRs run `plan` only. Uses the same `personal-dashboard` environment secrets; only needs `ALIBABA_CLOUD_*` + `ALIBABA_CLOUD_ROLE_ARN` (no Auth/FC secrets).
+
+> Note: the **Run workflow** (manual dispatch) button only appears once `terraform-qa.yml` is on the **default branch (`main`)** — a GitHub requirement. So the first apply happens by merging to `main` (auto-apply); after that you can also dispatch manually from any branch.
+
+After apply:
 1. Copy output `cdn_cname` → add Cloudflare CNAME `pd-qa` → `<cdn_cname>` (**DNS only / grey cloud**).
 2. Seed dummy data: `node scripts/qa-seed.mjs`.
 3. In `.env.local`: point at the outputs (`OTS_ENDPOINT`, `OTS_INSTANCE_NAME`, `OSS_VAULT_BUCKET`), set `MEDIA_PUBLIC_BASE_URL=https://pd-qa.huhansen.com` (so stored photo URLs use the CDN), and `MICROSOFT_AUTH_ENABLED=false`.

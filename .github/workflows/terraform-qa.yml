@@ -1,6 +1,11 @@
 name: Terraform QA
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "terraform/qa/**"
+      - ".github/workflows/terraform-qa.yml"
   pull_request:
     paths:
       - "terraform/qa/**"
@@ -72,7 +77,9 @@ jobs:
         run: terraform init -input=false
 
       - name: Import existing resources (if created outside state)
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply'
+        if: |
+          github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||
+          github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           OTS_INSTANCE: pd-dash-qa
           OSS_WEB_BUCKET: pd-web-qa
@@ -87,11 +94,16 @@ jobs:
         run: terraform plan -var-file="$TFVARS_FILE" -input=false -no-color
 
       - name: Terraform apply
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply'
+        if: |
+          github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||
+          github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: terraform apply -var-file="$TFVARS_FILE" -input=false -auto-approve
 
       - name: Upload Terraform state backup
-        if: always() && github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply'
+        if: |
+          always() &&
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||
+           github.event_name == 'push' && github.ref == 'refs/heads/main')
         uses: actions/upload-artifact@v4
         with:
           name: terraform-state-qa-${{ github.run_id }}
