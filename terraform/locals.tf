@@ -119,6 +119,9 @@ locals {
     OSS_VAULT_BUCKET                 = var.oss_vault_bucket
     OSS_VAULT_REGION                 = "oss-${var.region}"
     OSS_VAULT_ENDPOINT               = local.oss_endpoint
+    # Public bucket that stores visit photos, served via CDN /* at AUTH_URL.
+    OSS_WEB_BUCKET                   = var.oss_web_bucket
+    OSS_MEDIA_BUCKET                 = var.oss_web_bucket
     PORT                             = "9000"
     HOSTNAME                         = "0.0.0.0"
     PATH                             = "/var/fc/lang/nodejs20/bin:/usr/local/bin:/usr/bin:/bin"
