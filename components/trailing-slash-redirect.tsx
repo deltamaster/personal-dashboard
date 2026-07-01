@@ -12,7 +12,7 @@ export function TrailingSlashRedirect() {
 
   useEffect(() => {
     if (!pathname || !pathnameNeedsTrailingSlash(pathname)) return;
-    const query = searchParams.toString();
+    const query = searchParams?.toString() ?? "";
     const href = `${withTrailingSlash(pathname)}${query ? `?${query}` : ""}`;
     router.replace(href);
   }, [pathname, searchParams, router]);
