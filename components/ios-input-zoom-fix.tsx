@@ -22,10 +22,14 @@ export function IosInputZoomFix() {
 
     const resetViewport = () => {
       if (resetting) return;
+      const scale = window.visualViewport?.scale ?? 1;
+      if (scale <= 1.01) return;
       resetting = true;
+      const scrollY = window.scrollY;
       meta.setAttribute("content", `${VIEWPORT_DEFAULT}, maximum-scale=1`);
       requestAnimationFrame(() => {
         meta.setAttribute("content", VIEWPORT_DEFAULT);
+        window.scrollTo(0, scrollY);
         resetting = false;
       });
     };

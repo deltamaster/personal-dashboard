@@ -439,9 +439,9 @@ export function HoldingsTable({
           return (
             <li key={holding.holding_id}>
               <div className={`md:hidden ${rowClass}`}>
-                <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-                  <HoldingNameCell holding={holding} className="min-w-0 flex-1 basis-40" />
-                  <div className="flex flex-wrap items-center justify-end gap-2">
+                <HoldingNameCell holding={holding} className="min-w-0" />
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2">
                     <MoneyAmount
                       value={value}
                       currency={currency}
@@ -449,10 +449,10 @@ export function HoldingsTable({
                     />
                     <RiskBadge risk={risk} />
                     <PnlCell pnlPct={pnlPct} />
-                    {onRedeemed && (
-                      <RedeemHoldingButton holding={holding} onRedeemed={onRedeemed} />
-                    )}
                   </div>
+                  {onRedeemed && (
+                    <RedeemHoldingButton holding={holding} onRedeemed={onRedeemed} />
+                  )}
                 </div>
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--muted)]">
                   <ScheduledRedeemBadge holding={holding} />
