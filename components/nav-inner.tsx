@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useClientSession } from "@/components/session-provider";
+import { withTrailingSlash } from "@/lib/trailing-slash";
 
 const links = [
   { href: "/", label: "Dashboard" },
@@ -13,6 +14,7 @@ const links = [
 
 export function NavInner() {
   const pathname = usePathname();
+  const normalizedPath = withTrailingSlash(pathname ?? "/");
   const { session } = useClientSession();
 
   if (!pathname || pathname.startsWith("/auth")) return null;
@@ -22,7 +24,9 @@ export function NavInner() {
       <div className="mx-auto flex min-w-0 max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-3">
         <nav className="flex min-w-0 flex-wrap gap-1">
           {links.map(({ href, label }) => {
-            const active = pathname === href || (href !== "/" && pathname.startsWith(href));
+            const active =
+              normalizedPath === href ||
+              (href !== "/" && normalizedPath.startsWith(href));
             return (
               <Link
                 key={href}
