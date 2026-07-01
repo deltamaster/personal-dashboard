@@ -6,6 +6,8 @@ const CACHE_PREFIX = "pd-ots:";
 export const OTS_CACHE_TTL_MS = 60_000;
 /** Background refresh while the browser tab is visible. */
 export const OTS_POLL_INTERVAL_MS = 5 * 60_000;
+/** Use on module fetch() calls so polls always hit the network. */
+export const OTS_FETCH_INIT: RequestInit = { cache: "no-store" };
 
 interface OtsCacheEntry<T> {
   data: T;
@@ -117,12 +119,14 @@ export function useOtsCache<T>(
   }, [cacheKey]);
 
   useEffect(() => {
-    let intervalId: ReturnType<typeof setInterval> | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let stopped = false;
 
     const poll = async () => {
-      if (document.visibilityState !== "visible") return;
+      if (stopped || document.visibilityState !== "visible") return;
       try {
         const fresh = await fetchRef.current();
+        if (stopped) return;
         setData(fresh);
         writeOtsCacheEntry(cacheKey, fresh);
         setError(null);
@@ -131,27 +135,36 @@ export function useOtsCache<T>(
       }
     };
 
-    const startPolling = () => {
-      if (intervalId !== null) return;
-      intervalId = setInterval(() => void poll(), OTS_POLL_INTERVAL_MS);
+    const msUntilNextPoll = () => {
+      const entry = readOtsCacheEntry<T>(cacheKey);
+      const lastAt = entry?.updatedAt ?? 0;
+      if (lastAt <= 0) return OTS_POLL_INTERVAL_MS;
+      return Math.max(0, OTS_POLL_INTERVAL_MS - (Date.now() - lastAt));
     };
 
-    const stopPolling = () => {
-      if (intervalId === null) return;
-      clearInterval(intervalId);
-      intervalId = null;
+    const scheduleNextPoll = () => {
+      if (stopped || document.visibilityState !== "visible") return;
+      if (timeoutId !== null) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        timeoutId = null;
+        void poll().finally(() => scheduleNextPoll());
+      }, msUntilNextPoll());
     };
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") startPolling();
-      else stopPolling();
+      if (document.visibilityState === "visible") scheduleNextPoll();
+      else if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
     };
 
-    if (document.visibilityState === "visible") startPolling();
+    scheduleNextPoll();
     document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
-      stopPolling();
+      stopped = true;
+      if (timeoutId !== null) clearTimeout(timeoutId);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [cacheKey]);

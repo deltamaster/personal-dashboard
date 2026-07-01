@@ -7,7 +7,7 @@ import { TravelStatsPanel } from "@/components/travel-stats-panel";
 import { VisitTimeline } from "@/components/visit-timeline";
 import { filterVisitsBySearch } from "@/lib/travel-search";
 import type { Flight, Train, TravelStats, VisitWithImages } from "@/lib/types/travel";
-import { useOtsCache } from "@/lib/use-ots-cache";
+import { OTS_FETCH_INIT, useOtsCache } from "@/lib/use-ots-cache";
 
 interface TravelCache {
   visits: VisitWithImages[];
@@ -20,7 +20,7 @@ export default function TravelPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const fetchTravel = useCallback(async (): Promise<TravelCache> => {
-    const res = await fetch("/api/travel/visits/");
+    const res = await fetch("/api/travel/visits/", OTS_FETCH_INIT);
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       throw new Error(body.error ?? `HTTP ${res.status}`);
