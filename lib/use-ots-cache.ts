@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 const CACHE_PREFIX = "pd-ots:";
 export const OTS_CACHE_TTL_MS = 60_000;
+/** Background refresh while the browser tab is visible. */
+export const OTS_POLL_INTERVAL_MS = 5 * 60_000;
 
 interface OtsCacheEntry<T> {
   data: T;
@@ -111,6 +113,46 @@ export function useOtsCache<T>(
 
     return () => {
       cancelled = true;
+    };
+  }, [cacheKey]);
+
+  useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    const poll = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const fresh = await fetchRef.current();
+        setData(fresh);
+        writeOtsCacheEntry(cacheKey, fresh);
+        setError(null);
+      } catch {
+        // Keep showing the last good payload during background refresh.
+      }
+    };
+
+    const startPolling = () => {
+      if (intervalId !== null) return;
+      intervalId = setInterval(() => void poll(), OTS_POLL_INTERVAL_MS);
+    };
+
+    const stopPolling = () => {
+      if (intervalId === null) return;
+      clearInterval(intervalId);
+      intervalId = null;
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") startPolling();
+      else stopPolling();
+    };
+
+    if (document.visibilityState === "visible") startPolling();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [cacheKey]);
 
