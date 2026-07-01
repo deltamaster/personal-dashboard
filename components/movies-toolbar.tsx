@@ -24,8 +24,8 @@ export function MoviesToolbar({
 
   return (
     <div className="space-y-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
-      <div className="flex flex-wrap items-end gap-3">
-        <label className="min-w-[12rem] flex-1 text-sm">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-end">
+        <label className="min-w-0 text-sm sm:col-span-2 lg:col-span-1">
           Search
           <input
             type="search"
@@ -36,7 +36,7 @@ export function MoviesToolbar({
           />
         </label>
 
-        <label className="text-sm">
+        <label className="min-w-0 text-sm">
           Release year
           <select
             value={filters.releaseYear ?? ""}
@@ -46,7 +46,7 @@ export function MoviesToolbar({
                 releaseYear: e.target.value ? Number(e.target.value) : null,
               })
             }
-            className={`${inputClass} mt-1 min-w-[7rem]`}
+            className={`${inputClass} mt-1 w-full`}
           >
             <option value="">All years</option>
             {releaseYears.map((year) => (
@@ -57,7 +57,7 @@ export function MoviesToolbar({
           </select>
         </label>
 
-        <label className="text-sm">
+        <label className="min-w-0 text-sm">
           Min rating
           <select
             value={filters.minRating ?? ""}
@@ -67,7 +67,7 @@ export function MoviesToolbar({
                 minRating: e.target.value ? Number(e.target.value) : null,
               })
             }
-            className={`${inputClass} mt-1 min-w-[7rem]`}
+            className={`${inputClass} mt-1 w-full`}
           >
             <option value="">Any</option>
             {[5, 4, 3, 2, 1].map((n) => (

@@ -104,7 +104,7 @@ export function RedeemHoldingButton({
           onClick={() => !busy && setOpen(false)}
         >
           <div
-            className="w-full max-w-md overflow-x-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-xl"
+            className="w-full max-w-md rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h3
@@ -130,14 +130,12 @@ export function RedeemHoldingButton({
                   {dateHint && (
                     <span className="mt-0.5 block text-xs text-[var(--muted)]">{dateHint}</span>
                   )}
-                  <div className="mt-1 min-w-0 max-w-full overflow-hidden">
-                    <input
-                      type="date"
-                      value={redeemAt}
-                      onChange={(e) => setRedeemAt(e.target.value)}
-                      className="box-border block w-full min-w-0 max-w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base [color-scheme:dark]"
-                    />
-                  </div>
+                  <input
+                    type="date"
+                    value={redeemAt}
+                    onChange={(e) => setRedeemAt(e.target.value)}
+                    className="mt-1 box-border block w-full min-w-0 rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 [color-scheme:dark]"
+                  />
                 </label>
               </>
             )}

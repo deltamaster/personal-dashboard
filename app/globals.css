@@ -11,16 +11,29 @@
   --muted: #71767b;
 }
 
+html {
+  overflow-x: clip;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
   font-family: system-ui, -apple-system, sans-serif;
+  overflow-x: clip;
+  max-width: 100%;
 }
 
-/* iOS Safari auto-zooms focused inputs when font-size < 16px and does not always
-   zoom back out on blur, leaving the page wider than the viewport. */
+/* Beat Tailwind text-sm on form controls — iOS Safari zooms when font-size < 16px. */
 input,
 select,
 textarea {
-  font-size: 16px;
+  font-size: 16px !important;
+  max-width: 100%;
+}
+
+input[type="date"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
