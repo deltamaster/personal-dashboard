@@ -43,8 +43,8 @@ export function MovieStatsPanel({ stats }: { stats: MovieStats }) {
   const maxDirectorCount = Math.max(...topDirectors.map((d) => d.count), 1);
 
   return (
-    <div className="grid gap-6 md:grid-cols-3">
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+    <div className="grid min-w-0 gap-6 md:grid-cols-3">
+      <div className="min-w-0 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
         <p className="text-sm text-[var(--muted)]">Total watched</p>
         <p className="mt-1 text-3xl font-bold">{stats.total}</p>
         <p className="mt-2 text-sm text-[var(--muted)]">
@@ -52,16 +52,26 @@ export function MovieStatsPanel({ stats }: { stats: MovieStats }) {
         </p>
       </div>
 
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 md:col-span-2">
+      <div className="min-w-0 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 md:col-span-2">
         <h3 className="mb-3 text-sm font-medium text-[var(--muted)]">
           By release year{byYear.length > 20 ? " (by decade)" : ""}
         </h3>
         {yearBars.length === 0 ? (
           <p className="text-sm text-[var(--muted)]">No data yet</p>
         ) : (
-          <div className="flex h-24 items-end gap-1.5 overflow-x-auto pb-1">
-            {yearBars.map(({ key, count, label, title }) => (
-              <div key={key} className="flex min-w-[2rem] flex-1 flex-col items-center gap-1">
+          <div className="min-w-0 overflow-x-auto pb-1">
+            <div
+              className={`flex h-24 items-end gap-1.5 ${
+                yearBars.length > 12 ? "w-max min-w-full" : "w-full"
+              }`}
+            >
+              {yearBars.map(({ key, count, label, title }) => (
+                <div
+                  key={key}
+                  className={`flex flex-col items-center gap-1 ${
+                    yearBars.length > 12 ? "w-8 shrink-0" : "min-w-0 flex-1"
+                  }`}
+                >
                 <div
                   className="w-full rounded-t bg-[var(--accent)]"
                   style={{
@@ -72,26 +82,27 @@ export function MovieStatsPanel({ stats }: { stats: MovieStats }) {
                 <span className="shrink-0 text-[10px] text-[var(--muted)]">{label}</span>
               </div>
             ))}
+            </div>
           </div>
         )}
       </div>
 
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 md:col-span-3">
+      <div className="min-w-0 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 md:col-span-3">
         <h3 className="mb-3 text-sm font-medium text-[var(--muted)]">Top directors</h3>
         {topDirectors.length === 0 ? (
           <p className="text-sm text-[var(--muted)]">No data yet</p>
         ) : (
           <ul className="space-y-2">
             {topDirectors.map(({ director, count, avgRating }) => (
-              <li key={director} className="flex items-center gap-3 text-sm">
-                <span className="w-32 shrink-0 truncate">{director}</span>
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--border)]">
+              <li key={director} className="flex min-w-0 items-center gap-2 text-sm sm:gap-3">
+                <span className="min-w-0 flex-1 truncate">{director}</span>
+                <div className="h-2 w-16 shrink-0 overflow-hidden rounded-full bg-[var(--border)] sm:w-24">
                   <div
                     className="h-full rounded-full bg-[var(--accent)]"
                     style={{ width: `${(count / maxDirectorCount) * 100}%` }}
                   />
                 </div>
-                <span className="w-20 shrink-0 text-right text-[var(--muted)]">
+                <span className="shrink-0 text-right text-xs text-[var(--muted)] sm:text-sm">
                   {count} · ★{avgRating.toFixed(1)}
                 </span>
               </li>
@@ -161,7 +172,7 @@ export function AddMovieForm({ onAdded }: { onAdded: () => void }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 space-y-3"
+      className="w-full min-w-0 max-w-full space-y-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4"
     >
       <h3 className="font-medium">Add movie</h3>
       <div className="grid gap-3 sm:grid-cols-2">

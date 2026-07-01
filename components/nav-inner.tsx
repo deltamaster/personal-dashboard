@@ -19,8 +19,8 @@ export function NavInner() {
 
   return (
     <header className="border-b border-[var(--border)] bg-[var(--card)]">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <nav className="flex gap-1">
+      <div className="mx-auto flex min-w-0 max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-3">
+        <nav className="flex min-w-0 flex-wrap gap-1">
           {links.map(({ href, label }) => {
             const active = pathname === href || (href !== "/" && pathname.startsWith(href));
             return (

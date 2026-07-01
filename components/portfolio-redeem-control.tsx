@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Holding } from "@/lib/types/portfolio";
 import {
   canRedeemImmediately,
@@ -30,6 +31,7 @@ export function RedeemHoldingButton({
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [redeemAt, setRedeemAt] = useState(() => suggestRedeemDate(holding));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +39,8 @@ export function RedeemHoldingButton({
   const immediate = canRedeemImmediately(holding);
   const pending = isScheduledRedemptionPending(holding);
   const dateHint = redeemDateDefaultHint(holding);
+
+  useEffect(() => setMounted(true), []);
 
   async function submitImmediate() {
     setBusy(true);
@@ -95,91 +99,93 @@ export function RedeemHoldingButton({
         Redeem
       </button>
 
-      {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={`redeem-title-${holding.holding_id}`}
-          onClick={() => !busy && setOpen(false)}
-        >
+      {open && mounted &&
+        createPortal(
           <div
-            className="w-full max-w-md overflow-x-hidden rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`redeem-title-${holding.holding_id}`}
+            onClick={() => !busy && setOpen(false)}
           >
-            <h3
-              id={`redeem-title-${holding.holding_id}`}
-              className="text-lg font-semibold"
+            <div
+              className="box-border w-full min-w-0 max-w-md rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
             >
-              Redeem {holding.name}
-            </h3>
-
-            {immediate ? (
-              <p className="mt-2 text-sm text-[var(--muted)]">
-                This holding can be redeemed immediately. Its value will be set to zero and
-                it will disappear from your active holdings.
-              </p>
-            ) : (
-              <>
-                <p className="mt-2 text-sm text-[var(--muted)]">
-                  This product cannot be redeemed immediately. Choose the expected redemption
-                  date — the holding will zero out automatically on that day.
-                </p>
-                <label className="mt-4 block min-w-0 text-sm">
-                  <span className="text-[var(--muted)]">Expected redemption date</span>
-                  {dateHint && (
-                    <span className="mt-0.5 block text-xs text-[var(--muted)]">{dateHint}</span>
-                  )}
-                  <div className="mt-1 min-w-0 max-w-full overflow-hidden">
-                    <input
-                      type="date"
-                      value={redeemAt}
-                      onChange={(e) => setRedeemAt(e.target.value)}
-                      className="box-border block w-full min-w-0 max-w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-base [color-scheme:dark]"
-                    />
-                  </div>
-                </label>
-              </>
-            )}
-
-            {error && (
-              <p className="mt-3 text-sm text-red-400" role="alert">
-                {error}
-              </p>
-            )}
-
-            <div className="mt-5 flex flex-wrap justify-end gap-2">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => setOpen(false)}
-                className="rounded-md px-3 py-1.5 text-sm text-[var(--muted)] hover:text-[var(--foreground)]"
+              <h3
+                id={`redeem-title-${holding.holding_id}`}
+                className="break-words text-lg font-semibold"
               >
-                Cancel
-              </button>
+                Redeem {holding.name}
+              </h3>
+
               {immediate ? (
+                <p className="mt-2 text-sm text-[var(--muted)]">
+                  This holding can be redeemed immediately. Its value will be set to zero and
+                  it will disappear from your active holdings.
+                </p>
+              ) : (
+                <>
+                  <p className="mt-2 text-sm text-[var(--muted)]">
+                    This product cannot be redeemed immediately. Choose the expected redemption
+                    date — the holding will zero out automatically on that day.
+                  </p>
+                  <label className="mt-4 block min-w-0 text-sm">
+                    <span className="text-[var(--muted)]">Expected redemption date</span>
+                    {dateHint && (
+                      <span className="mt-0.5 block text-xs text-[var(--muted)]">{dateHint}</span>
+                    )}
+                    <div className="date-field-grid mt-1">
+                      <input
+                        type="date"
+                        value={redeemAt}
+                        onChange={(e) => setRedeemAt(e.target.value)}
+                        className="date-field-input rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 [color-scheme:dark]"
+                      />
+                    </div>
+                  </label>
+                </>
+              )}
+
+              {error && (
+                <p className="mt-3 text-sm text-red-400" role="alert">
+                  {error}
+                </p>
+              )}
+
+              <div className="mt-5 flex flex-wrap justify-end gap-2">
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => void submitImmediate()}
-                  className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+                  onClick={() => setOpen(false)}
+                  className="rounded-md px-3 py-1.5 text-sm text-[var(--muted)] hover:text-[var(--foreground)]"
                 >
-                  {busy ? "Redeeming…" : "Redeem now"}
+                  Cancel
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  disabled={busy || !redeemAt}
-                  onClick={() => void submitSchedule()}
-                  className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
-                >
-                  {busy ? "Saving…" : "Schedule redemption"}
-                </button>
-              )}
+                {immediate ? (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void submitImmediate()}
+                    className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+                  >
+                    {busy ? "Redeeming…" : "Redeem now"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={busy || !redeemAt}
+                    onClick={() => void submitSchedule()}
+                    className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+                  >
+                    {busy ? "Saving…" : "Schedule redemption"}
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </>
   );
 }

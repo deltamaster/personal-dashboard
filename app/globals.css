@@ -11,8 +11,44 @@
   --muted: #71767b;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
   font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Beat Tailwind text-sm on form controls — iOS Safari zooms when font-size < 16px. */
+input,
+select,
+textarea {
+  font-size: 16px !important;
+}
+
+/* WebKit date inputs ignore width:100% unless the parent is a minmax(0,1fr) grid cell. */
+.date-field-grid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.date-field-input,
+input[type="date"] {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  -webkit-min-logical-width: 0;
+}
+
+@supports (-webkit-touch-callout: none) {
+  .date-field-input,
+  input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-height: 2.75rem;
+  }
 }
