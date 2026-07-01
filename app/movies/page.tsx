@@ -47,8 +47,8 @@ export default function MoviesPage() {
 
   return (
     <AuthGuard>
-      <div className="space-y-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="min-w-0 space-y-8">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">Cinema Room</h1>
             <p className="mt-1 text-[var(--muted)]">Your watched movies log</p>
@@ -83,7 +83,7 @@ export default function MoviesPage() {
           <p className="text-[var(--muted)]">No movies match your search or filters.</p>
         )}
 
-        <div className="grid min-w-0 gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(9rem,100%),1fr))]">
+        <div className="grid min-w-0 grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8">
           {filteredMovies.map((movie) => (
             <MovieCard key={movie.douban_subject_id} movie={movie} />
           ))}

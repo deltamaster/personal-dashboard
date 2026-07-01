@@ -23,7 +23,7 @@ export function MoviesToolbar({
   const filtered = resultCount !== totalCount;
 
   return (
-    <div className="space-y-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+    <div className="min-w-0 space-y-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-end">
         <label className="min-w-0 text-sm sm:col-span-2 lg:col-span-1">
           Search
