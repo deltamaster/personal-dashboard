@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { redemptionZeroPatch, isScheduledRedemptionDue } from "@/lib/portfolio-redeem";
 import { holdingValueInCny, sortHoldingsByCnyValue, toCnyEquivalent } from "@/lib/portfolio-format";
 import {
   coerceOtsNumber,
@@ -24,6 +25,7 @@ const SNAPSHOTS_TABLE = "pd_snapshots";
 const VALUATION_FIELDS = new Set([
   "quantity",
   "current_nav",
+  "current_value",
   "purchase_amount",
   "cash_dividend",
 ]);
@@ -60,6 +62,9 @@ function normalizeHolding(raw: Record<string, unknown>): Holding {
   }
   if (holding.risk_level != null) {
     holding.risk_level = Math.min(5, Math.max(1, Math.round(holding.risk_level)));
+  }
+  if (holding.scheduled_redeem_at === "") {
+    delete holding.scheduled_redeem_at;
   }
   return holding;
 }
@@ -127,6 +132,7 @@ function holdingAttributes(holding: Holding): Record<string, string | number | u
     strike_level: holding.strike_level,
     maturity: holding.maturity,
     purchase_date: holding.purchase_date,
+    scheduled_redeem_at: holding.scheduled_redeem_at,
     notes: holding.notes,
     created_at: holding.created_at,
     updated_at: holding.updated_at,
@@ -170,8 +176,32 @@ async function scanTable<T>(
   return rows;
 }
 
+export async function executeRedemption(holdingId: string): Promise<Holding | null> {
+  return updateHolding(holdingId, redemptionZeroPatch());
+}
+
+export async function scheduleRedemption(
+  holdingId: string,
+  redeemAt: string
+): Promise<Holding | null> {
+  return updateHolding(holdingId, { scheduled_redeem_at: redeemAt.slice(0, 10) });
+}
+
+async function applyDueScheduledRedemptions(holdings: Holding[]): Promise<void> {
+  for (const holding of holdings) {
+    if (isScheduledRedemptionDue(holding)) {
+      await executeRedemption(holding.holding_id);
+    }
+  }
+}
+
 export async function listHoldings(): Promise<Holding[]> {
   const holdings = await scanTable(HOLDINGS_TABLE, "holding_id", normalizeHolding);
+  if (holdings.some((h) => isScheduledRedemptionDue(h))) {
+    await applyDueScheduledRedemptions(holdings);
+    const refreshed = await scanTable(HOLDINGS_TABLE, "holding_id", normalizeHolding);
+    return sortHoldingsByCnyValue(refreshed);
+  }
   return sortHoldingsByCnyValue(holdings);
 }
 

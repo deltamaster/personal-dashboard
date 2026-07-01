@@ -1,5 +1,9 @@
 import { computePortfolioStats } from "@/lib/ots/portfolio";
 import { filterActiveHoldings, sortHoldingsByCnyValue } from "@/lib/portfolio-format";
+import {
+  isScheduledRedemptionDue,
+  redemptionZeroPatch,
+} from "@/lib/portfolio-redeem";
 import type { Holding, Snapshot } from "@/lib/types/portfolio";
 
 const CREATED = "2024-06-01T00:00:00Z";
@@ -181,6 +185,51 @@ const dummyHoldings: Holding[] = [
   }),
 ];
 
+const dummyPatches = new Map<string, Partial<Holding>>();
+
+function getMergedDummyHoldings(): Holding[] {
+  return dummyHoldings.map((holding) => {
+    const patch = dummyPatches.get(holding.holding_id);
+    if (!patch) return holding;
+    const merged = { ...holding, ...patch };
+    if (patch.scheduled_redeem_at === "") {
+      delete merged.scheduled_redeem_at;
+    }
+    return merged;
+  });
+}
+
+function applyDummyDueRedemptions(): void {
+  for (const holding of getMergedDummyHoldings()) {
+    if (isScheduledRedemptionDue(holding)) {
+      dummyPatches.set(holding.holding_id, {
+        ...redemptionZeroPatch(),
+        updated_at: new Date().toISOString(),
+      });
+    }
+  }
+}
+
+export function redeemDummyHolding(holdingId: string): Holding | null {
+  if (!dummyHoldings.some((h) => h.holding_id === holdingId)) return null;
+  dummyPatches.set(holdingId, {
+    ...redemptionZeroPatch(),
+    updated_at: new Date().toISOString(),
+  });
+  return getMergedDummyHoldings().find((h) => h.holding_id === holdingId) ?? null;
+}
+
+export function scheduleDummyRedemption(holdingId: string, redeemAt: string): Holding | null {
+  if (!dummyHoldings.some((h) => h.holding_id === holdingId)) return null;
+  const existing = dummyPatches.get(holdingId) ?? {};
+  dummyPatches.set(holdingId, {
+    ...existing,
+    scheduled_redeem_at: redeemAt.slice(0, 10),
+    updated_at: new Date().toISOString(),
+  });
+  return getMergedDummyHoldings().find((h) => h.holding_id === holdingId) ?? null;
+}
+
 const dummySnapshots: Snapshot[] = [
   { snapshot_date: "2026-04-18", total_value: 582000, total_pnl: 42000, total_dividend: 3200, total_return: 45200, created_at: CREATED },
   { snapshot_date: "2026-04-25", total_value: 588500, total_pnl: 44500, total_dividend: 3250, total_return: 47750, created_at: CREATED },
@@ -195,7 +244,8 @@ const dummySnapshots: Snapshot[] = [
 ];
 
 export function getDummyPortfolioHoldingsData() {
-  const holdings = sortHoldingsByCnyValue(filterActiveHoldings(dummyHoldings));
+  applyDummyDueRedemptions();
+  const holdings = sortHoldingsByCnyValue(filterActiveHoldings(getMergedDummyHoldings()));
   const stats = computePortfolioStats(holdings);
   return { holdings, stats };
 }
