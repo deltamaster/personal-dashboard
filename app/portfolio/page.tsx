@@ -9,7 +9,7 @@ import {
 import { HoldingsTable, PortfolioStatsPanel } from "@/components/portfolio-panel";
 import { sortHoldingsByCnyValue } from "@/lib/portfolio-format";
 import type { Holding, PortfolioStats, Snapshot } from "@/lib/types/portfolio";
-import { useOtsCache } from "@/lib/use-ots-cache";
+import { OTS_FETCH_INIT, useOtsCache } from "@/lib/use-ots-cache";
 
 interface PortfolioCache {
   holdings: Holding[];
@@ -20,8 +20,8 @@ interface PortfolioCache {
 export default function PortfolioPage() {
   const fetchPortfolio = useCallback(async (): Promise<PortfolioCache> => {
     const [holdingsRes, snapshotsRes] = await Promise.all([
-      fetch("/api/portfolio/holdings/"),
-      fetch("/api/portfolio/snapshots/"),
+      fetch("/api/portfolio/holdings/", OTS_FETCH_INIT),
+      fetch("/api/portfolio/snapshots/", OTS_FETCH_INIT),
     ]);
 
     if (!holdingsRes.ok) {

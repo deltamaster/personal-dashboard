@@ -42,7 +42,7 @@ export default function AuthErrorPage() {
 
 function AuthErrorContent() {
   const searchParams = useSearchParams();
-  const code = searchParams.get("error") ?? "Unknown";
+  const code = searchParams?.get("error") ?? "Unknown";
   const known = ERROR_MESSAGES[code];
   const title = known?.title ?? "Sign-in failed";
   const detail =

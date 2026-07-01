@@ -11,7 +11,7 @@ import {
   filterMovies,
 } from "@/lib/movies-filter";
 import type { Movie, MovieStats } from "@/lib/types/movie";
-import { useOtsCache } from "@/lib/use-ots-cache";
+import { OTS_FETCH_INIT, useOtsCache } from "@/lib/use-ots-cache";
 
 interface MoviesCache {
   movies: Movie[];
@@ -22,7 +22,7 @@ export default function MoviesPage() {
   const [filters, setFilters] = useState(emptyMovieFilters);
 
   const fetchMovies = useCallback(async (): Promise<MoviesCache> => {
-    const res = await fetch("/api/movies/");
+    const res = await fetch("/api/movies/", OTS_FETCH_INIT);
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       throw new Error(body.error ?? `HTTP ${res.status}`);
