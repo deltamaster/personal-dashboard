@@ -177,3 +177,24 @@ resource "alicloud_cdn_domain_config" "subdir_index_rewrite" {
     arg_value = "break"
   }
 }
+
+# /travel (no slash) → /travel/index.html — OSS has no directory index without trailing slash.
+resource "alicloud_cdn_domain_config" "no_slash_index_rewrite" {
+  count = var.create_cdn_domain ? 1 : 0
+
+  domain_name   = alicloud_cdn_domain_new.main[0].domain_name
+  function_name = "back_to_origin_url_rewrite"
+
+  function_args {
+    arg_name  = "source_url"
+    arg_value = "^/(?!api/)((?:[^./]+/)*[^./]+)$"
+  }
+  function_args {
+    arg_name  = "target_url"
+    arg_value = "/$1/index.html"
+  }
+  function_args {
+    arg_name  = "flag"
+    arg_value = "break"
+  }
+}
