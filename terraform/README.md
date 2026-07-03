@@ -9,7 +9,7 @@ Does **not** create RAM users/roles. Uses your existing RAM user + AssumeRole.
 | Stack | Region | GitHub environment | State cache key | Auto on push |
 |---|---|---|---|---|
 | **Singapore (overseas prod)** | `ap-southeast-1` | `personal-dashboard` | `terraform-state-ap-southeast-1` | yes |
-| **Shanghai (mainland prod)** | `cn-shanghai` | `personal-dashboard` | `terraform-state-cn-shanghai` | manual only |
+| **Shanghai (mainland prod)** | `cn-shanghai` | `personal-dashboard` | `terraform-state-cn-shanghai` | yes |
 
 Both stacks use the **same** GitHub environment secrets. `auth_url` / `domain` come from per-stack tfvars (`pd.huhansen.com` / `pd.huhansen.cn`).
 
@@ -64,10 +64,8 @@ Add these to the **`personal-dashboard`** environment:
 
 ## 2. Run provisioning
 
-**Singapore:** push changes under `terraform/` to `main`, or  
-**Actions → Terraform → stack `ap-southeast-1` → apply**
-
-**Shanghai:** **Actions → Terraform → stack `cn-shanghai` → apply** (manual only)
+**Singapore + Shanghai:** push changes under `terraform/` to `main` (both stacks apply in parallel), or  
+**Actions → Terraform → pick stack → plan/apply** (single stack)
 
 After first apply:
 

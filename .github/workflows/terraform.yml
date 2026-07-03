@@ -31,7 +31,7 @@ on:
           - apply
 
 concurrency:
-  group: terraform-${{ github.event.inputs.stack || 'ap-southeast-1' }}-${{ github.ref }}
+  group: terraform-${{ github.event.inputs.stack || 'prod' }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -146,7 +146,10 @@ jobs:
           if-no-files-found: ignore
 
   terraform-cn-shanghai:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.stack == 'cn-shanghai'
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.stack == 'cn-shanghai') ||
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     environment: personal-dashboard
     env:
@@ -214,20 +217,28 @@ jobs:
         run: terraform init -input=false
 
       - name: Install aliyun CLI
-        if: github.event.inputs.action == 'apply' || github.event.inputs.action == 'plan'
+        if: |
+          github.event_name == 'pull_request' ||
+          (github.event_name == 'workflow_dispatch' && (github.event.inputs.action == 'apply' || github.event.inputs.action == 'plan')) ||
+          (github.event_name == 'push' && github.ref == 'refs/heads/main')
         run: |
           wget -q https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
           tar -xzf aliyun-cli-linux-latest-amd64.tgz
           sudo mv aliyun /usr/local/bin/
 
       - name: Import existing resources (if created outside state)
-        if: github.event.inputs.action == 'apply'
+        if: |
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply') ||
+          (github.event_name == 'push' && github.ref == 'refs/heads/main')
         env:
           ALICLOUD_REGION: cn-shanghai
         run: bash scripts/import-existing.sh
 
       - name: Check CDN root-domain ownership
-        if: github.event.inputs.action == 'apply' || github.event.inputs.action == 'plan'
+        if: |
+          github.event_name == 'pull_request' ||
+          (github.event_name == 'workflow_dispatch' && (github.event.inputs.action == 'apply' || github.event.inputs.action == 'plan')) ||
+          (github.event_name == 'push' && github.ref == 'refs/heads/main')
         id: cdn_verify
         continue-on-error: true
         env:
@@ -235,7 +246,9 @@ jobs:
         run: bash scripts/cdn-verify-root-domain.sh
 
       - name: Terraform plan
-        if: github.event.inputs.action == 'plan'
+        if: |
+          github.event_name == 'pull_request' ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
         env:
           AUTH_URL: ${{ secrets.AUTH_URL }}
         run: |
@@ -248,7 +261,9 @@ jobs:
           terraform plan "${EXTRA[@]}" -input=false -no-color
 
       - name: Terraform apply
-        if: github.event.inputs.action == 'apply'
+        if: |
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply') ||
+          (github.event_name == 'push' && github.ref == 'refs/heads/main')
         env:
           AUTH_URL: ${{ secrets.AUTH_URL }}
         run: |
@@ -261,7 +276,10 @@ jobs:
           terraform apply "${EXTRA[@]}" -input=false -auto-approve
 
       - name: Upload Terraform state backup
-        if: always() && github.event.inputs.action == 'apply'
+        if: |
+          always() &&
+          ((github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply') ||
+           (github.event_name == 'push' && github.ref == 'refs/heads/main'))
         uses: actions/upload-artifact@v4
         with:
           name: terraform-state-cn-shanghai-${{ github.run_id }}
