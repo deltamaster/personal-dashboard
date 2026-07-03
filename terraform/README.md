@@ -118,7 +118,7 @@ Wait ~10 minutes, then re-run **Terraform apply**. After verification succeeds, 
 
 3. Azure redirect URI: `https://pd.huhansen.cn/api/auth/callback/microsoft-entra-id`
 
-**HTTPS (automated):** `env/cn-shanghai.tfvars` sets `cdn_https_enabled = true`. Before Terraform apply, CI runs `scripts/cdn-ensure-cas-cert.sh` to order (or reuse) a CAS free DV cert for `pd.huhansen.cn`, add the `_dnsauth.pd` TXT record in Alibaba DNS (`huhansen.cn` zone), and pass `cdn_cas_cert_id` to Terraform. Terraform attaches the cert via `certificate_config` (`cert_type = cas`, `cert_region = cn-hangzhou`) and enables HTTP→HTTPS redirect (`https_force`).
+**HTTPS (automated or manual):** `env/cn-shanghai.tfvars` sets `cdn_https_enabled = true`. Set `cdn_cas_cert_id` to the CAS **CertificateId** (numeric ID from the cert detail page — not the `cas_dv-cn-…` InstanceId). CI may also run `scripts/cdn-ensure-cas-cert.sh` to order a free cert when `cdn_cas_cert_id` is unset. Terraform attaches the cert via `certificate_config` (`cert_type = cas`, `cert_region = cn-hangzhou`) and enables HTTP→HTTPS redirect (`https_force`).
 
 Prerequisites:
 - GitHub secret **`CAS_CONTACT_PHONE`** (CAS API requires a phone number)
