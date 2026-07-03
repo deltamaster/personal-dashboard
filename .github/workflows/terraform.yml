@@ -106,8 +106,9 @@ jobs:
 
       - name: Install aliyun CLI
         if: |
-          github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||
-          github.event_name == 'push' && github.ref == 'refs/heads/main'
+          github.event_name == 'pull_request' ||
+          (github.event_name == 'workflow_dispatch' && (github.event.inputs.action == 'apply' || github.event.inputs.action == 'plan')) ||
+          (github.event_name == 'push' && github.ref == 'refs/heads/main')
         run: |
           wget -q https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
           tar -xzf aliyun-cli-linux-latest-amd64.tgz
@@ -115,23 +116,46 @@ jobs:
 
       - name: Import existing resources (if created outside state)
         if: |
-          github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||
-          github.event_name == 'push' && github.ref == 'refs/heads/main'
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply') ||
+          (github.event_name == 'push' && github.ref == 'refs/heads/main')
         env:
           ALICLOUD_REGION: ap-southeast-1
         run: bash scripts/import-existing.sh
 
+      - name: Check FC custom domain DNS
+        if: |
+          github.event_name == 'pull_request' ||
+          (github.event_name == 'workflow_dispatch' && (github.event.inputs.action == 'apply' || github.event.inputs.action == 'plan')) ||
+          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        id: fc_dns
+        continue-on-error: true
+        env:
+          ALICLOUD_REGION: ap-southeast-1
+        run: bash scripts/fc-verify-custom-domain-dns.sh
+
       - name: Terraform plan
         if: |
           github.event_name == 'pull_request' ||
-          github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan'
-        run: terraform plan -var-file="$TFVARS_FILE" -input=false -no-color
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
+        run: |
+          EXTRA=(-var-file="$TFVARS_FILE")
+          if [ "${{ steps.fc_dns.outcome }}" != "success" ]; then
+            echo "::warning::FC custom domain DNS not ready — planning with create_fc_custom_domain=false"
+            EXTRA+=(-var="create_fc_custom_domain=false")
+          fi
+          terraform plan "${EXTRA[@]}" -input=false -no-color
 
       - name: Terraform apply
         if: |
-          github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||
-          github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: terraform apply -var-file="$TFVARS_FILE" -input=false -auto-approve
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply') ||
+          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        run: |
+          EXTRA=(-var-file="$TFVARS_FILE")
+          if [ "${{ steps.fc_dns.outcome }}" != "success" ]; then
+            echo "::warning::FC custom domain DNS not ready — applying with create_fc_custom_domain=false"
+            EXTRA+=(-var="create_fc_custom_domain=false")
+          fi
+          terraform apply "${EXTRA[@]}" -input=false -auto-approve
 
       - name: Upload Terraform state backup
         if: |
@@ -245,6 +269,17 @@ jobs:
           ALICLOUD_REGION: cn-shanghai
         run: bash scripts/cdn-verify-root-domain.sh
 
+      - name: Check FC custom domain DNS
+        if: |
+          github.event_name == 'pull_request' ||
+          (github.event_name == 'workflow_dispatch' && (github.event.inputs.action == 'apply' || github.event.inputs.action == 'plan')) ||
+          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        id: fc_dns
+        continue-on-error: true
+        env:
+          ALICLOUD_REGION: cn-shanghai
+        run: bash scripts/fc-verify-custom-domain-dns.sh
+
       - name: Terraform plan
         if: |
           github.event_name == 'pull_request' ||
@@ -257,6 +292,10 @@ jobs:
           if [ "${{ steps.cdn_verify.outcome }}" != "success" ]; then
             echo "::warning::CDN root domain not verified — planning with create_cdn_domain=false"
             EXTRA+=(-var="create_cdn_domain=false")
+          fi
+          if [ "${{ steps.fc_dns.outcome }}" != "success" ]; then
+            echo "::warning::FC custom domain DNS not ready — planning with create_fc_custom_domain=false"
+            EXTRA+=(-var="create_fc_custom_domain=false")
           fi
           terraform plan "${EXTRA[@]}" -input=false -no-color
 
@@ -272,6 +311,10 @@ jobs:
           if [ "${{ steps.cdn_verify.outcome }}" != "success" ]; then
             echo "::warning::CDN root domain not verified — applying with create_cdn_domain=false"
             EXTRA+=(-var="create_cdn_domain=false")
+          fi
+          if [ "${{ steps.fc_dns.outcome }}" != "success" ]; then
+            echo "::warning::FC custom domain DNS not ready — applying with create_fc_custom_domain=false"
+            EXTRA+=(-var="create_fc_custom_domain=false")
           fi
           terraform apply "${EXTRA[@]}" -input=false -auto-approve
 

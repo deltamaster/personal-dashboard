@@ -44,7 +44,7 @@ resource "alicloud_cdn_domain_config" "api_origin_dns" {
 
   depends_on = [
     alicloud_cdn_domain_config.api_path_rule,
-    alicloud_fcv3_custom_domain.api,
+    alicloud_fcv3_trigger.http,
   ]
 }
 
