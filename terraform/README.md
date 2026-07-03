@@ -35,7 +35,7 @@ State key: **`terraform-state-qa-hosted`** (distinct from the retired data-only 
 
 Then deploy + DNS (same pattern as prod, just `pd-qa`):
 1. **Push to any non-`main` branch** (or **Actions → Deploy API → stack `qa`**) — builds + ships the API to `api-qa`.
-2. Same for **Deploy Web** — non-`main` pushes target `pd-web-qa` and purge CDN. **`main` pushes deploy prod (`ap-southeast-1`) only.**
+2. Same for **Deploy Web** — non-`main` pushes target `pd-web-qa` and purge CDN. **`main` pushes deploy both prod stacks (`ap-southeast-1` + `cn-shanghai`) in parallel.**
 3. Cloudflare: `CNAME pd-qa → <cdn_cname output>` and DNS-only `CNAME api.pd-qa → {account_id}.ap-southeast-1.fc.aliyuncs.com`.
 4. Azure: add redirect URI `https://pd-qa.huhansen.com/api/auth/callback/microsoft-entra-id`.
 
