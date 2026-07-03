@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import time
 from typing import Any
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -58,6 +59,8 @@ TABLES: dict[str, str] = {
 
 URL_FIELDS = ("poster_url", "oss_url")
 OSS_DATA_PREFIXES = ("movies/", "travel/")
+OSS_TIMEOUT = 600
+OSS_MAX_RETRIES = 5
 
 
 def rewrite_url(value: Any) -> Any:
@@ -138,7 +141,14 @@ def migrate_ots(*, dry_run: bool) -> dict[str, int]:
 
 def oss_bucket(ak: str, sk: str, token: str | None, endpoint: str, bucket: str) -> oss2.Bucket:
     auth = oss2.StsAuth(ak, sk, token) if token else oss2.Auth(ak, sk)
-    return oss2.Bucket(auth, f"https://{endpoint}", bucket)
+    session = oss2.Session()
+    return oss2.Bucket(
+        auth,
+        f"https://{endpoint}",
+        bucket,
+        session=session,
+        connect_timeout=OSS_TIMEOUT,
+    )
 
 
 def copy_object(
@@ -147,36 +157,66 @@ def copy_object(
     key: str,
     *,
     dry_run: bool,
-) -> None:
+    skip_existing: bool,
+) -> str:
+    """Return 'copied', 'skipped', or 'dry-run'."""
     if dry_run:
-        return
-    result = src_bucket.get_object(key)
-    data = result.read()
-    headers: dict[str, str] = {}
-    content_type = result.headers.get("Content-Type")
-    if content_type:
-        headers["Content-Type"] = content_type
-    dst_bucket.put_object(key, data, headers=headers)
+        return "dry-run"
+    if skip_existing and dst_bucket.object_exists(key):
+        return "skipped"
+
+    last_error: Exception | None = None
+    for attempt in range(1, OSS_MAX_RETRIES + 1):
+        try:
+            result = src_bucket.get_object(key)
+            data = result.read()
+            headers: dict[str, str] = {}
+            content_type = result.headers.get("Content-Type")
+            if content_type:
+                headers["Content-Type"] = content_type
+            dst_bucket.put_object(key, data, headers=headers)
+            return "copied"
+        except Exception as exc:
+            last_error = exc
+            if attempt < OSS_MAX_RETRIES:
+                wait = min(30, 2**attempt)
+                print(f"    [!] {key}: attempt {attempt} failed ({exc}); retry in {wait}s")
+                time.sleep(wait)
+    raise RuntimeError(f"Failed to copy {key} after {OSS_MAX_RETRIES} attempts: {last_error}")
 
 
-def migrate_oss(*, dry_run: bool) -> dict[str, int]:
+def migrate_oss(*, dry_run: bool, skip_existing: bool) -> dict[str, dict[str, int]]:
     ak, sk, token = resolve_credentials()
     src = oss_bucket(ak, sk, token, SG_OSS_ENDPOINT, SG_OSS_WEB_BUCKET)
     dst = oss_bucket(ak, sk, token, CN_OSS_ENDPOINT, CN_OSS_WEB_BUCKET)
-    stats: dict[str, int] = {}
+    stats: dict[str, dict[str, int]] = {}
 
     for prefix in OSS_DATA_PREFIXES:
         keys = [o.key for o in oss2.ObjectIteratorV2(src, prefix=prefix)]
         print(f"[*] OSS {SG_OSS_WEB_BUCKET}/{prefix}: {len(keys)} objects")
-        copied = 0
-        for key in keys:
-            copy_object(src, dst, key, dry_run=dry_run)
-            copied += 1
-            if copied % 50 == 0:
-                print(f"    ... {copied}/{len(keys)}")
-        stats[prefix] = copied
-        action = "would copy" if dry_run else "copied"
-        print(f"[+] OSS {prefix}: {action} {copied} objects to {CN_OSS_WEB_BUCKET}")
+        counts = {"copied": 0, "skipped": 0}
+        for i, key in enumerate(keys, 1):
+            outcome = copy_object(
+                src,
+                dst,
+                key,
+                dry_run=dry_run,
+                skip_existing=skip_existing,
+            )
+            if outcome == "skipped":
+                counts["skipped"] += 1
+            else:
+                counts["copied"] += 1
+            if i % 25 == 0 or i == len(keys):
+                print(f"    ... {i}/{len(keys)} (copied={counts['copied']}, skipped={counts['skipped']})")
+        stats[prefix] = counts
+        if dry_run:
+            print(f"[+] OSS {prefix}: would copy {counts['copied']} objects to {CN_OSS_WEB_BUCKET}")
+        else:
+            print(
+                f"[+] OSS {prefix}: copied {counts['copied']}, "
+                f"skipped {counts['skipped']} existing → {CN_OSS_WEB_BUCKET}"
+            )
     return stats
 
 
@@ -190,6 +230,11 @@ def main() -> int:
     parser.add_argument("--yes", action="store_true", help="Required to perform writes (skip prompt)")
     parser.add_argument("--ots-only", action="store_true")
     parser.add_argument("--oss-only", action="store_true")
+    parser.add_argument(
+        "--no-skip-existing",
+        action="store_true",
+        help="Re-upload OSS objects even when the destination key already exists",
+    )
     args = parser.parse_args()
 
     if args.ots_only and args.oss_only:
@@ -212,12 +257,15 @@ def main() -> int:
     print(f"URL rewrite: {SG_PUBLIC_BASE} → {CN_PUBLIC_BASE}\n")
 
     ots_stats: dict[str, int] = {}
-    oss_stats: dict[str, int] = {}
+    oss_stats: dict[str, dict[str, int]] = {}
 
     if not args.oss_only:
         ots_stats = migrate_ots(dry_run=args.dry_run)
     if not args.ots_only:
-        oss_stats = migrate_oss(dry_run=args.dry_run)
+        oss_stats = migrate_oss(
+            dry_run=args.dry_run,
+            skip_existing=not args.no_skip_existing,
+        )
 
     print("\n=== Summary ===")
     if ots_stats:
@@ -226,10 +274,11 @@ def main() -> int:
         for table, count in ots_stats.items():
             print(f"  {table}: {count}")
     if oss_stats:
-        total_oss = sum(oss_stats.values())
-        print(f"OSS objects: {total_oss}")
-        for prefix, count in oss_stats.items():
-            print(f"  {prefix}: {count}")
+        copied = sum(v["copied"] for v in oss_stats.values())
+        skipped = sum(v["skipped"] for v in oss_stats.values())
+        print(f"OSS objects: copied={copied}, skipped={skipped}")
+        for prefix, counts in oss_stats.items():
+            print(f"  {prefix}: copied={counts['copied']}, skipped={counts['skipped']}")
     if args.dry_run:
         print("(dry-run — no changes made)")
     return 0
