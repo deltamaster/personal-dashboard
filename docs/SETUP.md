@@ -57,9 +57,7 @@ Add these in **GitHub → Settings → Secrets and variables → Actions**:
 
 Deploy workflows use fixed values for `OSS_ENDPOINT`, `OSS_WEB_BUCKET`, `FC_REGION`, and `FC_FUNCTION` (see workflow files). You do not need separate secrets for those unless you override them.
 
-Run **Terraform** for Singapore first, then **Deploy Web** / **Deploy API**.
-
-Shanghai stack (`pd.huhansen.cn`) — apply/deploy manually via workflow **stack = cn-shanghai** after ICP. DNS is in **Alibaba Cloud DNS** (CNAME `pd` → CDN, CNAME `api.pd` → FC); no Cloudflare needed for the `.cn` domain.
+Run **Terraform** for Singapore first (auto on `main` terraform changes), then Shanghai manually. **Deploy Web** / **Deploy API** on every `main` push target both prod stacks in parallel.
 
 ## 5. First deploy
 

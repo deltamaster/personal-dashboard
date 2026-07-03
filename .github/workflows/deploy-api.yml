@@ -17,26 +17,41 @@ on:
           - cn-shanghai
           - qa
 
-concurrency:
-  group: deploy-api-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.stack || (github.ref == 'refs/heads/main' && 'ap-southeast-1' || 'qa') }}
-  cancel-in-progress: true
-
 jobs:
+  resolve-stacks:
+    runs-on: ubuntu-latest
+    outputs:
+      stacks: ${{ steps.out.outputs.stacks }}
+    steps:
+      - id: out
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            stacks='["${{ github.event.inputs.stack }}"]'
+          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            stacks='["ap-southeast-1","cn-shanghai"]'
+          else
+            stacks='["qa"]'
+          fi
+          echo "stacks=${stacks}" >> "$GITHUB_OUTPUT"
+          echo "Deploy targets: ${stacks}"
+
   deploy:
+    needs: resolve-stacks
     runs-on: ubuntu-latest
     environment: personal-dashboard
+    strategy:
+      fail-fast: false
+      matrix:
+        stack: ${{ fromJSON(needs.resolve-stacks.outputs.stacks) }}
+    concurrency:
+      group: deploy-api-${{ matrix.stack }}-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
 
       - name: Resolve deployment stack
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            STACK="${{ github.event.inputs.stack }}"
-          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            STACK="ap-southeast-1"
-          else
-            STACK="qa"
-          fi
+          STACK="${{ matrix.stack }}"
           echo "STACK=$STACK" >> "$GITHUB_ENV"
           case "$STACK" in
             cn-shanghai)

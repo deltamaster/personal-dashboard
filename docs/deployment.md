@@ -4,11 +4,11 @@ Alibaba Cloud provisioning and deploy steps. Constants and env vars: [AGENTS.md]
 
 **Preferred:** [terraform/README.md](../terraform/README.md) — OTS, OSS, FC, CDN via GitHub Actions **Terraform** workflow. RAM user + role are **not** created by Terraform (use existing credentials + AssumeRole).
 
-| Stack | Region | Domain | Terraform stack |
-|---|---|---|---|
-| Singapore (overseas) | `ap-southeast-1` | `pd.huhansen.com` | `ap-southeast-1` (auto on `main`) |
-| Shanghai (mainland) | `cn-shanghai` | `pd.huhansen.cn` | `cn-shanghai` (manual) |
-| QA (Singapore only) | `ap-southeast-1` | `pd-qa.huhansen.com` | `qa` (manual) |
+| Stack | Region | Domain | Terraform | Deploy on `main` push |
+|---|---|---|---|---|
+| Singapore (overseas) | `ap-southeast-1` | `pd.huhansen.com` | auto | yes |
+| Shanghai (mainland) | `cn-shanghai` | `pd.huhansen.cn` | manual | yes |
+| QA (Singapore only) | `ap-southeast-1` | `pd-qa.huhansen.com` | manual | other branches only |
 
 ---
 
@@ -26,7 +26,7 @@ After first apply:
 
 ## 2. Deploy
 
-Use GitHub Actions **Deploy Web** and **Deploy API** (or push to `main` for Singapore). Shanghai/QA: workflow_dispatch with the matching stack.
+**Push to `main`:** **Deploy Web** and **Deploy API** run automatically in parallel for Singapore and Shanghai (matrix). Non-`main` branches deploy QA only. Manual runs: pick a single stack in workflow_dispatch.
 
 | Artifact | Build | Destination |
 |---|---|---|
