@@ -12,6 +12,16 @@ resource "alicloud_cdn_domain_new" "main" {
     port     = 80
     weight   = 10
   }
+
+  dynamic "certificate_config" {
+    for_each = local.cdn_https_active ? [1] : []
+    content {
+      server_certificate_status = "on"
+      cert_type                 = "cas"
+      cert_id                   = var.cdn_cas_cert_id
+      cert_region               = local.cas_cert_region
+    }
+  }
 }
 
 locals {

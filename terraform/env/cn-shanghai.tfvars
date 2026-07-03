@@ -8,3 +8,5 @@ domain            = "pd.huhansen.cn"
 auth_url          = "https://pd.huhansen.cn"
 cdn_scope         = "domestic"
 create_cdn_domain = true
+cdn_https_enabled = true
+cas_dns_zone      = "huhansen.cn"
