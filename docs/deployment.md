@@ -1,6 +1,6 @@
 # Deployment Runbook
 
-Alibaba Cloud provisioning and deploy steps. Constants and env vars: [AGENTS.md](../AGENTS.md). Table/index definitions: [TECHNICAL_SPEC.md](../TECHNICAL_SPEC.md).
+Alibaba Cloud provisioning and deploy steps. Constants and env vars: [AGENTS.md](../AGENTS.md). OTS table schemas: [TECHNICAL_SPEC.md](../TECHNICAL_SPEC.md).
 
 **Preferred:** [terraform/README.md](../terraform/README.md) — OTS, OSS, FC, CDN via GitHub Actions **Terraform** workflow. RAM user + role are **not** created by Terraform (use existing credentials + AssumeRole).
 
@@ -8,7 +8,7 @@ Alibaba Cloud provisioning and deploy steps. Constants and env vars: [AGENTS.md]
 |---|---|---|---|---|
 | Singapore (overseas) | `ap-southeast-1` | `pd.huhansen.com` | yes | yes |
 | Shanghai (mainland) | `cn-shanghai` | `pd.huhansen.cn` | yes | yes |
-| QA (Singapore only) | `ap-southeast-1` | `pd-qa.huhansen.com` | manual | other branches only |
+| QA (Singapore only) | `ap-southeast-1` | `pd-qa.huhansen.com` | auto on non-`main` push | other branches only |
 
 ---
 

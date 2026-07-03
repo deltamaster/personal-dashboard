@@ -24,12 +24,12 @@ QA is a **third stack on this same root** (not a separate root): static frontend
 
 | Resource | QA name |
 |---|---|
-| OTS | `pd-dash-qa` (+ tables + indexes) |
+| OTS | `pd-dash-qa` (+ 7 tables, no search indexes) |
 | OSS | `pd-web-qa` (public static + photos), `pd-vault-qa` (private; holds `fc/api-qa.zip`) |
 | FC v3 | `api-qa` + HTTP trigger + custom domain `api.pd-qa.huhansen.com` |
 | CDN | `pd-qa.huhansen.com` → `/*` web bucket, `/api/*` → FC |
 
-State key: **`terraform-state-qa-hosted`** (distinct from the retired data-only root). Run via **Actions → Terraform → stack `qa` → action `plan`/`apply`** (manual only). The apply job runs `scripts/import-existing.sh` first (`FC_FUNCTION=api-qa`, `CDN_DOMAIN=pd-qa.huhansen.com`) so the OTS instance / buckets / CDN domain already created earlier are **adopted**, then reconfigured (CDN origin → web bucket + `/api/*` rules).
+State key: **`terraform-state-qa-hosted`** (distinct from the retired data-only root). **Push to any non-`main` branch** that touches `terraform/**` runs **Terraform → apply** on QA automatically (same as Deploy API/Web). Manual override: **Actions → Terraform → stack `qa`**. The apply job runs `scripts/import-existing.sh` first (`FC_FUNCTION=api-qa`, `CDN_DOMAIN=pd-qa.huhansen.com`) so the OTS instance / buckets / CDN domain already created earlier are **adopted**, then reconfigured (CDN origin → web bucket + `/api/*` rules).
 
 > ⚠️ Review the **plan** before apply — confirm it shows adopt/update, not destroy of `pd-dash-qa` (QA data).
 
@@ -65,6 +65,15 @@ Add these to the **`personal-dashboard`** environment:
 | `AUTH_URL` | Shanghai only — `https://pd.huhansen.cn` (overrides tfvars on cn-shanghai apply) |
 
 ## 2. Run provisioning
+
+**Branch routing (same as Deploy API/Web):**
+
+| Trigger | Terraform targets |
+|---|---|
+| **Push to `main`** (`terraform/**`) | `ap-southeast-1` + `cn-shanghai` (apply) |
+| **Push to other branches** (`terraform/**`) | `qa` (apply) |
+| **Pull request** | `ap-southeast-1` + `cn-shanghai` (plan only) |
+| **workflow_dispatch** | Pick stack + plan or apply |
 
 **Singapore + Shanghai:** push changes under `terraform/` to `main` (both stacks apply in parallel), or  
 **Actions → Terraform → pick stack → plan/apply** (single stack)
@@ -123,13 +132,27 @@ Optional: `scripts/cdn-ensure-cas-cert.sh` can order a free DV cert locally/CI i
 
 CDN scope: **仅中国内地**. Static origin: `huhansen-web.oss-cn-shanghai.aliyuncs.com`.
 
+## OTS (no search indexes)
+
+Terraform provisions **7 data tables only** (`terraform/ots.tf`). We intentionally do **not** create Tablestore **多元索引** (search indexes).
+
+| Reason | Detail |
+|---|---|
+| App queries | API uses `GetRange` scans; UI search/filter is client-side — SearchIndex APIs are unused |
+| Billing | Each index on a 高性能型 instance accrues automatic **预留读能力** on the `#search_index` billing line (~¥5–6 per instance every few days in 2026), while actual 按量读/写 CU stayed within the free tier |
+| Data safety | Removing indexes does **not** delete table rows |
+
+**Apply to drop existing indexes:** merge to `main` applies Singapore + Shanghai prod; push to any other branch applies QA first (see [terraform/README § Branch routing](./README.md#2-run-provisioning)). Review the plan — expect `destroy` on six `alicloud_ots_search_index` resources per stack that still has them in state. If indexes were created outside Terraform, delete in the [OTS console](https://otsnext.console.aliyun.com/) (数据表 → 索引管理).
+
+Previously removed indexes: `idx_holdings`, `idx_visits`, `idx_flights`, `idx_trains`, `idx_movies`, `idx_visit_images`. Re-add only when implementing server-side filtered queries (see [TECHNICAL_SPEC.md § Query strategy](../TECHNICAL_SPEC.md#query-strategy--no-search-indexes)).
+
 ## What gets created
 
 ### Singapore (`env/ap-southeast-1.tfvars`)
 
 | Resource | Name |
 |---|---|
-| OTS | `pd-dash-sg` + tables + indexes |
+| OTS | `pd-dash-sg` + 7 tables (no search indexes) |
 | OSS | `pd-web-sg` (public), `pd-vault-sg` (private, holds `fc/api.zip`) |
 | FC v3 | `api` custom runtime + HTTP trigger |
 
@@ -137,7 +160,7 @@ CDN scope: **仅中国内地**. Static origin: `huhansen-web.oss-cn-shanghai.ali
 
 | Resource | Name |
 |---|---|
-| OTS | `pd-dashboard` |
+| OTS | `pd-dashboard` (7 tables, no search indexes) |
 | OSS | `huhansen-web`, `personal-dashboard-vault` |
 | FC v3 | `api` |
 

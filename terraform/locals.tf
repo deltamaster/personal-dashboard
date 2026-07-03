@@ -48,69 +48,6 @@ locals {
     }
   }
 
-  # table_name => { index_name, pk_name, fields: { name => type } }
-  ots_search_indexes = {
-    pd_holdings = {
-      index_name = "idx_holdings"
-      pk_name    = "holding_id"
-      fields = {
-        bank       = "Text"
-        asset_type = "Text"
-        risk_level = "Long"
-        currency   = "Text"
-        updated_at = "Text"
-      }
-    }
-    pd_visits = {
-      index_name = "idx_visits"
-      pk_name    = "visit_id"
-      fields = {
-        city     = "Text"
-        province = "Text"
-        type     = "Text"
-        date     = "Text"
-        country  = "Text"
-      }
-    }
-    pd_flights = {
-      index_name = "idx_flights"
-      pk_name    = "flight_id"
-      fields = {
-        flight_date    = "Text"
-        airline        = "Text"
-        departure_city = "Text"
-        arrival_city   = "Text"
-      }
-    }
-    pd_trains = {
-      index_name = "idx_trains"
-      pk_name    = "train_id"
-      fields = {
-        train_date        = "Text"
-        train_number      = "Text"
-        departure_station = "Text"
-        arrival_station   = "Text"
-      }
-    }
-    pd_movies = {
-      index_name = "idx_movies"
-      pk_name    = "douban_subject_id"
-      fields = {
-        director     = "Text"
-        release_year = "Long"
-        user_rating  = "Long"
-        watched_date = "Text"
-      }
-    }
-    pd_visit_images = {
-      index_name = "idx_visit_images"
-      pk_name    = "image_id"
-      fields = {
-        visit_id = "Text"
-      }
-    }
-  }
-
   fc_env = {
     AUTH_URL                        = var.auth_url
     AUTH_SECRET                     = var.auth_secret

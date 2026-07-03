@@ -176,6 +176,7 @@ AGENTS.md
 - [ ] `AUTH_URL` in prod is `https://huhansen.cn`, not FC trigger URL
 - [ ] FC `minInstances` = 0
 - [ ] Portfolio `updated_at` only changes on valuation edits (see spec § Computed fields)
+- [ ] OTS has **no search indexes** — app uses `GetRange` + client-side filter; indexes incur `#search_index` 预留读能力 with no benefit (see [TECHNICAL_SPEC.md § Query strategy](./TECHNICAL_SPEC.md#query-strategy--no-search-indexes))
 
 ---
 
@@ -191,7 +192,7 @@ Dev environment is plain Next.js 14 (App Router). **Node 24** Active LTS (see `.
 
 **QA / agent environment (bypass auth):** set `MICROSOFT_AUTH_ENABLED=false` **and** `NEXT_PUBLIC_MICROSOFT_AUTH_ENABLED=false` (both — the `NEXT_PUBLIC_` one is baked into the client bundle at build time). Then auth is bypassed: `requireSession()` returns a stub owner session (API routes skip the 401), `auth.ts` no longer throws on missing OAuth creds, and the client `SessionProvider` reports an authenticated "QA User". Combine with `QA_DUMMY_DATA=1` for a fully offline QA env.
 
-**QA cloud stack (Terraform):** QA is a **third stack on the main root** via `terraform/env/qa.tfvars` (state key `terraform-state-qa-hosted`) — a full hosted clone of prod (`pd-dash-qa`, `pd-web-qa`, `pd-vault-qa`, FC `api-qa`, CDN `pd-qa.huhansen.com`) with **Microsoft auth enforced** (no bypass). Run via **Actions → Terraform → stack `qa`**, then **Deploy API**/**Deploy Web** with stack `qa`. The apply adopts the previously-created QA resources via `scripts/import-existing.sh`. Photos upload server-side to `pd-web-qa` (FC env `OSS_MEDIA_BUCKET`). See `terraform/README.md`. The live `pd-dash-sg`/`pd-dashboard` are **production** — never seed/pollute them.
+**QA cloud stack (Terraform):** QA is a **third stack on the main root** via `terraform/env/qa.tfvars` (state key `terraform-state-qa-hosted`) — a full hosted clone of prod (`pd-dash-qa`, `pd-web-qa`, `pd-vault-qa`, FC `api-qa`, CDN `pd-qa.huhansen.com`) with **Microsoft auth enforced** (no bypass). **Push to non-`main` branches** that touch `terraform/**` auto-applies QA (same routing as Deploy API/Web); override via **Actions → Terraform → stack `qa`**. The apply adopts the previously-created QA resources via `scripts/import-existing.sh`. Photos upload server-side to `pd-web-qa` (FC env `OSS_MEDIA_BUCKET`). See `terraform/README.md`. The live `pd-dash-sg`/`pd-dashboard` are **production** — never seed/pollute them.
 
 **Local QA against the cloud:** to run the app locally pointed at the QA data with auth bypassed, set in `.env.local`: `MICROSOFT_AUTH_ENABLED=false`, `NEXT_PUBLIC_MICROSOFT_AUTH_ENABLED=false`, `OTS_INSTANCE_NAME=pd-dash-qa`, `OTS_ENDPOINT=https://pd-dash-qa.ap-southeast-1.ots.aliyuncs.com`. `scripts/qa-seed.mjs` seeds dummy rows into a QA instance (refuses prod instance names).
 

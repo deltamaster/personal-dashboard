@@ -3,7 +3,6 @@
 set -euo pipefail
 
 OTS_INSTANCE="${OTS_INSTANCE:-pd-dashboard}"
-SEARCH_INDEX_TYPE="${SEARCH_INDEX_TYPE:-Search}"
 FC_FUNCTION="${FC_FUNCTION:-api}"
 FC_HTTP_TRIGGER="${FC_HTTP_TRIGGER:-http}"
 FC_RUNTIME_MIGRATED=0
@@ -183,22 +182,6 @@ OTS_TABLES=(
 if terraform state show alicloud_ots_instance.main >/dev/null 2>&1; then
   for table in "${OTS_TABLES[@]}"; do
     import_if_missing "alicloud_ots_table.tables[\"$table\"]" "${OTS_INSTANCE}:${table}"
-  done
-
-  declare -A OTS_SEARCH_INDEXES=(
-    [pd_holdings]="idx_holdings"
-    [pd_visits]="idx_visits"
-    [pd_flights]="idx_flights"
-    [pd_trains]="idx_trains"
-    [pd_movies]="idx_movies"
-    [pd_visit_images]="idx_visit_images"
-  )
-
-  for table in "${!OTS_SEARCH_INDEXES[@]}"; do
-    index="${OTS_SEARCH_INDEXES[$table]}"
-    import_if_missing \
-      "alicloud_ots_search_index.indexes[\"$table\"]" \
-      "${OTS_INSTANCE}:${table}:${index}:${SEARCH_INDEX_TYPE}"
   done
 fi
 

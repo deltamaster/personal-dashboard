@@ -2,7 +2,6 @@ name: Terraform
 
 on:
   push:
-    branches: [main]
     paths:
       - "terraform/**"
       - ".github/workflows/terraform.yml"
@@ -30,17 +29,55 @@ on:
           - plan
           - apply
 
-concurrency:
-  group: terraform-${{ github.event.inputs.stack || 'prod' }}-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
+  resolve-stacks:
+    runs-on: ubuntu-latest
+    outputs:
+      run_ap_southeast_1: ${{ steps.out.outputs.run_ap_southeast_1 }}
+      run_cn_shanghai: ${{ steps.out.outputs.run_cn_shanghai }}
+      run_qa: ${{ steps.out.outputs.run_qa }}
+      should_apply: ${{ steps.out.outputs.should_apply }}
+    steps:
+      - id: out
+        run: |
+          should_apply=false
+          if [ "${{ github.event_name }}" = "push" ]; then
+            should_apply=true
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.action }}" = "apply" ]; then
+            should_apply=true
+          fi
+          echo "should_apply=${should_apply}" >> "$GITHUB_OUTPUT"
+
+          run_sg=0
+          run_cn=0
+          run_qa=0
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            case "${{ github.event.inputs.stack }}" in
+              ap-southeast-1) run_sg=1 ;;
+              cn-shanghai) run_cn=1 ;;
+              qa) run_qa=1 ;;
+            esac
+          elif [ "${{ github.event_name }}" = "pull_request" ] || [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            run_sg=1
+            run_cn=1
+          else
+            run_qa=1
+          fi
+
+          echo "run_ap_southeast_1=${run_sg}" >> "$GITHUB_OUTPUT"
+          echo "run_cn_shanghai=${run_cn}" >> "$GITHUB_OUTPUT"
+          echo "run_qa=${run_qa}" >> "$GITHUB_OUTPUT"
+          echo "Terraform targets: sg=${run_sg} cn=${run_cn} qa=${run_qa} apply=${should_apply} (ref=${{ github.ref }})"
+
   terraform-ap-southeast-1:
-    if: |
-      github.event_name != 'workflow_dispatch' ||
-      github.event.inputs.stack == 'ap-southeast-1'
+    needs: resolve-stacks
+    if: needs.resolve-stacks.outputs.run_ap_southeast_1 == '1'
     runs-on: ubuntu-latest
     environment: personal-dashboard
+    concurrency:
+      group: terraform-ap-southeast-1-${{ github.ref }}
+      cancel-in-progress: false
     env:
       TF_STACK: ap-southeast-1
       TF_WORKING_DIR: terraform
@@ -105,28 +142,20 @@ jobs:
         run: terraform init -input=false
 
       - name: Install aliyun CLI
-        if: |
-          github.event_name == 'pull_request' ||
-          (github.event_name == 'workflow_dispatch' && (github.event.inputs.action == 'apply' || github.event.inputs.action == 'plan')) ||
-          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        if: needs.resolve-stacks.outputs.should_apply == 'true' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
         run: |
           wget -q https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
           tar -xzf aliyun-cli-linux-latest-amd64.tgz
           sudo mv aliyun /usr/local/bin/
 
       - name: Import existing resources (if created outside state)
-        if: |
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply') ||
-          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        if: needs.resolve-stacks.outputs.should_apply == 'true'
         env:
           ALICLOUD_REGION: ap-southeast-1
         run: bash scripts/import-existing.sh
 
       - name: Check FC custom domain DNS
-        if: |
-          github.event_name == 'pull_request' ||
-          (github.event_name == 'workflow_dispatch' && (github.event.inputs.action == 'apply' || github.event.inputs.action == 'plan')) ||
-          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        if: needs.resolve-stacks.outputs.should_apply == 'true' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
         id: fc_dns
         continue-on-error: true
         env:
@@ -134,9 +163,7 @@ jobs:
         run: bash scripts/fc-verify-custom-domain-dns.sh
 
       - name: Terraform plan
-        if: |
-          github.event_name == 'pull_request' ||
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
+        if: needs.resolve-stacks.outputs.should_apply != 'true'
         run: |
           EXTRA=(-var-file="$TFVARS_FILE")
           if [ "${{ steps.fc_dns.outcome }}" != "success" ]; then
@@ -146,9 +173,7 @@ jobs:
           terraform plan "${EXTRA[@]}" -input=false -no-color
 
       - name: Terraform apply
-        if: |
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply') ||
-          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        if: needs.resolve-stacks.outputs.should_apply == 'true'
         run: |
           EXTRA=(-var-file="$TFVARS_FILE")
           if [ "${{ steps.fc_dns.outcome }}" != "success" ]; then
@@ -158,10 +183,7 @@ jobs:
           terraform apply "${EXTRA[@]}" -input=false -auto-approve
 
       - name: Upload Terraform state backup
-        if: |
-          always() &&
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' ||
-           github.event_name == 'push' && github.ref == 'refs/heads/main')
+        if: always() && needs.resolve-stacks.outputs.should_apply == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: terraform-state-ap-southeast-1-${{ github.run_id }}
@@ -170,12 +192,13 @@ jobs:
           if-no-files-found: ignore
 
   terraform-cn-shanghai:
-    if: |
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.stack == 'cn-shanghai') ||
-      github.event_name == 'pull_request' ||
-      (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    needs: resolve-stacks
+    if: needs.resolve-stacks.outputs.run_cn_shanghai == '1'
     runs-on: ubuntu-latest
     environment: personal-dashboard
+    concurrency:
+      group: terraform-cn-shanghai-${{ github.ref }}
+      cancel-in-progress: false
     env:
       TF_STACK: cn-shanghai
       TF_WORKING_DIR: terraform
@@ -241,28 +264,20 @@ jobs:
         run: terraform init -input=false
 
       - name: Install aliyun CLI
-        if: |
-          github.event_name == 'pull_request' ||
-          (github.event_name == 'workflow_dispatch' && (github.event.inputs.action == 'apply' || github.event.inputs.action == 'plan')) ||
-          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        if: needs.resolve-stacks.outputs.should_apply == 'true' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
         run: |
           wget -q https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
           tar -xzf aliyun-cli-linux-latest-amd64.tgz
           sudo mv aliyun /usr/local/bin/
 
       - name: Import existing resources (if created outside state)
-        if: |
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply') ||
-          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        if: needs.resolve-stacks.outputs.should_apply == 'true'
         env:
           ALICLOUD_REGION: cn-shanghai
         run: bash scripts/import-existing.sh
 
       - name: Check CDN root-domain ownership
-        if: |
-          github.event_name == 'pull_request' ||
-          (github.event_name == 'workflow_dispatch' && (github.event.inputs.action == 'apply' || github.event.inputs.action == 'plan')) ||
-          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        if: needs.resolve-stacks.outputs.should_apply == 'true' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
         id: cdn_verify
         continue-on-error: true
         env:
@@ -270,10 +285,7 @@ jobs:
         run: bash scripts/cdn-verify-root-domain.sh
 
       - name: Check FC custom domain DNS
-        if: |
-          github.event_name == 'pull_request' ||
-          (github.event_name == 'workflow_dispatch' && (github.event.inputs.action == 'apply' || github.event.inputs.action == 'plan')) ||
-          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        if: needs.resolve-stacks.outputs.should_apply == 'true' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
         id: fc_dns
         continue-on-error: true
         env:
@@ -281,9 +293,7 @@ jobs:
         run: bash scripts/fc-verify-custom-domain-dns.sh
 
       - name: Terraform plan
-        if: |
-          github.event_name == 'pull_request' ||
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
+        if: needs.resolve-stacks.outputs.should_apply != 'true'
         env:
           AUTH_URL: ${{ secrets.AUTH_URL }}
         run: |
@@ -300,9 +310,7 @@ jobs:
           terraform plan "${EXTRA[@]}" -input=false -no-color
 
       - name: Terraform apply
-        if: |
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply') ||
-          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        if: needs.resolve-stacks.outputs.should_apply == 'true'
         env:
           AUTH_URL: ${{ secrets.AUTH_URL }}
         run: |
@@ -319,10 +327,7 @@ jobs:
           terraform apply "${EXTRA[@]}" -input=false -auto-approve
 
       - name: Upload Terraform state backup
-        if: |
-          always() &&
-          ((github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply') ||
-           (github.event_name == 'push' && github.ref == 'refs/heads/main'))
+        if: always() && needs.resolve-stacks.outputs.should_apply == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: terraform-state-cn-shanghai-${{ github.run_id }}
@@ -331,9 +336,13 @@ jobs:
           if-no-files-found: ignore
 
   terraform-qa:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.stack == 'qa'
+    needs: resolve-stacks
+    if: needs.resolve-stacks.outputs.run_qa == '1'
     runs-on: ubuntu-latest
     environment: personal-dashboard
+    concurrency:
+      group: terraform-qa-${{ github.ref }}
+      cancel-in-progress: false
     env:
       TF_STACK: qa
       TF_WORKING_DIR: terraform
@@ -400,28 +409,28 @@ jobs:
         run: terraform init -input=false
 
       - name: Install aliyun CLI
-        if: github.event.inputs.action == 'apply'
+        if: needs.resolve-stacks.outputs.should_apply == 'true'
         run: |
           wget -q https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
           tar -xzf aliyun-cli-linux-latest-amd64.tgz
           sudo mv aliyun /usr/local/bin/
 
       - name: Import existing resources (adopt the data-only QA resources)
-        if: github.event.inputs.action == 'apply'
+        if: needs.resolve-stacks.outputs.should_apply == 'true'
         env:
           ALICLOUD_REGION: ap-southeast-1
         run: bash scripts/import-existing.sh
 
       - name: Terraform plan
-        if: github.event.inputs.action == 'plan'
+        if: needs.resolve-stacks.outputs.should_apply != 'true'
         run: terraform plan -var-file="$TFVARS_FILE" -input=false -no-color
 
       - name: Terraform apply
-        if: github.event.inputs.action == 'apply'
+        if: needs.resolve-stacks.outputs.should_apply == 'true'
         run: terraform apply -var-file="$TFVARS_FILE" -input=false -auto-approve
 
       - name: Upload Terraform state backup
-        if: always() && github.event.inputs.action == 'apply'
+        if: always() && needs.resolve-stacks.outputs.should_apply == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: terraform-state-qa-${{ github.run_id }}
