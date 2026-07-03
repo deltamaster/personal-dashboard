@@ -160,6 +160,7 @@ jobs:
       OSS_WEB_BUCKET: huhansen-web
       OSS_VAULT_BUCKET: personal-dashboard-vault
       CDN_DOMAIN: pd.huhansen.cn
+      CDN_ROOT_DOMAIN: huhansen.cn
       ALICLOUD_ACCESS_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
       ALICLOUD_SECRET_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
       ALICLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
@@ -213,7 +214,7 @@ jobs:
         run: terraform init -input=false
 
       - name: Install aliyun CLI
-        if: github.event.inputs.action == 'apply'
+        if: github.event.inputs.action == 'apply' || github.event.inputs.action == 'plan'
         run: |
           wget -q https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
           tar -xzf aliyun-cli-linux-latest-amd64.tgz
@@ -225,6 +226,14 @@ jobs:
           ALICLOUD_REGION: cn-shanghai
         run: bash scripts/import-existing.sh
 
+      - name: Check CDN root-domain ownership
+        if: github.event.inputs.action == 'apply' || github.event.inputs.action == 'plan'
+        id: cdn_verify
+        continue-on-error: true
+        env:
+          ALICLOUD_REGION: cn-shanghai
+        run: bash scripts/cdn-verify-root-domain.sh
+
       - name: Terraform plan
         if: github.event.inputs.action == 'plan'
         env:
@@ -232,6 +241,10 @@ jobs:
         run: |
           EXTRA=(-var-file="$TFVARS_FILE")
           if [ -n "$AUTH_URL" ]; then EXTRA+=(-var="auth_url=$AUTH_URL"); fi
+          if [ "${{ steps.cdn_verify.outcome }}" != "success" ]; then
+            echo "::warning::CDN root domain not verified — planning with create_cdn_domain=false"
+            EXTRA+=(-var="create_cdn_domain=false")
+          fi
           terraform plan "${EXTRA[@]}" -input=false -no-color
 
       - name: Terraform apply
@@ -241,6 +254,10 @@ jobs:
         run: |
           EXTRA=(-var-file="$TFVARS_FILE")
           if [ -n "$AUTH_URL" ]; then EXTRA+=(-var="auth_url=$AUTH_URL"); fi
+          if [ "${{ steps.cdn_verify.outcome }}" != "success" ]; then
+            echo "::warning::CDN root domain not verified — applying with create_cdn_domain=false"
+            EXTRA+=(-var="create_cdn_domain=false")
+          fi
           terraform apply "${EXTRA[@]}" -input=false -auto-approve
 
       - name: Upload Terraform state backup
