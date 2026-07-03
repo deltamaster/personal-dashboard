@@ -64,10 +64,8 @@ Add these to the **`personal-dashboard`** environment:
 
 ## 2. Run provisioning
 
-**Singapore:** push changes under `terraform/` to `main`, or  
-**Actions → Terraform → stack `ap-southeast-1` → apply**
-
-**Shanghai:** **Actions → Terraform → stack `cn-shanghai` → apply** (manual only)
+**Singapore + Shanghai:** push changes under `terraform/` to `main` (both stacks apply in parallel), or  
+**Actions → Terraform → pick stack → plan/apply** (single stack)
 
 After first apply:
 
