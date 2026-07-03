@@ -6,8 +6,8 @@ Alibaba Cloud provisioning and deploy steps. Constants and env vars: [AGENTS.md]
 
 | Stack | Region | Domain | Terraform | Deploy on `main` push |
 |---|---|---|---|---|
-| Singapore (overseas) | `ap-southeast-1` | `pd.huhansen.com` | auto | yes |
-| Shanghai (mainland) | `cn-shanghai` | `pd.huhansen.cn` | manual | yes |
+| Singapore (overseas) | `ap-southeast-1` | `pd.huhansen.com` | yes | yes |
+| Shanghai (mainland) | `cn-shanghai` | `pd.huhansen.cn` | yes | yes |
 | QA (Singapore only) | `ap-southeast-1` | `pd-qa.huhansen.com` | manual | other branches only |
 
 ---
