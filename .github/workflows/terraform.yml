@@ -159,6 +159,7 @@ jobs:
       OTS_INSTANCE: pd-dashboard
       OSS_WEB_BUCKET: huhansen-web
       OSS_VAULT_BUCKET: personal-dashboard-vault
+      CDN_DOMAIN: pd.huhansen.cn
       ALICLOUD_ACCESS_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
       ALICLOUD_SECRET_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
       ALICLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
@@ -211,8 +212,17 @@ jobs:
       - name: Terraform init
         run: terraform init -input=false
 
+      - name: Install aliyun CLI
+        if: github.event.inputs.action == 'apply'
+        run: |
+          wget -q https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
+          tar -xzf aliyun-cli-linux-latest-amd64.tgz
+          sudo mv aliyun /usr/local/bin/
+
       - name: Import existing resources (if created outside state)
         if: github.event.inputs.action == 'apply'
+        env:
+          ALICLOUD_REGION: cn-shanghai
         run: bash scripts/import-existing.sh
 
       - name: Terraform plan

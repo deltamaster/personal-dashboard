@@ -8,8 +8,8 @@ Does **not** create RAM users/roles. Uses your existing RAM user + AssumeRole.
 
 | Stack | Region | GitHub environment | State cache key | Auto on push |
 |---|---|---|---|---|
-| **Singapore (active)** | `ap-southeast-1` | `personal-dashboard` | `terraform-state-ap-southeast-1` | yes |
-| **Shanghai (paused)** | `cn-shanghai` | `personal-dashboard` | `terraform-state-cn-shanghai` | manual only |
+| **Singapore (overseas prod)** | `ap-southeast-1` | `personal-dashboard` | `terraform-state-ap-southeast-1` | yes |
+| **Shanghai (mainland prod)** | `cn-shanghai` | `personal-dashboard` | `terraform-state-cn-shanghai` | manual only |
 
 Both stacks use the **same** GitHub environment secrets. `auth_url` / `domain` come from per-stack tfvars (`pd.huhansen.com` / `pd.huhansen.cn`).
 
@@ -50,7 +50,7 @@ API runs as **FC Custom Runtime** — no ACR or Docker required. **CDN** (when `
 | `/*` (default) | OSS web bucket |
 | `/api/*` | FC HTTP trigger (`advanced_origin`) |
 
-Singapore: `create_cdn_domain = true` in `env/ap-southeast-1.tfvars`. If you already created the domain in the console, the import script adopts it before apply.
+Both prod stacks use `create_cdn_domain = true` (`env/ap-southeast-1.tfvars`, `env/cn-shanghai.tfvars`). If you already created the domain in the console, the import script adopts it before apply.
 
 ## 1. GitHub secrets
 
@@ -93,9 +93,19 @@ Terraform manages CDN when `create_cdn_domain = true` (Singapore: enabled). Afte
 
 If the domain already exists in the CDN console, the import step adopts it — no need to delete first.
 
-### Shanghai — `pd.huhansen.cn` (after ICP)
+### Shanghai — `pd.huhansen.cn` (Alibaba DNS, ICP complete)
 
-Same pattern with scope **仅中国内地**, origin `huhansen-web.oss-cn-shanghai.aliyuncs.com`, DNS CNAME `pd` → CDN CNAME.
+1. **Terraform apply** (stack `cn-shanghai`) creates/updates CDN + OSS/FC routing
+2. In **Alibaba Cloud DNS** for `huhansen.cn` (no Cloudflare needed):
+
+| 类型 | 主机记录 | 目标 |
+|---|---|---|
+| CNAME | `pd` | Terraform output `cdn_cname` |
+| CNAME | `api.pd` | Terraform output `fc_custom_domain_cname` (`{account_id}.cn-shanghai.fc.aliyuncs.com`) |
+
+3. Azure redirect URI: `https://pd.huhansen.cn/api/auth/callback/microsoft-entra-id`
+
+CDN scope: **仅中国内地**. Static origin: `huhansen-web.oss-cn-shanghai.aliyuncs.com`.
 
 ## What gets created
 
