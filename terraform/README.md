@@ -24,7 +24,7 @@ QA is a **third stack on this same root** (not a separate root): static frontend
 
 | Resource | QA name |
 |---|---|
-| OTS | `pd-dash-qa` (+ tables + indexes) |
+| OTS | `pd-dash-qa` (+ 7 tables, no search indexes) |
 | OSS | `pd-web-qa` (public static + photos), `pd-vault-qa` (private; holds `fc/api-qa.zip`) |
 | FC v3 | `api-qa` + HTTP trigger + custom domain `api.pd-qa.huhansen.com` |
 | CDN | `pd-qa.huhansen.com` → `/*` web bucket, `/api/*` → FC |
@@ -123,13 +123,27 @@ Optional: `scripts/cdn-ensure-cas-cert.sh` can order a free DV cert locally/CI i
 
 CDN scope: **仅中国内地**. Static origin: `huhansen-web.oss-cn-shanghai.aliyuncs.com`.
 
+## OTS (no search indexes)
+
+Terraform provisions **7 data tables only** (`terraform/ots.tf`). We intentionally do **not** create Tablestore **多元索引** (search indexes).
+
+| Reason | Detail |
+|---|---|
+| App queries | API uses `GetRange` scans; UI search/filter is client-side — SearchIndex APIs are unused |
+| Billing | Each index on a 高性能型 instance accrues automatic **预留读能力** on the `#search_index` billing line (~¥5–6 per instance every few days in 2026), while actual 按量读/写 CU stayed within the free tier |
+| Data safety | Removing indexes does **not** delete table rows |
+
+**Apply to drop existing indexes:** after merging this change, run **Actions → Terraform → apply** on **`ap-southeast-1`**, **`cn-shanghai`**, and **`qa`**. Review the plan — expect `destroy` on six `alicloud_ots_search_index` resources per stack that still has them in state. If indexes were created outside Terraform, delete in the [OTS console](https://otsnext.console.aliyun.com/) (数据表 → 索引管理).
+
+Previously removed indexes: `idx_holdings`, `idx_visits`, `idx_flights`, `idx_trains`, `idx_movies`, `idx_visit_images`. Re-add only when implementing server-side filtered queries (see [TECHNICAL_SPEC.md § Query strategy](../TECHNICAL_SPEC.md#query-strategy--no-search-indexes)).
+
 ## What gets created
 
 ### Singapore (`env/ap-southeast-1.tfvars`)
 
 | Resource | Name |
 |---|---|
-| OTS | `pd-dash-sg` + tables + indexes |
+| OTS | `pd-dash-sg` + 7 tables (no search indexes) |
 | OSS | `pd-web-sg` (public), `pd-vault-sg` (private, holds `fc/api.zip`) |
 | FC v3 | `api` custom runtime + HTTP trigger |
 
@@ -137,7 +151,7 @@ CDN scope: **仅中国内地**. Static origin: `huhansen-web.oss-cn-shanghai.ali
 
 | Resource | Name |
 |---|---|
-| OTS | `pd-dashboard` |
+| OTS | `pd-dashboard` (7 tables, no search indexes) |
 | OSS | `huhansen-web`, `personal-dashboard-vault` |
 | FC v3 | `api` |
 

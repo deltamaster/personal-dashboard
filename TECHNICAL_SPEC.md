@@ -104,20 +104,17 @@ export async function GET() {
 
 ## Database (Tablestore / OTS)
 
-Wide-column NoSQL. PK set at table creation; other columns schemaless. Use **Search Indexes** for filtered queries.
+Wide-column NoSQL. PK set at table creation; other columns schemaless.
 
-### Search indexes
+### Query strategy — no search indexes
 
-| Table | Index | Columns |
-|---|---|---|
-| `pd_holdings` | `idx_holdings` | `bank`, `asset_type`, `risk_level`, `currency`, `updated_at` |
-| `pd_visits` | `idx_visits` | `city`, `province`, `type`, `date`, `country` |
-| `pd_flights` | `idx_flights` | `flight_date`, `airline`, `departure_city`, `arrival_city` |
-| `pd_trains` | `idx_trains` | `train_date`, `train_number`, `departure_station`, `arrival_station` |
-| `pd_movies` | `idx_movies` | `director`, `release_year`, `user_rating`, `watched_date` |
-| `pd_visit_images` | `idx_visit_images` | `visit_id` |
+All API reads use **`GetRange`** (full-table scan in `lib/ots/*.ts`). Filtering and search run **client-side** (`lib/movies-filter.ts`, `lib/travel-search.ts`, movies toolbar). We do **not** provision Tablestore **多元索引** (search indexes).
 
-`pd_snapshots` — no index; range scan on `snapshot_date` PK.
+**Why:** On 高性能型 instances, each search index triggers automatic **预留读能力** on the instance `#search_index` billing line — hourly fixed cost with no usage benefit while the app never calls SearchIndex APIs. In mid-2026 this was ~¥16/month across three instances (`pd-dash-sg`, `pd-dashboard`, `pd-dash-qa`) with near-zero actual read/write CU. Reintroduce indexes only when implementing server-side filtered queries that justify the cost.
+
+**Removing indexes in cloud:** Terraform no longer manages search indexes. Run **Actions → Terraform → apply** on each stack (`ap-southeast-1`, `cn-shanghai`, `qa`) so Terraform destroys any indexes still in state. Data tables are unchanged. Alternatively delete manually in the OTS console (数据表 → 索引管理 → 删除). See [terraform/README.md § OTS (no search indexes)](./terraform/README.md#ots-no-search-indexes).
+
+`pd_snapshots` — range scan on `snapshot_date` PK only.
 
 ### Table schemas
 

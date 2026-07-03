@@ -176,6 +176,7 @@ AGENTS.md
 - [ ] `AUTH_URL` in prod is `https://huhansen.cn`, not FC trigger URL
 - [ ] FC `minInstances` = 0
 - [ ] Portfolio `updated_at` only changes on valuation edits (see spec § Computed fields)
+- [ ] OTS has **no search indexes** — app uses `GetRange` + client-side filter; indexes incur `#search_index` 预留读能力 with no benefit (see [TECHNICAL_SPEC.md § Query strategy](./TECHNICAL_SPEC.md#query-strategy--no-search-indexes))
 
 ---
 
