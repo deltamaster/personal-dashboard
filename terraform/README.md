@@ -111,7 +111,9 @@ Wait ~10 minutes, then re-run **Terraform apply**. After verification succeeds, 
 | 类型 | 主机记录 | 目标 |
 |---|---|---|
 | CNAME | `pd` | Terraform output `cdn_cname` |
-| CNAME | `api.pd` | Terraform output `fc_custom_domain_cname` (`{account_id}.cn-shanghai.fc.aliyuncs.com`) |
+| CNAME | `api.pd` | Terraform output `fc_custom_domain_cname` (`1197388755513152.cn-shanghai.fc.aliyuncs.com`) |
+
+> **Order:** add the `api.pd` CNAME **before** Terraform binds the FC custom domain (`DomainNameNotResolved` if missing). CI skips `create_fc_custom_domain` until DNS resolves, then re-apply to bind OAuth/CDN `/api/*` routing.
 
 3. Azure redirect URI: `https://pd.huhansen.cn/api/auth/callback/microsoft-entra-id`
 

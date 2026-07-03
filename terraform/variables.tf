@@ -85,6 +85,12 @@ variable "fc_custom_domain" {
   default     = ""
 }
 
+variable "create_fc_custom_domain" {
+  description = "Bind FC custom domain (api.{domain}). Requires CNAME to {account_id}.{region}.fc.aliyuncs.com first."
+  type        = bool
+  default     = true
+}
+
 variable "create_cdn_domain" {
   description = "Create CDN domain via Terraform. Set false until the subdomain is verified in Alibaba CDN console."
   type        = bool
