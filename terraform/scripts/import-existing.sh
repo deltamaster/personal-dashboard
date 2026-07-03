@@ -7,6 +7,60 @@ SEARCH_INDEX_TYPE="${SEARCH_INDEX_TYPE:-Search}"
 FC_FUNCTION="${FC_FUNCTION:-api}"
 FC_HTTP_TRIGGER="${FC_HTTP_TRIGGER:-http}"
 
+configure_aliyun_cli() {
+  if ! command -v aliyun >/dev/null 2>&1; then
+    return 1
+  fi
+  local region="${ALICLOUD_REGION:-cn-shanghai}"
+  if [ -n "${ALICLOUD_ACCESS_KEY:-}" ] && [ -n "${ALICLOUD_SECRET_KEY:-}" ]; then
+    aliyun configure set \
+      --profile import \
+      --mode AK \
+      --access-key-id "$ALICLOUD_ACCESS_KEY" \
+      --access-key-secret "$ALICLOUD_SECRET_KEY" \
+      --region "$region" >/dev/null
+    return 0
+  fi
+  return 1
+}
+
+# FC v3 cannot change runtime in-place (custom-container → custom.debian10). Delete legacy
+# Shanghai function so Terraform can recreate the zip-based custom runtime.
+migrate_legacy_fc_container_runtime() {
+  if ! configure_aliyun_cli; then
+    echo "aliyun CLI not configured — skipping FC runtime migration check"
+    return 0
+  fi
+
+  local region="${ALICLOUD_REGION:-cn-shanghai}"
+  local runtime
+  runtime=$(aliyun fc GET "/2023-03-30/functions/${FC_FUNCTION}" --profile import --region "$region" 2>/dev/null \
+    | jq -r '.runtime // empty' || true)
+  if [ "$runtime" != "custom-container" ]; then
+    return 0
+  fi
+
+  echo "::warning::Legacy FC function ${FC_FUNCTION} uses custom-container — removing for custom.debian10 zip runtime migration"
+
+  local custom_domain="${FC_CUSTOM_DOMAIN:-api.${CDN_DOMAIN:-pd.huhansen.cn}}"
+  aliyun fc DELETE "/2023-03-30/custom-domains/${custom_domain}" --profile import --region "$region" >/dev/null 2>&1 || true
+  aliyun fc DELETE "/2023-03-30/functions/${FC_FUNCTION}/triggers/${FC_HTTP_TRIGGER}" --profile import --region "$region" >/dev/null 2>&1 || true
+  aliyun fc DELETE "/2023-03-30/functions/${FC_FUNCTION}" --profile import --region "$region" >/dev/null 2>&1 || true
+
+  for addr in \
+    alicloud_fcv3_custom_domain.api \
+    alicloud_fcv3_provision_config.api \
+    alicloud_fcv3_trigger.http \
+    alicloud_fcv3_function.api; do
+    if terraform state show "$addr" >/dev/null 2>&1; then
+      echo "  terraform state rm $addr"
+      terraform state rm "$addr"
+    fi
+  done
+
+  echo "Legacy FC function removed — Terraform will create custom.debian10 runtime"
+}
+
 tf_cli_args() {
   local args=(-input=false)
   if [ -n "${TFVARS_FILE:-}" ] && [ -f "$TFVARS_FILE" ]; then
@@ -84,6 +138,8 @@ if terraform state show alicloud_ots_instance.main >/dev/null 2>&1; then
       "${OTS_INSTANCE}:${table}:${index}:${SEARCH_INDEX_TYPE}"
   done
 fi
+
+migrate_legacy_fc_container_runtime
 
 import_if_missing alicloud_fcv3_function.api "$FC_FUNCTION"
 

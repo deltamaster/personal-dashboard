@@ -95,6 +95,16 @@ If the domain already exists in the CDN console, the import step adopts it — n
 
 ### Shanghai — `pd.huhansen.cn` (Alibaba DNS, ICP complete)
 
+**Before first CDN apply:** verify root domain `huhansen.cn` in CDN (one-time). CI runs `scripts/cdn-verify-root-domain.sh`; if verification fails, Terraform still applies OTS/OSS/FC but skips CDN (`create_cdn_domain=false`).
+
+Add this TXT record in **Alibaba Cloud DNS** for `huhansen.cn`:
+
+| 类型 | 主机记录 | 记录值 |
+|---|---|---|
+| TXT | `verification` | output of `aliyun cdn DescribeVerifyContent --DomainName huhansen.cn` |
+
+Wait ~10 minutes, then re-run **Terraform apply**. After verification succeeds, CDN + path rules are created automatically.
+
 1. **Terraform apply** (stack `cn-shanghai`) creates/updates CDN + OSS/FC routing
 2. In **Alibaba Cloud DNS** for `huhansen.cn` (no Cloudflare needed):
 
