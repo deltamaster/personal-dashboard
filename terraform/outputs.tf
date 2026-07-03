@@ -52,6 +52,11 @@ output "cdn_domain" {
   value = var.create_cdn_domain ? alicloud_cdn_domain_new.main[0].domain_name : var.domain
 }
 
+output "cdn_https_enabled" {
+  description = "Whether HTTPS is active on the CDN domain (CAS cert attached)."
+  value       = local.cdn_https_active
+}
+
 output "github_actions_secrets" {
   description = "Values to copy into GitHub Actions repository secrets."
   value = {

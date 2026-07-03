@@ -63,6 +63,7 @@ Add these to the **`personal-dashboard`** environment:
 | `ALIBABA_CLOUD_*`, `ALIBABA_CLOUD_ROLE_ARN` | RAM user (AssumeRole only) + `resourceadmin` role — used by Terraform, FC runtime, and local `.env.local` |
 | `AUTH_*` | Auth.js + Azure OAuth |
 | `AUTH_URL` | Shanghai only — `https://pd.huhansen.cn` (overrides tfvars on cn-shanghai apply) |
+| `CAS_CONTACT_PHONE` | Shanghai HTTPS — applicant phone for CAS free DV cert (required when `cdn_https_enabled`) |
 
 ## 2. Run provisioning
 
@@ -116,6 +117,14 @@ Wait ~10 minutes, then re-run **Terraform apply**. After verification succeeds, 
 > **Order:** add the `api.pd` CNAME **before** Terraform binds the FC custom domain (`DomainNameNotResolved` if missing). CI skips `create_fc_custom_domain` until DNS resolves, then re-apply to bind OAuth/CDN `/api/*` routing.
 
 3. Azure redirect URI: `https://pd.huhansen.cn/api/auth/callback/microsoft-entra-id`
+
+**HTTPS (automated):** `env/cn-shanghai.tfvars` sets `cdn_https_enabled = true`. Before Terraform apply, CI runs `scripts/cdn-ensure-cas-cert.sh` to order (or reuse) a CAS free DV cert for `pd.huhansen.cn`, add the `_dnsauth.pd` TXT record in Alibaba DNS (`huhansen.cn` zone), and pass `cdn_cas_cert_id` to Terraform. Terraform attaches the cert via `certificate_config` (`cert_type = cas`, `cert_region = cn-hangzhou`) and enables HTTP→HTTPS redirect (`https_force`).
+
+Prerequisites:
+- GitHub secret **`CAS_CONTACT_PHONE`** (CAS API requires a phone number)
+- RAM role/user needs `yundun-cert:*` (CreateCertificateRequest, ListUserCertificateOrder, DescribeCertificateState) and `alidns:*` on `huhansen.cn` for auto TXT
+
+If the cert is still pending (DNS propagation or CA review), apply continues without HTTPS; re-run **Terraform → cn-shanghai → apply** after ~10 minutes.
 
 CDN scope: **仅中国内地**. Static origin: `huhansen-web.oss-cn-shanghai.aliyuncs.com`.
 

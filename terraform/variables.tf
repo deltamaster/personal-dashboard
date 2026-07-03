@@ -97,6 +97,50 @@ variable "create_cdn_domain" {
   default     = false
 }
 
+variable "cdn_https_enabled" {
+  description = "Enable HTTPS on the CDN domain via CAS certificate (requires cdn_cas_cert_id at apply time)."
+  type        = bool
+  default     = false
+}
+
+variable "cdn_cas_cert_id" {
+  description = "CAS certificate ID for CDN HTTPS. CI sets this via cdn-ensure-cas-cert.sh; override manually if needed."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "cas_cert_region" {
+  description = "CAS region for cert_type=cas (China site: cn-hangzhou; international: ap-southeast-1). Empty = auto from cdn_scope."
+  type        = string
+  default     = ""
+}
+
+variable "cas_dns_zone" {
+  description = "Alibaba DNS zone for auto CAS domain-validation TXT (e.g. huhansen.cn). Empty = parent zone of domain."
+  type        = string
+  default     = ""
+}
+
+variable "cas_contact_name" {
+  description = "Applicant name for CAS free DV certificate orders."
+  type        = string
+  default     = "Personal Dashboard"
+}
+
+variable "cas_contact_phone" {
+  description = "Applicant phone for CAS free DV certificate orders (required by CAS API)."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "cas_contact_email" {
+  description = "Applicant email for CAS free DV certificate orders."
+  type        = string
+  default     = ""
+}
+
 # --- FC runtime secrets (Auth.js + data access) ---
 
 variable "auth_url" {

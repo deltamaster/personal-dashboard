@@ -1,3 +1,20 @@
+# HTTP → HTTPS after CAS certificate is attached (cdn_https_active).
+resource "alicloud_cdn_domain_config" "force_https" {
+  count = local.cdn_https_active ? 1 : 0
+
+  domain_name   = alicloud_cdn_domain_new.main[0].domain_name
+  function_name = "https_force"
+
+  function_args {
+    arg_name  = "enable"
+    arg_value = "on"
+  }
+  function_args {
+    arg_name  = "https_rewrite"
+    arg_value = "301"
+  }
+}
+
 # CDN path rules: /api/* → FC, default /* → OSS (via alicloud_cdn_domain_new sources).
 # advanced_origin only supports exact URI match; use rules engine + conditional origin for /api/*.
 
