@@ -104,10 +104,9 @@ variable "cdn_https_enabled" {
 }
 
 variable "cdn_cas_cert_id" {
-  description = "CAS certificate ID for CDN HTTPS. CI sets this via cdn-ensure-cas-cert.sh; override manually if needed."
+  description = "CAS CertificateId (numeric) for CDN HTTPS — not the cas_dv-cn-… InstanceId. CI or tfvars."
   type        = string
   default     = ""
-  sensitive   = true
 }
 
 variable "cas_cert_region" {
