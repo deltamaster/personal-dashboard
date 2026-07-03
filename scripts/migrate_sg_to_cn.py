@@ -26,6 +26,7 @@ import argparse
 import os
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -61,6 +62,7 @@ URL_FIELDS = ("poster_url", "oss_url")
 OSS_DATA_PREFIXES = ("movies/", "travel/")
 OSS_TIMEOUT = 600
 OSS_MAX_RETRIES = 5
+OSS_WORKERS = 8
 
 
 def rewrite_url(value: Any) -> Any:
@@ -185,7 +187,7 @@ def copy_object(
     raise RuntimeError(f"Failed to copy {key} after {OSS_MAX_RETRIES} attempts: {last_error}")
 
 
-def migrate_oss(*, dry_run: bool, skip_existing: bool) -> dict[str, dict[str, int]]:
+def migrate_oss(*, dry_run: bool, skip_existing: bool, workers: int) -> dict[str, dict[str, int]]:
     ak, sk, token = resolve_credentials()
     src = oss_bucket(ak, sk, token, SG_OSS_ENDPOINT, SG_OSS_WEB_BUCKET)
     dst = oss_bucket(ak, sk, token, CN_OSS_ENDPOINT, CN_OSS_WEB_BUCKET)
@@ -193,30 +195,49 @@ def migrate_oss(*, dry_run: bool, skip_existing: bool) -> dict[str, dict[str, in
 
     for prefix in OSS_DATA_PREFIXES:
         keys = [o.key for o in oss2.ObjectIteratorV2(src, prefix=prefix)]
-        print(f"[*] OSS {SG_OSS_WEB_BUCKET}/{prefix}: {len(keys)} objects")
-        counts = {"copied": 0, "skipped": 0}
-        for i, key in enumerate(keys, 1):
-            outcome = copy_object(
+        print(f"[*] OSS {SG_OSS_WEB_BUCKET}/{prefix}: {len(keys)} objects ({workers} workers)")
+        counts = {"copied": 0, "skipped": 0, "failed": 0}
+
+        def task(key: str) -> tuple[str, str]:
+            return key, copy_object(
                 src,
                 dst,
                 key,
                 dry_run=dry_run,
                 skip_existing=skip_existing,
             )
-            if outcome == "skipped":
-                counts["skipped"] += 1
-            else:
-                counts["copied"] += 1
-            if i % 25 == 0 or i == len(keys):
-                print(f"    ... {i}/{len(keys)} (copied={counts['copied']}, skipped={counts['skipped']})")
+
+        done = 0
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = {pool.submit(task, key): key for key in keys}
+            for future in as_completed(futures):
+                key = futures[future]
+                done += 1
+                try:
+                    _key, outcome = future.result()
+                    if outcome == "skipped":
+                        counts["skipped"] += 1
+                    else:
+                        counts["copied"] += 1
+                except Exception as exc:
+                    counts["failed"] += 1
+                    print(f"    [-] {key}: {exc}")
+                if done % 25 == 0 or done == len(keys):
+                    print(
+                        f"    ... {done}/{len(keys)} "
+                        f"(copied={counts['copied']}, skipped={counts['skipped']}, failed={counts['failed']})"
+                    )
+
         stats[prefix] = counts
         if dry_run:
             print(f"[+] OSS {prefix}: would copy {counts['copied']} objects to {CN_OSS_WEB_BUCKET}")
         else:
             print(
                 f"[+] OSS {prefix}: copied {counts['copied']}, "
-                f"skipped {counts['skipped']} existing → {CN_OSS_WEB_BUCKET}"
+                f"skipped {counts['skipped']}, failed {counts['failed']} → {CN_OSS_WEB_BUCKET}"
             )
+        if counts["failed"]:
+            raise RuntimeError(f"OSS migration incomplete for prefix {prefix}")
     return stats
 
 
@@ -234,6 +255,12 @@ def main() -> int:
         "--no-skip-existing",
         action="store_true",
         help="Re-upload OSS objects even when the destination key already exists",
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=OSS_WORKERS,
+        help=f"Parallel OSS copy workers (default: {OSS_WORKERS})",
     )
     args = parser.parse_args()
 
@@ -265,6 +292,7 @@ def main() -> int:
         oss_stats = migrate_oss(
             dry_run=args.dry_run,
             skip_existing=not args.no_skip_existing,
+            workers=max(1, args.workers),
         )
 
     print("\n=== Summary ===")
