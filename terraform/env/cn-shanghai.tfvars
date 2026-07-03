@@ -11,4 +11,3 @@ create_cdn_domain = true
 cdn_https_enabled = true
 # CAS InstanceId cas_dv-cn-o8p4uiogy03q → CertificateId for CDN cert_type=cas
 cdn_cas_cert_id   = "25887176"
-cas_dns_zone      = "huhansen.cn"
