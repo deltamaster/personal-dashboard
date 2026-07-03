@@ -45,6 +45,8 @@ jobs:
               echo "FC_CODE_KEY=fc/api.zip" >> "$GITHUB_ENV"
               echo "OSS_ENDPOINT=oss-cn-shanghai.aliyuncs.com" >> "$GITHUB_ENV"
               echo "OSS_VAULT_BUCKET=personal-dashboard-vault" >> "$GITHUB_ENV"
+              echo "OSS_WEB_BUCKET=huhansen-web" >> "$GITHUB_ENV"
+              echo "AUTH_URL=https://pd.huhansen.cn" >> "$GITHUB_ENV"
               echo "OTS_INSTANCE_NAME=pd-dashboard" >> "$GITHUB_ENV"
               ;;
             qa)
@@ -53,6 +55,8 @@ jobs:
               echo "FC_CODE_KEY=fc/api-qa.zip" >> "$GITHUB_ENV"
               echo "OSS_ENDPOINT=oss-ap-southeast-1.aliyuncs.com" >> "$GITHUB_ENV"
               echo "OSS_VAULT_BUCKET=pd-vault-qa" >> "$GITHUB_ENV"
+              echo "OSS_WEB_BUCKET=pd-web-qa" >> "$GITHUB_ENV"
+              echo "AUTH_URL=https://pd-qa.huhansen.com" >> "$GITHUB_ENV"
               echo "OTS_INSTANCE_NAME=pd-dash-qa" >> "$GITHUB_ENV"
               ;;
             *)
@@ -61,6 +65,8 @@ jobs:
               echo "FC_CODE_KEY=fc/api.zip" >> "$GITHUB_ENV"
               echo "OSS_ENDPOINT=oss-ap-southeast-1.aliyuncs.com" >> "$GITHUB_ENV"
               echo "OSS_VAULT_BUCKET=pd-vault-sg" >> "$GITHUB_ENV"
+              echo "OSS_WEB_BUCKET=pd-web-sg" >> "$GITHUB_ENV"
+              echo "AUTH_URL=https://pd.huhansen.com" >> "$GITHUB_ENV"
               echo "OTS_INSTANCE_NAME=pd-dash-sg" >> "$GITHUB_ENV"
               ;;
           esac
@@ -183,12 +189,15 @@ jobs:
             --arg role "$ALIBABA_CLOUD_ROLE_ARN" \
             --arg session "personal-dashboard-fc" \
             --arg region "$FC_REGION" \
+            --arg auth_url "$AUTH_URL" \
             --arg ots_endpoint "$OTS_ENDPOINT" \
             --arg ots_instance "$OTS_INSTANCE_NAME" \
-            --arg oss_bucket "$OSS_VAULT_BUCKET" \
+            --arg oss_vault "$OSS_VAULT_BUCKET" \
+            --arg oss_web "$OSS_WEB_BUCKET" \
             --arg oss_region "$OSS_VAULT_REGION" \
             --arg oss_endpoint "$OSS_ENDPOINT" \
             '.environmentVariables = ((.environmentVariables // {}) + {
+              AUTH_URL: $auth_url,
               ALIBABA_CLOUD_ACCESS_KEY_ID: $ak,
               ALIBABA_CLOUD_ACCESS_KEY_SECRET: $sk,
               ALIBABA_CLOUD_ROLE_ARN: $role,
@@ -196,7 +205,9 @@ jobs:
               ALIBABA_CLOUD_REGION: $region,
               OTS_ENDPOINT: $ots_endpoint,
               OTS_INSTANCE_NAME: $ots_instance,
-              OSS_VAULT_BUCKET: $oss_bucket,
+              OSS_VAULT_BUCKET: $oss_vault,
+              OSS_WEB_BUCKET: $oss_web,
+              OSS_MEDIA_BUCKET: $oss_web,
               OSS_VAULT_REGION: $oss_region,
               OSS_VAULT_ENDPOINT: $oss_endpoint,
               PATH: "/code/node/bin:/usr/local/bin:/usr/bin:/bin"

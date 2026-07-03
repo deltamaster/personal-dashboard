@@ -1,7 +1,7 @@
 # AGENTS.md — Personal Dashboard
 
 > **Read this first.** Single source of truth for AI agents and implementers.
-> Repo status: **movies module implemented** — portfolio/travel pending. Cloud not provisioned yet.
+> Repo status: **movies module implemented** — portfolio/travel pending. Singapore + Shanghai prod stacks in Terraform; apply/deploy via GitHub Actions.
 
 ## Doc map
 
@@ -39,7 +39,7 @@ Launch with **empty/manual data**. SQLite migration is deferred (see [TECHNICAL_
 | Cloud | **Alibaba Cloud only** — no Vercel, no AWS |
 | Compute billing | **No hourly/always-on cost** — FC pay-per-invocation; static UI on OSS |
 | Domain | `huhansen.cn` (registered with Alibaba) |
-| Region | `ap-southeast-1` (Singapore — active stack; Shanghai paused) |
+| Region | Singapore `ap-southeast-1` (`pd.huhansen.com`); Shanghai `cn-shanghai` (`pd.huhansen.cn`, ICP) |
 | OSS web bucket | **Public read** — static HTML/JS/CSS only |
 | OSS vault bucket | **Private** — presigned URLs only; block all public access |
 | Auth protocol | OAuth 2.0 Authorization Code — **not** Implicit Flow |
@@ -51,18 +51,24 @@ Launch with **empty/manual data**. SQLite migration is deferred (see [TECHNICAL_
 ## Constants
 
 ```
+# Singapore (overseas)
+AUTH_URL_PROD_SG= https://pd.huhansen.com
+OTS_INSTANCE_SG= pd-dash-sg
+OTS_ENDPOINT_SG= https://pd-dash-sg.ap-southeast-1.ots.aliyuncs.com
+OSS_WEB_BUCKET_SG= pd-web-sg
+OSS_VAULT_BUCKET_SG= pd-vault-sg
+
+# Shanghai (mainland, ICP on huhansen.cn)
+AUTH_URL_PROD_CN= https://pd.huhansen.cn
+OTS_INSTANCE_CN= pd-dashboard
+OTS_ENDPOINT_CN= https://pd-dashboard.cn-shanghai.ots.aliyuncs.com
+OSS_WEB_BUCKET_CN= huhansen-web
+OSS_VAULT_BUCKET_CN= personal-dashboard-vault
+
 DOMAIN= huhansen.cn
-AUTH_URL_PROD= https://huhansen.cn
 ALLOWED_USER_EMAIL= huhansen318@hotmail.com
 MICROSOFT_ISSUER= https://login.microsoftonline.com/consumers/v2.0
 MICROSOFT_CONSUMER_TENANT_ID= 9188040d-6ce5-4aae-b5-5e4b370a0ae8  # fixed, do not env-var
-
-OTS_INSTANCE= pd-dash-sg
-OTS_ENDPOINT= https://pd-dash-sg.ap-southeast-1.ots.aliyuncs.com
-
-OSS_WEB_BUCKET= pd-web-sg              # public static site
-OSS_VAULT_BUCKET= pd-vault-sg          # private media
-OSS_REGION= oss-ap-southeast-1
 
 FC_SERVICE= personal-dashboard
 FC_FUNCTION= api
