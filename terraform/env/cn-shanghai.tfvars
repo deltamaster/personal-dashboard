@@ -1,4 +1,4 @@
-# Shanghai stack — pd.huhansen.cn after ICP. Apply via workflow_dispatch only.
+# Shanghai stack — pd.huhansen.cn (ICP complete). Apply via workflow_dispatch only.
 
 region            = "cn-shanghai"
 ots_instance_name = "pd-dashboard"
@@ -7,4 +7,4 @@ oss_vault_bucket  = "personal-dashboard-vault"
 domain            = "pd.huhansen.cn"
 auth_url          = "https://pd.huhansen.cn"
 cdn_scope         = "domestic"
-create_cdn_domain = false
+create_cdn_domain = true

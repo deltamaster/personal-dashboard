@@ -59,7 +59,7 @@ Deploy workflows use fixed values for `OSS_ENDPOINT`, `OSS_WEB_BUCKET`, `FC_REGI
 
 Run **Terraform** for Singapore first, then **Deploy Web** / **Deploy API**.
 
-Shanghai stack is kept for production after ICP — apply/deploy manually via workflow **stack = cn-shanghai**.
+Shanghai stack (`pd.huhansen.cn`) — apply/deploy manually via workflow **stack = cn-shanghai** after ICP. DNS is in **Alibaba Cloud DNS** (CNAME `pd` → CDN, CNAME `api.pd` → FC); no Cloudflare needed for the `.cn` domain.
 
 ## 5. First deploy
 
@@ -73,7 +73,7 @@ Shanghai stack is kept for production after ICP — apply/deploy manually via wo
 | Symptom | Likely cause |
 |---|---|
 | Sign-in redirects to wrong URL | `AUTH_URL` on FC must match the stack subdomain (`https://pd.huhansen.com` or `https://pd.huhansen.cn`) |
-| `ExternalRedirectForbidden` on Microsoft sign-in | FC blocks OAuth redirects on `*.fcapp.run`. Add DNS-only CNAME `api.pd` → `{account_id}.ap-southeast-1.fc.aliyuncs.com`, then re-run Terraform to bind `api.pd.huhansen.com` as FC custom domain. |
+| `ExternalRedirectForbidden` on Microsoft sign-in | FC blocks OAuth redirects on `*.fcapp.run`. Add DNS CNAME `api.pd` → `{account_id}.{region}.fc.aliyuncs.com` (Cloudflare DNS-only for `.com`, Alibaba DNS for `.cn`), then re-run Terraform to bind the FC custom domain. |
 | Terraform `ConfigParentExceedLimit` on CDN | Each rule-engine condition allows one child config. Terraform CI runs `scripts/cdn-sync-api-origin.sh` before apply to import or prune orphan children under **api-path**. Or delete extras manually in CDN console (duplicate `origin_dns_host`, `/api/` cache rule with parent, etc.), then re-run Terraform. |
 | 401 on `/api/movies` | Not signed in, or session cookie blocked (check CDN forwards `/api/*`) |
 | 500 on `/api/movies` | OTS not provisioned, wrong credentials, or `pd_movies` table missing |
