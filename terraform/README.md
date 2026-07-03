@@ -52,6 +52,8 @@ API runs as **FC Custom Runtime** — no ACR or Docker required. **CDN** (when `
 
 Both prod stacks use `create_cdn_domain = true` (`env/ap-southeast-1.tfvars`, `env/cn-shanghai.tfvars`). If you already created the domain in the console, the import script adopts it before apply.
 
+**Shanghai FC runtime migration:** if an old `custom-container` function exists, `import-existing.sh` deletes it via **AssumeRole** (raw RAM user lacks `fc:DeleteFunction`), clears Terraform state, and skips re-import so apply creates `custom.debian10` zip runtime. Do not re-import the legacy function manually.
+
 ## 1. GitHub secrets
 
 Add these to the **`personal-dashboard`** environment:
