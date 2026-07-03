@@ -280,23 +280,6 @@ jobs:
           ALICLOUD_REGION: cn-shanghai
         run: bash scripts/fc-verify-custom-domain-dns.sh
 
-      - name: Ensure CAS certificate for CDN HTTPS
-        if: |
-          github.event_name == 'pull_request' ||
-          (github.event_name == 'workflow_dispatch' && (github.event.inputs.action == 'apply' || github.event.inputs.action == 'plan')) ||
-          (github.event_name == 'push' && github.ref == 'refs/heads/main')
-        id: cas_cert
-        continue-on-error: true
-        env:
-          ALICLOUD_REGION: cn-shanghai
-          CDN_DOMAIN: pd.huhansen.cn
-          CDN_HTTPS_ENABLED: "1"
-          CAS_REGION: cn-hangzhou
-          CAS_DNS_ZONE: huhansen.cn
-          CAS_CONTACT_PHONE: ${{ secrets.CAS_CONTACT_PHONE }}
-          ALLOWED_USER_EMAIL: huhansen318@hotmail.com
-        run: bash scripts/cdn-ensure-cas-cert.sh
-
       - name: Terraform plan
         if: |
           github.event_name == 'pull_request' ||
@@ -313,11 +296,6 @@ jobs:
           if [ "${{ steps.fc_dns.outcome }}" != "success" ]; then
             echo "::warning::FC custom domain DNS not ready — planning with create_fc_custom_domain=false"
             EXTRA+=(-var="create_fc_custom_domain=false")
-          fi
-          if [ "${{ steps.cas_cert.outputs.cert_ready }}" = "true" ] && [ -n "${{ steps.cas_cert.outputs.cert_id }}" ]; then
-            EXTRA+=(-var="cdn_cas_cert_id=${{ steps.cas_cert.outputs.cert_id }}")
-          elif [ "${{ steps.cas_cert.outcome }}" != "success" ]; then
-            echo "::warning::CAS certificate not ready — planning CDN without HTTPS"
           fi
           terraform plan "${EXTRA[@]}" -input=false -no-color
 
@@ -337,11 +315,6 @@ jobs:
           if [ "${{ steps.fc_dns.outcome }}" != "success" ]; then
             echo "::warning::FC custom domain DNS not ready — applying with create_fc_custom_domain=false"
             EXTRA+=(-var="create_fc_custom_domain=false")
-          fi
-          if [ "${{ steps.cas_cert.outputs.cert_ready }}" = "true" ] && [ -n "${{ steps.cas_cert.outputs.cert_id }}" ]; then
-            EXTRA+=(-var="cdn_cas_cert_id=${{ steps.cas_cert.outputs.cert_id }}")
-          elif [ "${{ steps.cas_cert.outcome }}" != "success" ]; then
-            echo "::warning::CAS certificate not ready — applying CDN without HTTPS"
           fi
           terraform apply "${EXTRA[@]}" -input=false -auto-approve
 

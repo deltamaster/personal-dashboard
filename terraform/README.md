@@ -63,7 +63,6 @@ Add these to the **`personal-dashboard`** environment:
 | `ALIBABA_CLOUD_*`, `ALIBABA_CLOUD_ROLE_ARN` | RAM user (AssumeRole only) + `resourceadmin` role — used by Terraform, FC runtime, and local `.env.local` |
 | `AUTH_*` | Auth.js + Azure OAuth |
 | `AUTH_URL` | Shanghai only — `https://pd.huhansen.cn` (overrides tfvars on cn-shanghai apply) |
-| `CAS_CONTACT_PHONE` | Shanghai HTTPS — applicant phone for CAS free DV cert (required when `cdn_https_enabled`) |
 
 ## 2. Run provisioning
 
@@ -118,13 +117,9 @@ Wait ~10 minutes, then re-run **Terraform apply**. After verification succeeds, 
 
 3. Azure redirect URI: `https://pd.huhansen.cn/api/auth/callback/microsoft-entra-id`
 
-**HTTPS (automated or manual):** `env/cn-shanghai.tfvars` sets `cdn_https_enabled = true`. Set `cdn_cas_cert_id` to the CAS **CertificateId** (numeric ID from the cert detail page — not the `cas_dv-cn-…` InstanceId). CI may also run `scripts/cdn-ensure-cas-cert.sh` to order a free cert when `cdn_cas_cert_id` is unset. Terraform attaches the cert via `certificate_config` (`cert_type = cas`, `cert_region = cn-hangzhou`) and enables HTTP→HTTPS redirect (`https_force`).
+**HTTPS:** `env/cn-shanghai.tfvars` sets `cdn_https_enabled = true` and `cdn_cas_cert_id` to the CAS **CertificateId** (numeric — not the `cas_dv-cn-…` InstanceId). Terraform attaches the cert via `certificate_config` (`cert_type = cas`, `cert_region = cn-hangzhou`) and enables HTTP→HTTPS redirect (`https_force`). Order/renew the cert in the CAS console; update `cdn_cas_cert_id` when it changes.
 
-Prerequisites:
-- GitHub secret **`CAS_CONTACT_PHONE`** (CAS API requires a phone number)
-- RAM role/user needs `yundun-cert:*` (CreateCertificateRequest, ListUserCertificateOrder, DescribeCertificateState) and `alidns:*` on `huhansen.cn` for auto TXT
-
-If the cert is still pending (DNS propagation or CA review), apply continues without HTTPS; re-run **Terraform → cn-shanghai → apply** after ~10 minutes.
+Optional: `scripts/cdn-ensure-cas-cert.sh` can order a free DV cert locally/CI if you leave `cdn_cas_cert_id` empty — not used in the default Shanghai workflow.
 
 CDN scope: **仅中国内地**. Static origin: `huhansen-web.oss-cn-shanghai.aliyuncs.com`.
 
