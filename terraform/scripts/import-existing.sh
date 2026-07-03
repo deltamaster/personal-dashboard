@@ -6,36 +6,86 @@ OTS_INSTANCE="${OTS_INSTANCE:-pd-dashboard}"
 SEARCH_INDEX_TYPE="${SEARCH_INDEX_TYPE:-Search}"
 FC_FUNCTION="${FC_FUNCTION:-api}"
 FC_HTTP_TRIGGER="${FC_HTTP_TRIGGER:-http}"
+FC_RUNTIME_MIGRATED=0
+
+ALIYUN_FC_PROFILE="import-fc"
 
 configure_aliyun_cli() {
   if ! command -v aliyun >/dev/null 2>&1; then
     return 1
   fi
   local region="${ALICLOUD_REGION:-cn-shanghai}"
-  if [ -n "${ALICLOUD_ACCESS_KEY:-}" ] && [ -n "${ALICLOUD_SECRET_KEY:-}" ]; then
+  if [ -z "${ALICLOUD_ACCESS_KEY:-}" ] || [ -z "${ALICLOUD_SECRET_KEY:-}" ]; then
+    return 1
+  fi
+
+  aliyun configure set \
+    --profile import-base \
+    --mode AK \
+    --access-key-id "$ALICLOUD_ACCESS_KEY" \
+    --access-key-secret "$ALICLOUD_SECRET_KEY" \
+    --region "$region" >/dev/null
+
+  # FC delete/update requires AssumeRole — raw RAM user lacks fc:DeleteFunction.
+  if [ -n "${ALICLOUD_ROLE_ARN:-}" ]; then
+    local creds
+    creds=$(aliyun sts AssumeRole \
+      --RoleArn "$ALICLOUD_ROLE_ARN" \
+      --RoleSessionName "terraform-import-fc" \
+      --DurationSeconds 3600 \
+      --profile import-base)
     aliyun configure set \
-      --profile import \
+      --profile "$ALIYUN_FC_PROFILE" \
+      --mode StsToken \
+      --access-key-id "$(echo "$creds" | jq -r '.Credentials.AccessKeyId')" \
+      --access-key-secret "$(echo "$creds" | jq -r '.Credentials.AccessKeySecret')" \
+      --sts-token "$(echo "$creds" | jq -r '.Credentials.SecurityToken')" \
+      --region "$region" >/dev/null
+  else
+    aliyun configure set \
+      --profile "$ALIYUN_FC_PROFILE" \
       --mode AK \
       --access-key-id "$ALICLOUD_ACCESS_KEY" \
       --access-key-secret "$ALICLOUD_SECRET_KEY" \
       --region "$region" >/dev/null
-    return 0
   fi
-  return 1
+  return 0
+}
+
+fc_api() {
+  aliyun fc "$@" --profile "$ALIYUN_FC_PROFILE" --region "${ALICLOUD_REGION:-cn-shanghai}"
 }
 
 # FC v3 cannot change runtime in-place (custom-container → custom.debian10). Delete legacy
-# Shanghai function so Terraform can recreate the zip-based custom runtime.
+# function via AssumeRole, drop from state, and let Terraform create the zip runtime.
 migrate_legacy_fc_container_runtime() {
   if ! configure_aliyun_cli; then
     echo "aliyun CLI not configured — skipping FC runtime migration check"
     return 0
   fi
 
-  local region="${ALICLOUD_REGION:-cn-shanghai}"
-  local runtime
-  runtime=$(aliyun fc GET "/2023-03-30/functions/${FC_FUNCTION}" --profile import --region "$region" 2>/dev/null \
-    | jq -r '.runtime // empty' || true)
+  local runtime=""
+  local get_rc=0
+  runtime=$(fc_api GET "/2023-03-30/functions/${FC_FUNCTION}" 2>/dev/null | jq -r '.runtime // empty') || get_rc=$?
+
+  if [ "$get_rc" -ne 0 ] || [ -z "$runtime" ]; then
+    if terraform state show alicloud_fcv3_function.api >/dev/null 2>&1; then
+      echo "FC function ${FC_FUNCTION} absent in cloud but present in state — clearing FC state for recreate"
+      for addr in \
+        alicloud_fcv3_custom_domain.api \
+        alicloud_fcv3_provision_config.api \
+        alicloud_fcv3_trigger.http \
+        alicloud_fcv3_function.api; do
+        if terraform state show "$addr" >/dev/null 2>&1; then
+          echo "  terraform state rm $addr"
+          terraform state rm "$addr"
+        fi
+      done
+      FC_RUNTIME_MIGRATED=1
+    fi
+    return 0
+  fi
+
   if [ "$runtime" != "custom-container" ]; then
     return 0
   fi
@@ -43,9 +93,19 @@ migrate_legacy_fc_container_runtime() {
   echo "::warning::Legacy FC function ${FC_FUNCTION} uses custom-container — removing for custom.debian10 zip runtime migration"
 
   local custom_domain="${FC_CUSTOM_DOMAIN:-api.${CDN_DOMAIN:-pd.huhansen.cn}}"
-  aliyun fc DELETE "/2023-03-30/custom-domains/${custom_domain}" --profile import --region "$region" >/dev/null 2>&1 || true
-  aliyun fc DELETE "/2023-03-30/functions/${FC_FUNCTION}/triggers/${FC_HTTP_TRIGGER}" --profile import --region "$region" >/dev/null 2>&1 || true
-  aliyun fc DELETE "/2023-03-30/functions/${FC_FUNCTION}" --profile import --region "$region" >/dev/null 2>&1 || true
+  fc_api DELETE "/2023-03-30/custom-domains/${custom_domain}" >/dev/null 2>&1 || true
+  fc_api DELETE "/2023-03-30/functions/${FC_FUNCTION}/triggers/${FC_HTTP_TRIGGER}" >/dev/null 2>&1 || true
+  if ! fc_api DELETE "/2023-03-30/functions/${FC_FUNCTION}" >/dev/null 2>&1; then
+    echo "::error::Failed to delete legacy FC function ${FC_FUNCTION} (need fc:DeleteFunction on AssumeRole)"
+    fc_api GET "/2023-03-30/functions/${FC_FUNCTION}" 2>&1 || true
+    exit 1
+  fi
+
+  # Confirm delete succeeded — do not re-import custom-container into state.
+  if fc_api GET "/2023-03-30/functions/${FC_FUNCTION}" >/dev/null 2>&1; then
+    echo "::error::FC function ${FC_FUNCTION} still exists after delete — aborting before re-import"
+    exit 1
+  fi
 
   for addr in \
     alicloud_fcv3_custom_domain.api \
@@ -58,6 +118,7 @@ migrate_legacy_fc_container_runtime() {
     fi
   done
 
+  FC_RUNTIME_MIGRATED=1
   echo "Legacy FC function removed — Terraform will create custom.debian10 runtime"
 }
 
@@ -141,16 +202,20 @@ fi
 
 migrate_legacy_fc_container_runtime
 
-import_if_missing alicloud_fcv3_function.api "$FC_FUNCTION"
-
-if ! terraform state show alicloud_fcv3_function.api >/dev/null 2>&1; then
-  echo "FC function ${FC_FUNCTION} not in state — clearing orphaned FC entries"
-  prune_state_prefix "alicloud_fcv3_"
+if [ "$FC_RUNTIME_MIGRATED" = "1" ]; then
+  echo "Skipping FC import — fresh custom.debian10 function will be created by Terraform"
 else
-  import_if_missing alicloud_fcv3_trigger.http "${FC_FUNCTION}:${FC_HTTP_TRIGGER}"
-  import_if_missing alicloud_fcv3_provision_config.api "$FC_FUNCTION"
-  if [ -n "${CDN_DOMAIN:-}" ]; then
-    import_if_missing alicloud_fcv3_custom_domain.api "${FC_CUSTOM_DOMAIN:-api.${CDN_DOMAIN}}"
+  import_if_missing alicloud_fcv3_function.api "$FC_FUNCTION"
+
+  if ! terraform state show alicloud_fcv3_function.api >/dev/null 2>&1; then
+    echo "FC function ${FC_FUNCTION} not in state — clearing orphaned FC entries"
+    prune_state_prefix "alicloud_fcv3_"
+  else
+    import_if_missing alicloud_fcv3_trigger.http "${FC_FUNCTION}:${FC_HTTP_TRIGGER}"
+    import_if_missing alicloud_fcv3_provision_config.api "$FC_FUNCTION"
+    if [ -n "${CDN_DOMAIN:-}" ]; then
+      import_if_missing alicloud_fcv3_custom_domain.api "${FC_CUSTOM_DOMAIN:-api.${CDN_DOMAIN}}"
+    fi
   fi
 fi
 
