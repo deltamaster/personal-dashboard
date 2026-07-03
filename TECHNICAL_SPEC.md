@@ -112,7 +112,7 @@ All API reads use **`GetRange`** (full-table scan in `lib/ots/*.ts`). Filtering 
 
 **Why:** On 高性能型 instances, each search index triggers automatic **预留读能力** on the instance `#search_index` billing line — hourly fixed cost with no usage benefit while the app never calls SearchIndex APIs. In mid-2026 this was ~¥16/month across three instances (`pd-dash-sg`, `pd-dashboard`, `pd-dash-qa`) with near-zero actual read/write CU. Reintroduce indexes only when implementing server-side filtered queries that justify the cost.
 
-**Removing indexes in cloud:** Terraform no longer manages search indexes. Run **Actions → Terraform → apply** on each stack (`ap-southeast-1`, `cn-shanghai`, `qa`) so Terraform destroys any indexes still in state. Data tables are unchanged. Alternatively delete manually in the OTS console (数据表 → 索引管理 → 删除). See [terraform/README.md § OTS (no search indexes)](./terraform/README.md#ots-no-search-indexes).
+**Removing indexes in cloud:** Terraform no longer manages search indexes. **Push this change to a non-`main` branch** to auto-apply QA (destroys QA indexes). **Merge to `main`** to auto-apply Singapore + Shanghai prod. Data tables are unchanged. Alternatively delete manually in the OTS console (数据表 → 索引管理 → 删除). See [terraform/README.md § OTS (no search indexes)](./terraform/README.md#ots-no-search-indexes).
 
 `pd_snapshots` — range scan on `snapshot_date` PK only.
 

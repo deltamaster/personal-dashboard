@@ -57,7 +57,14 @@ Add these in **GitHub → Settings → Secrets and variables → Actions**:
 
 Deploy workflows use fixed values for `OSS_ENDPOINT`, `OSS_WEB_BUCKET`, `FC_REGION`, and `FC_FUNCTION` (see workflow files). You do not need separate secrets for those unless you override them.
 
-Run **Terraform** and **Deploy Web** / **Deploy API** automatically on every `main` push that touches app/terraform code (both prod stacks in parallel). QA remains manual / non-`main` branches only.
+Run **Terraform**, **Deploy Web**, and **Deploy API** automatically on push:
+
+| Branch | Targets |
+|---|---|
+| **`main`** | Singapore + Shanghai prod (parallel) |
+| **Other branches** | QA only |
+
+Pull requests against `main` run Terraform **plan** (prod stacks) when `terraform/**` changes.
 
 ## 5. First deploy
 

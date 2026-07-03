@@ -8,7 +8,7 @@ Alibaba Cloud provisioning and deploy steps. Constants and env vars: [AGENTS.md]
 |---|---|---|---|---|
 | Singapore (overseas) | `ap-southeast-1` | `pd.huhansen.com` | yes | yes |
 | Shanghai (mainland) | `cn-shanghai` | `pd.huhansen.cn` | yes | yes |
-| QA (Singapore only) | `ap-southeast-1` | `pd-qa.huhansen.com` | manual | other branches only |
+| QA (Singapore only) | `ap-southeast-1` | `pd-qa.huhansen.com` | auto on non-`main` push | other branches only |
 
 ---
 
