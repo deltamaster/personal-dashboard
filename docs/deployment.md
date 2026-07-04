@@ -55,7 +55,11 @@ After first apply:
 
 ## 4. Cost (single user, light use)
 
-≈ **¥10–30/month** per stack — mostly OSS storage + CDN. FC ≈ ¥0 at this traffic. No hourly compute charges (`minInstances: 0`).
+Principles (avoid hourly/reserved billing): [AGENTS.md § Cost control](../AGENTS.md#cost-control-principles).
+
+≈ **¥10–30/month** per stack when following those rules — mostly OSS storage + CDN egress. FC ≈ ¥0 at this traffic. **No** FC provisioned instances, **no** OTS search indexes or reserved CU.
+
+Watch for bill lines that charge while idle: OTS `#search_index` **预留读能力**, FC **预留实例**, NAT/SLB hourly fees.
 
 ---
 

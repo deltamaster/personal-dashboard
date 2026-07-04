@@ -4,6 +4,8 @@ Provisions OTS, OSS, FC (zip / custom runtime), and (optionally) CDN. **Runs on 
 
 Does **not** create RAM users/roles. Uses your existing RAM user + AssumeRole.
 
+**Cost:** all Terraform resources must comply with [AGENTS.md § Cost control](../AGENTS.md#cost-control-principles) — prefer pay-per-use; never add reserved CU, search indexes, or `minInstances > 0` without documented justification.
+
 ## Region stacks
 
 | Stack | Region | GitHub environment | State cache key | Auto on push |
