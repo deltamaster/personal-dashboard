@@ -897,6 +897,14 @@ main {
   }
 }
 
+@media (max-width: 320px) {
+  .hero-subtitle,
+  .hero-meta {
+    font-size: 0.75rem;
+    letter-spacing: normal;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

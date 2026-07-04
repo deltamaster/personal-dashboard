@@ -75,7 +75,7 @@ Taller than phone via **symmetric padding only** — no `min-height` (avoids a l
 | `.hero-meta` | Same size and letter-spacing as subtitle on the same breakpoint |
 | Mobile letter-spacing | `@media (max-width: 600px)` — both use `letter-spacing: normal` (override the `0.08em` from `@media (max-width: 960px)`) so Goldman Sachs fits on one line without shrinking font |
 | `.hero-name-zh` | Mobile: `letter-spacing: 0.12em` (not `0.35em` — too wide on small screens) |
-| Per-width font shrink | **Forbidden** — do not set a smaller `font-size` on subtitle or meta at `max-width: 360px` alone |
+| Per-width font shrink | **Forbidden** — do not set a smaller `font-size` on subtitle or meta alone. Exception: at `max-width: 320px` both may scale down together (`0.75rem`). |
 
 ### HTML
 
