@@ -333,6 +333,13 @@ main {
   margin: 0 0 1rem;
 }
 
+.panel-lead {
+  color: var(--cyan);
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+}
+
 .panel-body p:last-child {
   margin-bottom: 0;
 }
@@ -457,14 +464,6 @@ main {
   color: var(--magenta);
 }
 
-.contact-body {
-  padding: 1rem 1.25rem 1.25rem;
-  max-width: 360px;
-}
-
-.link-card--solo {
-  display: grid;
-}
 
 .skill-grid {
   list-style: none;
@@ -524,6 +523,8 @@ main {
 .link-icon {
   font-size: 1.2rem;
   color: var(--magenta);
+  font-family: var(--font-display);
+  letter-spacing: 0.06em;
 }
 
 .link-title {
@@ -661,6 +662,19 @@ main {
 
   .hero-tag {
     margin-bottom: 0.75rem;
+  }
+
+  .timeline {
+    padding-left: 1rem;
+  }
+
+  .timeline-list {
+    padding-left: 0.9rem;
+  }
+
+  .focus-grid li,
+  .skill-grid li {
+    padding: 0.75rem 0.85rem;
   }
 
   .hero-subtitle,
