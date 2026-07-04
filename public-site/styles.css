@@ -30,6 +30,8 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: var(--header-height);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -339,11 +341,12 @@ main {
 
 .panel-body p {
   margin: 0 0 1rem;
+  font-size: var(--text-base);
 }
 
 .panel-lead {
   color: var(--cyan);
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   letter-spacing: 0.04em;
   line-height: 1.7;
 }
@@ -415,7 +418,7 @@ main {
 
 .timeline-org {
   font-family: var(--font-display);
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   letter-spacing: 0.14em;
   color: var(--yellow);
 }
@@ -441,6 +444,7 @@ main {
 
 .timeline-list li {
   margin-bottom: 0.45rem;
+  font-size: var(--text-base);
 }
 
 .timeline-list li:last-child {
@@ -638,12 +642,12 @@ main {
   }
 }
 
-@media (max-width: 600px), (max-height: 500px) and (orientation: landscape) {
+@media (max-width: 960px) {
   :root {
     --text-xs: 0.68rem;
     --text-sm: 0.72rem;
     --text-base: 0.82rem;
-    --text-md: 0.84rem;
+    --text-md: 0.82rem;
     --text-lg: clamp(0.72rem, 1.4vw + 0.58rem, 0.82rem);
     --text-display: 0.82rem;
     --text-hero: clamp(1.85rem, 4.5vw + 0.75rem, 2.45rem);
@@ -665,17 +669,6 @@ main {
   .hero-subtitle,
   .hero-meta {
     letter-spacing: 0.08em;
-  }
-
-  .hero-subtitle {
-    margin-top: 1rem;
-    white-space: nowrap;
-  }
-
-  .hero-meta {
-    margin-top: 0.55rem;
-    flex-wrap: nowrap;
-    white-space: nowrap;
   }
 }
 
@@ -724,6 +717,17 @@ main {
     margin-bottom: 0.75rem;
   }
 
+  .hero-subtitle {
+    margin-top: 1rem;
+    white-space: nowrap;
+  }
+
+  .hero-meta {
+    margin-top: 0.55rem;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
   .hero-name-zh {
     margin-top: 0.4rem;
   }
@@ -738,7 +742,7 @@ main {
   }
 }
 
-@media (max-height: 500px) and (orientation: landscape) {
+@media (orientation: landscape) and (max-width: 960px) {
   .site-header {
     flex-direction: row;
     align-items: center;
@@ -770,10 +774,13 @@ main {
 
   .hero-subtitle {
     margin-top: 0.65rem;
+    white-space: nowrap;
   }
 
   .hero-meta {
     margin-top: 0.45rem;
+    flex-wrap: nowrap;
+    white-space: nowrap;
   }
 
   .hero-name-zh {
