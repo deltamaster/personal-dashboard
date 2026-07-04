@@ -281,6 +281,7 @@ main {
   margin: 1.25rem 0 0;
   font-size: var(--text-lg);
   color: var(--muted);
+  text-indent: 0;
 }
 
 .hero-name-zh {
@@ -289,12 +290,7 @@ main {
   letter-spacing: 0.35em;
   color: var(--cyan);
   opacity: 0.85;
-}
-
-.typed-cursor {
-  color: var(--cyan);
-  margin-right: 0.35rem;
-  animation: blink 1s step-end infinite;
+  text-indent: 0;
 }
 
 .hero-meta {
@@ -306,6 +302,7 @@ main {
   font-size: var(--text-lg);
   letter-spacing: 0.16em;
   color: var(--muted);
+  text-indent: 0;
 }
 
 .panel {
@@ -761,6 +758,7 @@ main {
 
   .hero-name-zh {
     margin-top: 0.2rem;
+    letter-spacing: 0.12em;
   }
 
   .hero-image {
@@ -869,11 +867,6 @@ main {
     font-size: 0.5rem;
     letter-spacing: 0.02em;
     gap: 0.12rem;
-  }
-
-  .hero-subtitle,
-  .hero-meta {
-    font-size: 0.68rem;
   }
 }
 
