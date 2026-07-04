@@ -16,5 +16,5 @@ cdn_cas_cert_id = "25887176"
 create_www_site   = true
 www_domain        = "www.huhansen.cn"
 oss_www_bucket    = "huhansen-www"
-# Order a separate CAS DV cert for www.huhansen.cn (scripts/cdn-ensure-cas-cert.sh) if HTTPS fails to attach.
-www_cdn_cas_cert_id = ""
+# CAS DV cert for www.huhansen.cn → CertificateId for CDN cert_type=cas
+www_cdn_cas_cert_id = "25892283"
