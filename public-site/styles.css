@@ -712,8 +712,11 @@ main {
   }
 
   .hero {
-    min-height: clamp(14.5rem, 34vh, 18.5rem);
-    margin-bottom: 1.15rem;
+    display: flex;
+    align-items: center;
+    min-height: unset;
+    margin-bottom: 0;
+    padding: 1rem 0 0.5rem;
   }
 
   .hero-banner {
@@ -722,7 +725,12 @@ main {
   }
 
   .hero-content {
-    padding: 2.65rem 0.75rem 0.65rem;
+    padding: 0 0.75rem;
+    width: 100%;
+  }
+
+  .main-content > .panel:first-child {
+    margin-top: 0.5rem;
   }
 
   .hero-tag {
