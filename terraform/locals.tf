@@ -12,6 +12,9 @@ locals {
   )
   cdn_https_active = var.create_cdn_domain && var.cdn_https_enabled && var.cdn_cas_cert_id != ""
 
+  www_cdn_cas_cert_id = var.www_cdn_cas_cert_id
+  www_cdn_https_active = var.create_www_site && var.create_cdn_domain && var.cdn_https_enabled && var.www_cdn_cas_cert_id != ""
+
   ots_endpoint     = "https://${var.ots_instance_name}.${var.region}.ots.aliyuncs.com"
   oss_endpoint     = "oss-${var.region}.aliyuncs.com"
   fc_code_key      = "fc/${var.fc_function_name}.zip"

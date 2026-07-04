@@ -57,6 +57,23 @@ output "cdn_https_enabled" {
   value       = local.cdn_https_active
 }
 
+output "oss_www_bucket" {
+  value = var.create_www_site ? alicloud_oss_bucket.www[0].bucket : null
+}
+
+output "www_cdn_cname" {
+  value = var.create_www_site && var.create_cdn_domain ? alicloud_cdn_domain_new.www[0].cname : null
+}
+
+output "www_cdn_domain" {
+  value = var.create_www_site ? var.www_domain : null
+}
+
+output "www_cdn_https_enabled" {
+  description = "Whether HTTPS is active on the www CDN domain."
+  value       = local.www_cdn_https_active
+}
+
 output "github_actions_secrets" {
   description = "Values to copy into GitHub Actions repository secrets."
   value = {

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Hansen Hu — 开发者、探索者。赛博朋克风格的个人主页。"
+    />
+    <title>HANSEN // NEURAL LINK</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="scanlines" aria-hidden="true"></div>
+    <div class="grid-floor" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <div class="status-bar">
+        <span class="status-dot"></span>
+        <span>SYS.ONLINE</span>
+        <span class="divider">|</span>
+        <span id="clock">--:--:--</span>
+      </div>
+      <nav class="nav" aria-label="主导航">
+        <a href="#about">ABOUT</a>
+        <a href="#skills">SKILLS</a>
+        <a href="#links">LINKS</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" id="top">
+        <p class="hero-tag">// PERSONAL NODE v1.0</p>
+        <h1 class="glitch" data-text="HANSEN HU">HANSEN HU</h1>
+        <p class="hero-subtitle">
+          <span class="typed-cursor">&gt;</span>
+          开发者 · 数据探索者 · 夜行者
+        </p>
+        <div class="hero-meta">
+          <span>LOC: SHANGHAI</span>
+          <span>NET: huhansen.cn</span>
+        </div>
+      </section>
+
+      <section class="panel" id="about">
+        <div class="panel-header">
+          <span class="panel-id">[01]</span>
+          <h2>ABOUT</h2>
+          <span class="panel-line"></span>
+        </div>
+        <div class="panel-body">
+          <p>
+            你好，我是 <strong>Hansen</strong>。在代码与数据的交界处游荡，
+            用系统化的方式记录生活——投资组合、旅行轨迹、观影清单。
+          </p>
+          <p>
+            相信工具应当安静、可靠、只属于你自己。
+            这个节点是我对外公开的接口；更深层的控制台在私人仪表盘里。
+          </p>
+        </div>
+      </section>
+
+      <section class="panel" id="skills">
+        <div class="panel-header">
+          <span class="panel-id">[02]</span>
+          <h2>SKILLS</h2>
+          <span class="panel-line"></span>
+        </div>
+        <ul class="skill-grid">
+          <li><span class="skill-label">LANG</span>TypeScript / Python</li>
+          <li><span class="skill-label">STACK</span>Next.js / Node.js</li>
+          <li><span class="skill-label">CLOUD</span>Alibaba Cloud</li>
+          <li><span class="skill-label">DATA</span>Tablestore / SQLite</li>
+          <li><span class="skill-label">OPS</span>Terraform / GitHub Actions</li>
+          <li><span class="skill-label">DESIGN</span>Minimal / Cyberpunk</li>
+        </ul>
+      </section>
+
+      <section class="panel" id="links">
+        <div class="panel-header">
+          <span class="panel-id">[03]</span>
+          <h2>LINKS</h2>
+          <span class="panel-line"></span>
+        </div>
+        <div class="link-grid">
+          <a class="link-card" href="https://pd.huhansen.cn/" rel="noopener noreferrer">
+            <span class="link-icon">◈</span>
+            <span class="link-title">Personal Dashboard</span>
+            <span class="link-desc">pd.huhansen.cn — 私人控制台</span>
+          </a>
+          <a class="link-card" href="mailto:huhansen318@hotmail.com">
+            <span class="link-icon">✉</span>
+            <span class="link-title">Email</span>
+            <span class="link-desc">huhansen318@hotmail.com</span>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p class="footer-copy">© <span id="year"></span> Hansen Hu · All systems nominal</p>
+      <p class="footer-icp">
+        <a
+          href="https://beian.miit.gov.cn/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          沪ICP备2026030261号-1
+        </a>
+      </p>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>

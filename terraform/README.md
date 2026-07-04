@@ -132,6 +132,22 @@ Optional: `scripts/cdn-ensure-cas-cert.sh` can order a free DV cert locally/CI i
 
 CDN scope: **仅中国内地**. Static origin: `huhansen-web.oss-cn-shanghai.aliyuncs.com`.
 
+### Public personal site — `www.huhansen.cn`
+
+Static cyberpunk intro page (no API). Source: `public-site/` → OSS `huhansen-www` → CDN `www.huhansen.cn`.
+
+1. **Terraform apply** (stack `cn-shanghai`, `create_www_site = true` in tfvars) creates bucket + CDN
+2. Alibaba DNS for `huhansen.cn`:
+
+| 类型 | 主机记录 | 目标 |
+|---|---|---|
+| CNAME | `www` | Terraform output `www_cdn_cname` |
+
+3. **HTTPS:** order a CAS DV cert for `www.huhansen.cn` (`CDN_DOMAIN=www.huhansen.cn bash scripts/cdn-ensure-cas-cert.sh`), set `www_cdn_cas_cert_id` in `env/cn-shanghai.tfvars`, re-apply
+4. **Deploy:** push changes under `public-site/` or run **Actions → Deploy Public Site**
+
+Footer displays ICP: 沪ICP备2026030261号-1
+
 ## FC custom domain state (all stacks)
 
 `terraform/moved.tf` records the `api` → `api[0]` address change when `create_fc_custom_domain` gained `count`. **Before every apply**, `scripts/import-existing.sh` runs `reconcile_fc_custom_domain_state`:
@@ -175,6 +191,7 @@ Previously removed indexes: `idx_holdings`, `idx_visits`, `idx_flights`, `idx_tr
 |---|---|
 | OTS | `pd-dashboard` (7 tables, no search indexes) |
 | OSS | `huhansen-web`, `personal-dashboard-vault` |
+| OSS (public site) | `huhansen-www` → CDN `www.huhansen.cn` |
 | FC v3 | `api` |
 
 ## Local Terraform (optional)
