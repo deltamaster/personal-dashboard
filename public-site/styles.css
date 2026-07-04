@@ -712,8 +712,8 @@ main {
   }
 
   .hero {
-    min-height: clamp(21rem, 48vh, 26rem);
-    margin-bottom: 1.5rem;
+    min-height: clamp(14.5rem, 34vh, 18.5rem);
+    margin-bottom: 1.15rem;
   }
 
   .hero-banner {
@@ -722,26 +722,26 @@ main {
   }
 
   .hero-content {
-    padding: 4.5rem 0.75rem 1rem;
+    padding: 2.65rem 0.75rem 0.65rem;
   }
 
   .hero-tag {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.45rem;
   }
 
   .hero-subtitle {
-    margin-top: 1rem;
+    margin-top: 0.65rem;
     white-space: nowrap;
   }
 
   .hero-meta {
-    margin-top: 0.55rem;
+    margin-top: 0.35rem;
     flex-wrap: nowrap;
     white-space: nowrap;
   }
 
   .hero-name-zh {
-    margin-top: 0.4rem;
+    margin-top: 0.25rem;
   }
 
   .hero-image {
