@@ -57,7 +57,14 @@ Use **two separate variables** — do not collapse into one symmetric padding:
 
 ### Tablet portrait (`601px–960px`, portrait)
 
-Uses `--hero-edge-gap` (symmetric top/bottom inside hero) + `--hero-profile-gap: 1.5rem`. Do not apply the phone +32px values here unless explicitly requested.
+Same vertical model as phone portrait, plus a taller banner area:
+
+```css
+--hero-padding-top: 3.5rem;
+--hero-padding-bottom: 3.5rem;
+--hero-profile-gap: 1.75rem;
+min-height: clamp(22rem, 40vh, 30rem);
+```
 
 ---
 

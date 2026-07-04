@@ -773,14 +773,15 @@ main {
 
 @media (min-width: 601px) and (max-width: 960px) and (orientation: portrait) {
   :root {
-    --hero-edge-gap: 1.75rem;
-    --hero-profile-gap: 1.5rem;
+    --hero-padding-top: 3.5rem;
+    --hero-padding-bottom: 3.5rem;
+    --hero-profile-gap: 1.75rem;
   }
 
   .hero {
-    min-height: unset;
+    min-height: clamp(22rem, 40vh, 30rem);
     margin-bottom: 0;
-    padding: var(--hero-edge-gap) 0;
+    padding: var(--hero-padding-top) 0 var(--hero-padding-bottom);
   }
 
   .hero-content {
@@ -789,6 +790,32 @@ main {
 
   .main-content > .panel:first-child {
     margin-top: var(--hero-profile-gap);
+  }
+
+  .hero-tag {
+    margin-bottom: 0.35rem;
+  }
+
+  .hero-subtitle,
+  .hero-meta {
+    letter-spacing: normal;
+  }
+
+  .hero-subtitle {
+    margin-top: 0.5rem;
+    white-space: nowrap;
+    line-height: 1.4;
+  }
+
+  .hero-meta {
+    margin-top: 0.5rem;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  .hero-name-zh {
+    margin-top: 0.2rem;
+    letter-spacing: 0.12em;
   }
 }
 
