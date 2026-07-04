@@ -627,46 +627,46 @@ main {
   }
 
   .hero {
-    min-height: auto;
-    margin-bottom: 1.25rem;
+    min-height: clamp(21rem, 48vh, 26rem);
+    margin-bottom: 1.5rem;
   }
 
   .hero-banner {
-    height: 10.5rem;
-    inset: 0 0 auto 0;
+    inset: 0;
+    height: auto;
   }
 
   .hero-content {
-    padding: 4.25rem 1rem 0.75rem;
+    padding: 4.5rem 1rem 1rem;
   }
 
   .hero-tag {
-    margin-bottom: 0.65rem;
+    margin-bottom: 0.75rem;
   }
 
   .hero-subtitle {
-    margin-top: 0.85rem;
+    margin-top: 1rem;
   }
 
   .hero-meta {
-    margin-top: 0.75rem;
+    margin-top: 1rem;
   }
 
   .glitch {
-    font-size: clamp(1.85rem, 9vw, 2.35rem);
+    font-size: clamp(1.95rem, 9vw, 2.5rem);
   }
 
   .hero-name-zh {
-    margin-top: 0.35rem;
+    margin-top: 0.4rem;
   }
 
   .hero-image {
-    object-position: 72% 28%;
+    object-position: 74% 32%;
   }
 
   .hero-banner-shade {
     background:
-      linear-gradient(180deg, rgba(5, 5, 8, 0.9) 0%, rgba(5, 5, 8, 0.72) 55%, rgba(5, 5, 8, 0.96) 100%);
+      linear-gradient(180deg, rgba(5, 5, 8, 0.88) 0%, rgba(5, 5, 8, 0.62) 50%, rgba(5, 5, 8, 0.9) 100%);
   }
 }
 
