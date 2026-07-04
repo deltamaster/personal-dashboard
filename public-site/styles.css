@@ -739,13 +739,16 @@ main {
 
   .hero-subtitle {
     margin-top: 0.65rem;
-    white-space: nowrap;
+    white-space: normal;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
   }
 
   .hero-meta {
     margin-top: 0.35rem;
-    flex-wrap: nowrap;
-    white-space: nowrap;
+    flex-wrap: wrap;
+    row-gap: 0.25rem;
+    white-space: normal;
   }
 
   .hero-name-zh {
