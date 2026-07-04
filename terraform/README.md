@@ -132,6 +132,19 @@ Optional: `scripts/cdn-ensure-cas-cert.sh` can order a free DV cert locally/CI i
 
 CDN scope: **仅中国内地**. Static origin: `huhansen-web.oss-cn-shanghai.aliyuncs.com`.
 
+## FC custom domain state (all stacks)
+
+`terraform/moved.tf` records the `api` → `api[0]` address change when `create_fc_custom_domain` gained `count`. **Before every apply**, `scripts/import-existing.sh` runs `reconcile_fc_custom_domain_state`:
+
+| Situation | Action |
+|---|---|
+| Both `api` and `api[0]` in state | **state rm** legacy `api` only (does not touch cloud) |
+| Only legacy `api` in state | **state mv** → `api[0]` |
+| Domain missing in FC but still in state | **state rm** so next apply **creates** it |
+| Domain exists in FC, not in state | import into `api[0]` |
+
+Without this, a cached pre-`count` state causes Terraform to **destroy** the live `api.{domain}` when removing the orphan — the QA failure mode in Jul 2026.
+
 ## OTS (no search indexes)
 
 Terraform provisions **7 data tables only** (`terraform/ots.tf`). We intentionally do **not** create Tablestore **多元索引** (search indexes).

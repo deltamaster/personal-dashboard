@@ -421,13 +421,33 @@ jobs:
           ALICLOUD_REGION: ap-southeast-1
         run: bash scripts/import-existing.sh
 
+      - name: Check FC custom domain DNS
+        if: needs.resolve-stacks.outputs.should_apply == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
+        id: fc_dns
+        continue-on-error: true
+        env:
+          ALICLOUD_REGION: ap-southeast-1
+        run: bash scripts/fc-verify-custom-domain-dns.sh
+
       - name: Terraform plan
         if: needs.resolve-stacks.outputs.should_apply != 'true'
-        run: terraform plan -var-file="$TFVARS_FILE" -input=false -no-color
+        run: |
+          EXTRA=(-var-file="$TFVARS_FILE")
+          if [ "${{ steps.fc_dns.outcome }}" != "success" ]; then
+            echo "::warning::FC custom domain DNS not ready — planning with create_fc_custom_domain=false"
+            EXTRA+=(-var="create_fc_custom_domain=false")
+          fi
+          terraform plan "${EXTRA[@]}" -input=false -no-color
 
       - name: Terraform apply
         if: needs.resolve-stacks.outputs.should_apply == 'true'
-        run: terraform apply -var-file="$TFVARS_FILE" -input=false -auto-approve
+        run: |
+          EXTRA=(-var-file="$TFVARS_FILE")
+          if [ "${{ steps.fc_dns.outcome }}" != "success" ]; then
+            echo "::warning::FC custom domain DNS not ready — applying with create_fc_custom_domain=false"
+            EXTRA+=(-var="create_fc_custom_domain=false")
+          fi
+          terraform apply "${EXTRA[@]}" -input=false -auto-approve
 
       - name: Upload Terraform state backup
         if: always() && needs.resolve-stacks.outputs.should_apply == 'true'
