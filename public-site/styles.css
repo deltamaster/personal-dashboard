@@ -12,6 +12,13 @@
   --font-display: "Orbitron", system-ui, sans-serif;
   --font-mono: "Share Tech Mono", ui-monospace, monospace;
   --header-height: 4.5rem;
+  --text-xs: 0.72rem;
+  --text-sm: 0.78rem;
+  --text-base: 0.86rem;
+  --text-md: 0.92rem;
+  --text-lg: clamp(0.95rem, 0.18vw + 0.9rem, 1.05rem);
+  --text-display: 0.95rem;
+  --text-hero: clamp(2.2rem, 3.6vw + 1rem, 4.2rem);
 }
 
 *,
@@ -31,6 +38,7 @@ body {
   color: var(--text);
   background: var(--bg);
   font-family: var(--font-mono);
+  font-size: var(--text-base);
   line-height: 1.65;
   overflow-x: hidden;
 }
@@ -109,7 +117,7 @@ main,
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  font-size: 0.78rem;
+  font-size: var(--text-sm);
   letter-spacing: 0.12em;
   color: var(--muted);
 }
@@ -130,7 +138,7 @@ main,
 .nav {
   display: flex;
   gap: 1.5rem;
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   letter-spacing: 0.18em;
 }
 
@@ -210,7 +218,7 @@ main {
 
 .hero-tag {
   margin: 0 0 1rem;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.28em;
   color: var(--magenta);
   text-shadow: var(--glow-magenta);
@@ -220,7 +228,7 @@ main {
   position: relative;
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(2.2rem, 8vw, 4.2rem);
+  font-size: var(--text-hero);
   font-weight: 900;
   letter-spacing: 0.08em;
   color: var(--text);
@@ -257,13 +265,13 @@ main {
 
 .hero-subtitle {
   margin: 1.25rem 0 0;
-  font-size: clamp(0.95rem, 2.5vw, 1.15rem);
+  font-size: var(--text-lg);
   color: var(--muted);
 }
 
 .hero-name-zh {
   margin: 0.5rem 0 0;
-  font-size: 1rem;
+  font-size: var(--text-md);
   letter-spacing: 0.35em;
   color: var(--cyan);
   opacity: 0.85;
@@ -281,7 +289,7 @@ main {
   gap: 1.5rem;
   flex-wrap: wrap;
   margin-top: 2rem;
-  font-size: 0.72rem;
+  font-size: var(--text-lg);
   letter-spacing: 0.16em;
   color: var(--muted);
 }
@@ -307,14 +315,14 @@ main {
 
 .panel-id {
   color: var(--magenta);
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.1em;
 }
 
 .panel-header h2 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 0.95rem;
+  font-size: var(--text-display);
   letter-spacing: 0.22em;
   font-weight: 700;
 }
@@ -335,7 +343,7 @@ main {
 
 .panel-lead {
   color: var(--cyan);
-  font-size: 0.9rem;
+  font-size: var(--text-md);
   letter-spacing: 0.04em;
   line-height: 1.7;
 }
@@ -348,7 +356,7 @@ main {
   margin-top: 1.25rem !important;
   padding-top: 1rem;
   border-top: 1px solid rgba(0, 240, 255, 0.15);
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   color: var(--muted);
   letter-spacing: 0.06em;
 }
@@ -407,20 +415,20 @@ main {
 
 .timeline-org {
   font-family: var(--font-display);
-  font-size: 0.92rem;
+  font-size: var(--text-md);
   letter-spacing: 0.14em;
   color: var(--yellow);
 }
 
 .timeline-period {
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.12em;
   color: var(--magenta);
 }
 
 .timeline-role {
   margin: 0 0 0.75rem;
-  font-size: 0.84rem;
+  font-size: var(--text-base);
   color: var(--cyan);
 }
 
@@ -428,7 +436,7 @@ main {
   margin: 0;
   padding-left: 1.1rem;
   color: var(--text);
-  font-size: 0.86rem;
+  font-size: var(--text-base);
 }
 
 .timeline-list li {
@@ -452,14 +460,14 @@ main {
   padding: 0.9rem 1rem;
   border: 1px solid var(--border);
   background: rgba(0, 240, 255, 0.03);
-  font-size: 0.86rem;
+  font-size: var(--text-base);
   line-height: 1.55;
 }
 
 .focus-label {
   display: block;
   margin-bottom: 0.35rem;
-  font-size: 0.68rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.2em;
   color: var(--magenta);
 }
@@ -478,7 +486,7 @@ main {
   padding: 0.85rem 1rem;
   border: 1px solid rgba(255, 0, 170, 0.25);
   background: rgba(255, 0, 170, 0.04);
-  font-size: 0.88rem;
+  font-size: var(--text-base);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -490,7 +498,7 @@ main {
 .skill-label {
   display: block;
   margin-bottom: 0.25rem;
-  font-size: 0.68rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.2em;
   color: var(--cyan);
 }
@@ -529,13 +537,13 @@ main {
 
 .link-title {
   font-family: var(--font-display);
-  font-size: 0.85rem;
+  font-size: var(--text-base);
   letter-spacing: 0.12em;
   color: var(--text);
 }
 
 .link-desc {
-  font-size: 0.78rem;
+  font-size: var(--text-sm);
   color: var(--muted);
 }
 
@@ -549,14 +557,14 @@ main {
 
 .footer-copy {
   margin: 0 0 0.5rem;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.08em;
   color: var(--muted);
 }
 
 .footer-icp {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: var(--text-sm);
 }
 
 .footer-icp a {
@@ -618,6 +626,59 @@ main {
   }
 }
 
+@media (min-width: 1200px) {
+  :root {
+    --text-xs: 0.74rem;
+    --text-sm: 0.8rem;
+    --text-base: 0.9rem;
+    --text-md: 0.96rem;
+    --text-lg: 1.05rem;
+    --text-display: 1rem;
+    --text-hero: clamp(2.8rem, 2vw + 1.5rem, 4.2rem);
+  }
+}
+
+@media (max-width: 600px), (max-height: 500px) and (orientation: landscape) {
+  :root {
+    --text-xs: 0.68rem;
+    --text-sm: 0.72rem;
+    --text-base: 0.82rem;
+    --text-md: 0.84rem;
+    --text-lg: clamp(0.72rem, 1.4vw + 0.58rem, 0.82rem);
+    --text-display: 0.82rem;
+    --text-hero: clamp(1.85rem, 4.5vw + 0.75rem, 2.45rem);
+  }
+
+  .timeline {
+    padding-left: 1rem;
+  }
+
+  .timeline-list {
+    padding-left: 0.9rem;
+  }
+
+  .focus-grid li,
+  .skill-grid li {
+    padding: 0.75rem 0.85rem;
+  }
+
+  .hero-subtitle,
+  .hero-meta {
+    letter-spacing: 0.08em;
+  }
+
+  .hero-subtitle {
+    margin-top: 1rem;
+    white-space: nowrap;
+  }
+
+  .hero-meta {
+    margin-top: 0.55rem;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+}
+
 @media (max-width: 600px) {
   .site-header {
     flex-direction: column;
@@ -627,7 +688,6 @@ main {
   }
 
   .status-bar {
-    font-size: 0.68rem;
     letter-spacing: 0.08em;
     white-space: nowrap;
   }
@@ -637,7 +697,7 @@ main {
     flex-wrap: nowrap;
     justify-content: space-between;
     gap: 0.2rem;
-    font-size: clamp(0.5rem, 2.65vw, 0.62rem);
+    font-size: clamp(0.5rem, 2.65vw, var(--text-sm));
     letter-spacing: 0.03em;
   }
 
@@ -664,40 +724,6 @@ main {
     margin-bottom: 0.75rem;
   }
 
-  .timeline {
-    padding-left: 1rem;
-  }
-
-  .timeline-list {
-    padding-left: 0.9rem;
-  }
-
-  .focus-grid li,
-  .skill-grid li {
-    padding: 0.75rem 0.85rem;
-  }
-
-  .hero-subtitle,
-  .hero-meta {
-    font-size: clamp(0.62rem, 3.2vw, 0.72rem);
-    letter-spacing: 0.08em;
-  }
-
-  .hero-subtitle {
-    margin-top: 1rem;
-    white-space: nowrap;
-  }
-
-  .hero-meta {
-    margin-top: 0.55rem;
-    flex-wrap: nowrap;
-    white-space: nowrap;
-  }
-
-  .glitch {
-    font-size: clamp(1.95rem, 9vw, 2.5rem);
-  }
-
   .hero-name-zh {
     margin-top: 0.4rem;
   }
@@ -712,17 +738,60 @@ main {
   }
 }
 
+@media (max-height: 500px) and (orientation: landscape) {
+  .site-header {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 1rem;
+  }
+
+  .nav {
+    width: auto;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    gap: clamp(0.45rem, 2vw, 0.9rem);
+    font-size: var(--text-sm);
+    letter-spacing: 0.06em;
+  }
+
+  .hero {
+    min-height: clamp(11rem, 88vh, 16rem);
+    margin-bottom: 1.25rem;
+  }
+
+  .hero-content {
+    padding: 2.25rem 1.25rem 0.85rem;
+  }
+
+  .hero-tag {
+    margin-bottom: 0.5rem;
+  }
+
+  .hero-subtitle {
+    margin-top: 0.65rem;
+  }
+
+  .hero-meta {
+    margin-top: 0.45rem;
+  }
+
+  .hero-name-zh {
+    margin-top: 0.25rem;
+  }
+
+  .hero-banner-shade {
+    background:
+      linear-gradient(90deg, rgba(5, 5, 8, 0.94) 0%, rgba(5, 5, 8, 0.78) 42%, rgba(5, 5, 8, 0.28) 68%, rgba(5, 5, 8, 0.5) 100%),
+      linear-gradient(180deg, rgba(5, 5, 8, 0.55) 0%, transparent 35%, transparent 70%, rgba(5, 5, 8, 0.65) 100%);
+  }
+}
+
 @media (max-width: 360px) {
   .nav {
     font-size: 0.5rem;
     letter-spacing: 0.02em;
     gap: 0.12rem;
-  }
-
-  .hero-subtitle,
-  .hero-meta {
-    font-size: 0.6rem;
-    letter-spacing: 0.06em;
   }
 }
 
