@@ -303,3 +303,15 @@ if [ -n "${CDN_DOMAIN:-}" ]; then
     bash scripts/cdn-sync-api-origin.sh
   fi
 fi
+
+OSS_WWW_BUCKET="${OSS_WWW_BUCKET:-huhansen-www}"
+WWW_CDN_DOMAIN="${WWW_CDN_DOMAIN:-www.huhansen.cn}"
+
+import_if_missing 'alicloud_oss_bucket.www[0]' "$OSS_WWW_BUCKET"
+import_if_missing 'alicloud_oss_bucket_public_access_block.www[0]' "$OSS_WWW_BUCKET"
+import_if_missing 'alicloud_oss_bucket_acl.www[0]' "$OSS_WWW_BUCKET"
+import_if_missing 'alicloud_oss_bucket_website.www[0]' "$OSS_WWW_BUCKET"
+
+if [ -n "${WWW_CDN_DOMAIN:-}" ]; then
+  import_if_missing 'alicloud_cdn_domain_new.www[0]' "$WWW_CDN_DOMAIN"
+fi

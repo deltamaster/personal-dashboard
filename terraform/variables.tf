@@ -178,3 +178,29 @@ variable "runtime_secret_key" {
   type      = string
   sensitive = true
 }
+
+# --- Public personal site (www.huhansen.cn) ---
+
+variable "create_www_site" {
+  description = "Provision OSS bucket + CDN for the public personal site at www_domain."
+  type        = bool
+  default     = false
+}
+
+variable "www_domain" {
+  description = "CDN domain for the public personal site."
+  type        = string
+  default     = "www.huhansen.cn"
+}
+
+variable "oss_www_bucket" {
+  description = "Public OSS bucket for the www personal site."
+  type        = string
+  default     = "huhansen-www"
+}
+
+variable "www_cdn_cas_cert_id" {
+  description = "CAS CertificateId for www CDN HTTPS. Required for HTTPS on www.huhansen.cn (order via scripts/cdn-ensure-cas-cert.sh)."
+  type        = string
+  default     = ""
+}

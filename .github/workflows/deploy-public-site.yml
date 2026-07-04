@@ -1,0 +1,102 @@
+name: Deploy Public Site
+
+on:
+  push:
+    paths:
+      - "public-site/**"
+      - ".github/workflows/deploy-public-site.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: personal-dashboard
+    concurrency:
+      group: deploy-public-site-${{ github.ref }}
+      cancel-in-progress: true
+    env:
+      OSS_ENDPOINT: oss-cn-shanghai.aliyuncs.com
+      OSS_WWW_BUCKET: huhansen-www
+      CDN_DOMAIN: www.huhansen.cn
+      ALICLOUD_REGION: cn-shanghai
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          ALIBABA_CLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
+        run: |
+          missing=()
+          [ -z "$ALIBABA_CLOUD_ACCESS_KEY_ID" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_ID")
+          [ -z "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
+          [ -z "$ALIBABA_CLOUD_ROLE_ARN" ] && missing+=("ALIBABA_CLOUD_ROLE_ARN")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing environment secrets for public site deploy"
+            printf '  - %s\n' "${missing[@]}"
+            exit 1
+          fi
+
+      - name: Install aliyun CLI
+        run: |
+          wget -q https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
+          tar -xzf aliyun-cli-linux-latest-amd64.tgz
+          sudo mv aliyun /usr/local/bin/
+
+      - name: Install ossutil
+        run: curl -fsSL https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
+
+      - name: Assume provision role
+        id: sts
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          ALIBABA_CLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
+        run: |
+          aliyun configure set \
+            --profile default \
+            --mode AK \
+            --access-key-id "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
+            --access-key-secret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
+            --region "$ALICLOUD_REGION"
+
+          CREDS=$(aliyun sts AssumeRole \
+            --RoleArn "$ALIBABA_CLOUD_ROLE_ARN" \
+            --RoleSessionName "github-deploy-public-site" \
+            --DurationSeconds 3600)
+
+          echo "access_key_id=$(echo "$CREDS" | jq -r '.Credentials.AccessKeyId')" >> "$GITHUB_OUTPUT"
+          echo "access_key_secret=$(echo "$CREDS" | jq -r '.Credentials.AccessKeySecret')" >> "$GITHUB_OUTPUT"
+          echo "security_token=$(echo "$CREDS" | jq -r '.Credentials.SecurityToken')" >> "$GITHUB_OUTPUT"
+
+      - name: Upload public site to OSS
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ steps.sts.outputs.access_key_id }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ steps.sts.outputs.access_key_secret }}
+          ALIBABA_CLOUD_SECURITY_TOKEN: ${{ steps.sts.outputs.security_token }}
+        run: |
+          ossutil config -e "$OSS_ENDPOINT" -i "$ALIBABA_CLOUD_ACCESS_KEY_ID" -k "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" -t "$ALIBABA_CLOUD_SECURITY_TOKEN" -L CH
+          ossutil cp -r public-site/ "oss://${OSS_WWW_BUCKET}/" --update --force --disable-dir-object
+          find public-site -name '*.html' | while read -r f; do
+            rel="${f#public-site/}"
+            ossutil cp "$f" "oss://${OSS_WWW_BUCKET}/${rel}" --update --meta "Cache-Control:public, max-age=0, must-revalidate" --disable-dir-object
+          done
+
+      - name: Purge CDN cache
+        continue-on-error: true
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ steps.sts.outputs.access_key_id }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ steps.sts.outputs.access_key_secret }}
+          ALIBABA_CLOUD_SECURITY_TOKEN: ${{ steps.sts.outputs.security_token }}
+        run: |
+          aliyun configure set \
+            --profile default \
+            --mode StsToken \
+            --access-key-id "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
+            --access-key-secret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
+            --sts-token "$ALIBABA_CLOUD_SECURITY_TOKEN" \
+            --region "$ALICLOUD_REGION"
+          aliyun cdn RefreshObjectCaches \
+            --ObjectPath "https://${CDN_DOMAIN}/" \
+            --ObjectType Directory
