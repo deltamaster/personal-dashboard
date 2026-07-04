@@ -686,8 +686,9 @@ main {
 
 @media (max-width: 600px) {
   :root {
-    --hero-edge-gap: 1.375rem;
-    --hero-profile-gap: 1.5rem;
+    --hero-padding-top: 3.5rem;
+    --hero-padding-bottom: 1.75rem;
+    --hero-profile-gap: 1.75rem;
   }
 
   .site-header {
@@ -719,7 +720,7 @@ main {
   .hero {
     min-height: unset;
     margin-bottom: 0;
-    padding: var(--hero-edge-gap) 0;
+    padding: var(--hero-padding-top) 0 var(--hero-padding-bottom);
   }
 
   .hero-banner {
@@ -792,8 +793,9 @@ main {
 
 @media (orientation: landscape) and (max-width: 960px) and (max-height: 500px) {
   :root {
-    --hero-edge-gap: 1.125rem;
-    --hero-profile-gap: 1.125rem;
+    --hero-padding-top: 3.15rem;
+    --hero-padding-bottom: 1.65rem;
+    --hero-profile-gap: 1.65rem;
   }
 
   .site-header {
@@ -815,7 +817,7 @@ main {
   .hero {
     min-height: unset;
     margin-bottom: 0;
-    padding: var(--hero-edge-gap) 0;
+    padding: var(--hero-padding-top) 0 var(--hero-padding-bottom);
   }
 
   .hero-content {
