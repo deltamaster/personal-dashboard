@@ -661,15 +661,21 @@ main {
     margin-bottom: 0.75rem;
   }
 
+  .hero-subtitle,
+  .hero-meta {
+    font-size: clamp(0.62rem, 3.2vw, 0.72rem);
+    letter-spacing: 0.08em;
+  }
+
   .hero-subtitle {
     margin-top: 1rem;
-    font-size: clamp(0.54rem, 2.85vw, 0.68rem);
-    letter-spacing: 0.01em;
     white-space: nowrap;
   }
 
   .hero-meta {
-    margin-top: 1rem;
+    margin-top: 0.55rem;
+    flex-wrap: nowrap;
+    white-space: nowrap;
   }
 
   .glitch {
@@ -697,8 +703,10 @@ main {
     gap: 0.12rem;
   }
 
-  .hero-subtitle {
-    font-size: 0.52rem;
+  .hero-subtitle,
+  .hero-meta {
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
   }
 }
 
