@@ -11,6 +11,7 @@
   --glow-magenta: 0 0 12px rgba(255, 0, 170, 0.45);
   --font-display: "Orbitron", system-ui, sans-serif;
   --font-mono: "Share Tech Mono", ui-monospace, monospace;
+  --header-height: 4.5rem;
 }
 
 *,
@@ -21,6 +22,7 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: var(--header-height);
 }
 
 body {
