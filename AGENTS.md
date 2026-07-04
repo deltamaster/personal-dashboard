@@ -9,7 +9,7 @@
 |---|---|
 | Starting any task | This file (`AGENTS.md`) |
 | Implementing auth, data models, APIs, UI | [TECHNICAL_SPEC.md](./TECHNICAL_SPEC.md) |
-| Provisioning or deploying to Alibaba Cloud | [docs/deployment.md](./docs/deployment.md) |
+| Provisioning, deploy, or **cost / billing** decisions | [AGENTS.md § Cost control](./AGENTS.md#cost-control-principles) · [docs/deployment.md](./docs/deployment.md) |
 | Human-oriented product overview | [README.md](./README.md) |
 
 Do not duplicate content across these files. If something conflicts, **AGENTS.md wins**.
@@ -45,6 +45,50 @@ Launch with **empty/manual data**. SQLite migration is deferred (see [TECHNICAL_
 | Auth protocol | OAuth 2.0 Authorization Code — **not** Implicit Flow |
 | Static UI | Next.js `output: "export"` — no SSR in production |
 | API auth | Session check in **every** API handler (client guard is UX only) |
+
+---
+
+## Cost control principles
+
+**Default:** bill on **usage** (requests, bytes, CU consumed), not on **existence** (hours a resource is provisioned, reserved capacity, idle instances). This is a single-user dashboard with low traffic — fixed hourly costs dominate quickly.
+
+### Avoid — existence / reserved billing
+
+| Pattern | Example | Why it hurts here |
+|---|---|---|
+| Always-on compute | ECS, ECI, ACK nodes, FC **`minInstances` > 0** | Charges 24×7 even with zero requests. **Rule:** `FC_MIN_INSTANCES=0`; Terraform `alicloud_fcv3_provision_config` `target = 0`. |
+| Reserved throughput | OTS **预留读/写 CU** on tables; Tablestore **多元索引** (`#search_index` 预留读) | Hourly per CU / per index, **independent of queries**. Six unused search indexes across three OTS instances cost ~**¥120+/month** in 2026 while actual 按量读/写 stayed in the free tier. **Rule:** no search indexes; no manual reserved CU unless measured need. |
+| Duplicate prod stacks | Running **QA + SG prod + CN prod** all month with the same reserved extras | Multiplies fixed lines (indexes, reserved CU) by stack count. **Rule:** tear down or avoid reserved features on QA; don’t leave QA infra provisioned when not testing. |
+| Always-on networking | NAT Gateway, SLB/ALB with hourly fee, VPN | Hourly + traffic. **Rule:** CDN → OSS / FC HTTP trigger only; no NAT/SLB in architecture. |
+| Managed DB always on | ApsaraDB RDS, Redis **按量但实例常驻** tiers | Hourly instance fee. **Rule:** OTS pay-per-CU + OSS; no RDS. |
+| Over-provisioned storage class | OSS IA/Archive for hot static assets; huge vault without lifecycle | Low traffic but wrong tier still adds cost. **Rule:** standard OSS for web + vault; lifecycle only when vault grows. |
+
+### Prefer — usage-aligned billing
+
+| Pattern | This project |
+|---|---|
+| Serverless API | FC **pay-per-invocation** (`custom.debian10` zip, `minInstances: 0`) |
+| Static UI | Next.js **`output: "export"`** → OSS; no SSR/container always running |
+| Data reads/writes | OTS **`GetRange`** on small tables; 按量 CU within monthly free tier (10M read / 10M write CU) |
+| Media | Private vault + presigned URLs; egress only when viewed |
+| Edge | CDN — cost follows traffic, not idle servers |
+
+### Acceptable existence billing (small at this scale)
+
+Some lines are **GB·hour** or **hourly minimums** but stay negligible for one user:
+
+- **OTS / OSS storage** — scales with data size; currently within or near free tiers.
+- **CDN domain** — no heavy traffic; cost is mostly egress when used.
+- **OTS instance** itself (CU mode) — no instance hourly fee; danger is **reserved/index** add-ons, not the instance existing.
+
+### Before adding or changing cloud resources
+
+1. **Does it bill per hour / per reserved unit while idle?** If yes, reject or gate behind explicit approval.
+2. **Is there a serverless / pay-per-use alternative?** (FC vs ECS, OSS static vs SSR host, GetRange vs search index.)
+3. **Will this multiply across SG + CN + QA?** Estimate **×3** for reserved-style costs.
+4. **Check the bill item name** in 费用与成本 → 账单详情 (`预留读能力`, `#search_index`, `预留实例`, NAT, SLB, etc.).
+
+Infrastructure examples and OTS index policy: [terraform/README.md § OTS](./terraform/README.md#ots-no-search-indexes). Rough monthly envelope: [docs/deployment.md § Cost](./docs/deployment.md#4-cost-single-user-light-use).
 
 ---
 
@@ -175,6 +219,7 @@ AGENTS.md
 - [ ] Web bucket contains only static assets — no user data
 - [ ] `AUTH_URL` in prod is `https://huhansen.cn`, not FC trigger URL
 - [ ] FC `minInstances` = 0
+- [ ] New infra follows [§ Cost control](./AGENTS.md#cost-control-principles) — no existence/reserved billing without explicit need
 - [ ] Portfolio `updated_at` only changes on valuation edits (see spec § Computed fields)
 - [ ] OTS has **no search indexes** — app uses `GetRange` + client-side filter; indexes incur `#search_index` 预留读能力 with no benefit (see [TECHNICAL_SPEC.md § Query strategy](./TECHNICAL_SPEC.md#query-strategy--no-search-indexes))
 

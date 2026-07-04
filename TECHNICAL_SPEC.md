@@ -110,7 +110,7 @@ Wide-column NoSQL. PK set at table creation; other columns schemaless.
 
 All API reads use **`GetRange`** (full-table scan in `lib/ots/*.ts`). Filtering and search run **client-side** (`lib/movies-filter.ts`, `lib/travel-search.ts`, movies toolbar). We do **not** provision Tablestore **多元索引** (search indexes).
 
-**Why:** On 高性能型 instances, each search index triggers automatic **预留读能力** on the instance `#search_index` billing line — hourly fixed cost with no usage benefit while the app never calls SearchIndex APIs. In mid-2026 this was ~¥16/month across three instances (`pd-dash-sg`, `pd-dashboard`, `pd-dash-qa`) with near-zero actual read/write CU. Reintroduce indexes only when implementing server-side filtered queries that justify the cost.
+**Why:** On 高性能型 instances, each search index triggers automatic **预留读能力** on the instance `#search_index` billing line — **existence billing** with no usage benefit while the app never calls SearchIndex APIs (see [AGENTS.md § Cost control](./AGENTS.md#cost-control-principles)). In mid-2026 this was ~¥16/month across three instances with near-zero actual read/write CU. Reintroduce indexes only when server-side filtered queries justify the reserved cost.
 
 **Removing indexes in cloud:** Terraform no longer manages search indexes. **Push this change to a non-`main` branch** to auto-apply QA (destroys QA indexes). **Merge to `main`** to auto-apply Singapore + Shanghai prod. Data tables are unchanged. Alternatively delete manually in the OTS console (数据表 → 索引管理 → 删除). See [terraform/README.md § OTS (no search indexes)](./terraform/README.md#ots-no-search-indexes).
 
