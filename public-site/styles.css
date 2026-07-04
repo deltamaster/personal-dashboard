@@ -716,7 +716,7 @@ main {
     align-items: center;
     min-height: unset;
     margin-bottom: 0;
-    padding: 1.5rem 0 0.75rem;
+    padding: 3.5rem 0 1.75rem;
   }
 
   .hero-banner {
@@ -730,7 +730,7 @@ main {
   }
 
   .main-content > .panel:first-child {
-    margin-top: 0.75rem;
+    margin-top: 1.75rem;
   }
 
   .hero-tag {
@@ -799,7 +799,7 @@ main {
     align-items: center;
     min-height: unset;
     margin-bottom: 0;
-    padding: 1.15rem 0 0.65rem;
+    padding: 3.15rem 0 1.65rem;
   }
 
   .hero-content {
@@ -808,7 +808,7 @@ main {
   }
 
   .main-content > .panel:first-child {
-    margin-top: 0.65rem;
+    margin-top: 1.65rem;
   }
 
   .hero-tag {
