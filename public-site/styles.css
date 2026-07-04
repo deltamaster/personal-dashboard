@@ -773,13 +773,13 @@ main {
 
 @media (min-width: 601px) and (max-width: 960px) and (orientation: portrait) {
   :root {
-    --hero-padding-top: 3.5rem;
-    --hero-padding-bottom: 3.5rem;
+    --hero-padding-top: 4.5rem;
+    --hero-padding-bottom: 4.5rem;
     --hero-profile-gap: 1.75rem;
   }
 
   .hero {
-    min-height: clamp(22rem, 40vh, 30rem);
+    min-height: unset;
     margin-bottom: 0;
     padding: var(--hero-padding-top) 0 var(--hero-padding-bottom);
   }
