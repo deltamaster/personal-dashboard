@@ -686,7 +686,7 @@ main {
 
 @media (max-width: 600px) {
   :root {
-    --page-gutter: 0.5rem;
+    --page-inset: max(0.625rem, env(safe-area-inset-left, 0px));
     --hero-edge-gap: 1.375rem;
     --hero-profile-gap: 1.5rem;
   }
@@ -695,7 +695,8 @@ main {
     flex-direction: column;
     align-items: stretch;
     gap: 0.65rem;
-    padding: 0.85rem var(--page-gutter);
+    padding: 0.85rem var(--page-inset);
+    padding-right: max(0.625rem, env(safe-area-inset-right, 0px));
   }
 
   .status-bar {
@@ -729,13 +730,55 @@ main {
   }
 
   .hero-content {
-    padding: 0 var(--page-gutter);
+    padding: 0 var(--page-inset);
+    padding-right: max(0.625rem, env(safe-area-inset-right, 0px));
     width: 100%;
   }
 
   .main-content {
-    padding-left: var(--page-gutter);
-    padding-right: var(--page-gutter);
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .panel {
+    border-left: none;
+    border-right: none;
+  }
+
+  .panel-header {
+    padding-left: var(--page-inset);
+    padding-right: max(0.625rem, env(safe-area-inset-right, 0px));
+  }
+
+  .panel-body,
+  .timeline,
+  .focus-grid,
+  .skill-grid,
+  .link-grid {
+    padding-left: var(--page-inset);
+    padding-right: max(0.625rem, env(safe-area-inset-right, 0px));
+  }
+
+  .panel-body {
+    padding-top: 1.15rem;
+    padding-bottom: 1.35rem;
+  }
+
+  .timeline {
+    padding-top: 1rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .focus-grid,
+  .skill-grid,
+  .link-grid {
+    padding-top: 1rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .site-footer {
+    padding-left: var(--page-inset);
+    padding-right: max(0.625rem, env(safe-area-inset-right, 0px));
   }
 
   .main-content > .panel:first-child {
@@ -766,10 +809,6 @@ main {
     margin-top: 0.2rem;
   }
 
-  .panel-body {
-    padding: 1.15rem var(--page-gutter) 1.35rem;
-  }
-
   .hero-image {
     object-position: 74% 32%;
   }
@@ -782,7 +821,7 @@ main {
 
 @media (min-width: 601px) and (max-width: 960px) and (orientation: portrait) {
   :root {
-    --page-gutter: 1rem;
+    --page-inset: 0.875rem;
     --hero-edge-gap: 1.75rem;
     --hero-profile-gap: 1.5rem;
   }
@@ -794,12 +833,36 @@ main {
   }
 
   .hero-content {
-    padding: 0 var(--page-gutter);
+    padding: 0 var(--page-inset);
   }
 
   .main-content {
-    padding-left: var(--page-gutter);
-    padding-right: var(--page-gutter);
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .panel {
+    border-left: none;
+    border-right: none;
+  }
+
+  .panel-header {
+    padding-left: var(--page-inset);
+    padding-right: var(--page-inset);
+  }
+
+  .panel-body,
+  .timeline,
+  .focus-grid,
+  .skill-grid,
+  .link-grid {
+    padding-left: var(--page-inset);
+    padding-right: var(--page-inset);
+  }
+
+  .site-footer {
+    padding-left: var(--page-inset);
+    padding-right: var(--page-inset);
   }
 
   .main-content > .panel:first-child {
@@ -809,7 +872,7 @@ main {
 
 @media (orientation: landscape) and (max-width: 960px) and (max-height: 500px) {
   :root {
-    --page-gutter: 1rem;
+    --page-inset: 0.875rem;
     --hero-edge-gap: 1.125rem;
     --hero-profile-gap: 1.125rem;
   }
@@ -837,13 +900,28 @@ main {
   }
 
   .hero-content {
-    padding: 0 var(--page-gutter);
+    padding: 0 var(--page-inset);
     width: 100%;
   }
 
   .main-content {
-    padding-left: var(--page-gutter);
-    padding-right: var(--page-gutter);
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .panel {
+    border-left: none;
+    border-right: none;
+  }
+
+  .panel-header,
+  .panel-body,
+  .timeline,
+  .focus-grid,
+  .skill-grid,
+  .link-grid {
+    padding-left: var(--page-inset);
+    padding-right: var(--page-inset);
   }
 
   .main-content > .panel:first-child {
