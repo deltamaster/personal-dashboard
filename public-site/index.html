@@ -39,15 +39,20 @@
     <main>
       <section class="hero" id="top">
         <div class="hero-banner" aria-hidden="true">
-          <img
-            class="hero-image"
-            src="images/hero.webp"
-            alt=""
-            width="1920"
-            height="823"
-            decoding="async"
-            fetchpriority="high"
-          />
+          <picture>
+            <source srcset="images/hero.webp" type="image/webp" />
+            <source srcset="images/hero.png" type="image/png" />
+            <source srcset="images/hero.jpg" type="image/jpeg" />
+            <img
+              class="hero-image"
+              src="images/hero.png"
+              alt=""
+              width="1920"
+              height="823"
+              decoding="async"
+              fetchpriority="high"
+            />
+          </picture>
           <div class="hero-banner-shade"></div>
         </div>
         <div class="hero-content">
