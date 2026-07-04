@@ -2,6 +2,7 @@ name: Deploy Public Site
 
 on:
   push:
+    branches: [main]
     paths:
       - "public-site/**"
       - ".github/workflows/deploy-public-site.yml"
@@ -77,6 +78,10 @@ jobs:
           ALIBABA_CLOUD_SECURITY_TOKEN: ${{ steps.sts.outputs.security_token }}
         run: |
           ossutil config -e "$OSS_ENDPOINT" -i "$ALIBABA_CLOUD_ACCESS_KEY_ID" -k "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" -t "$ALIBABA_CLOUD_SECURITY_TOKEN" -L CH
+          if ! ossutil ls "oss://${OSS_WWW_BUCKET}/" --limited-num 1 >/dev/null 2>&1; then
+            echo "::error::OSS bucket ${OSS_WWW_BUCKET} does not exist. Run Terraform apply (cn-shanghai stack) first."
+            exit 1
+          fi
           ossutil cp -r public-site/ "oss://${OSS_WWW_BUCKET}/" --update --force --disable-dir-object
           find public-site -name '*.html' | while read -r f; do
             rel="${f#public-site/}"
