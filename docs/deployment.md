@@ -34,7 +34,7 @@ After first apply:
 | Public site | `public-site/` (static HTML) | OSS `huhansen-www` → `www.huhansen.cn` |
 | API | `npm run build:api` → `api.zip` | OSS vault → FC custom runtime |
 
-**Public site (`www.huhansen.cn`):** provision via Terraform (Shanghai stack, `create_www_site = true`). Deploy with **Actions → Deploy Public Site** or push changes under `public-site/`. DNS: CNAME `www` → Terraform output `www_cdn_cname`.
+**Public site (`www.huhansen.cn`):** provision via Terraform (Shanghai stack, `create_www_site = true`). Deploy with **Actions → Deploy Public Site** or push changes under `public-site/`. DNS: CNAME `www` → Terraform output `www_cdn_cname`. Hero layout/typography constraints: [public-site/LAYOUT.md](../public-site/LAYOUT.md).
 
 ---
 

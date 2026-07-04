@@ -281,6 +281,7 @@ main {
   margin: 1.25rem 0 0;
   font-size: var(--text-lg);
   color: var(--muted);
+  text-indent: 0;
 }
 
 .hero-name-zh {
@@ -289,12 +290,7 @@ main {
   letter-spacing: 0.35em;
   color: var(--cyan);
   opacity: 0.85;
-}
-
-.typed-cursor {
-  color: var(--cyan);
-  margin-right: 0.35rem;
-  animation: blink 1s step-end infinite;
+  text-indent: 0;
 }
 
 .hero-meta {
@@ -306,6 +302,7 @@ main {
   font-size: var(--text-lg);
   letter-spacing: 0.16em;
   color: var(--muted);
+  text-indent: 0;
 }
 
 .panel {
@@ -685,6 +682,12 @@ main {
 }
 
 @media (max-width: 600px) {
+  :root {
+    --hero-padding-top: 3.5rem;
+    --hero-padding-bottom: 3.5rem;
+    --hero-profile-gap: 1.75rem;
+  }
+
   .site-header {
     flex-direction: column;
     align-items: stretch;
@@ -712,8 +715,9 @@ main {
   }
 
   .hero {
-    min-height: clamp(21rem, 48vh, 26rem);
-    margin-bottom: 1.5rem;
+    min-height: unset;
+    margin-bottom: 0;
+    padding: var(--hero-padding-top) 0 var(--hero-padding-bottom);
   }
 
   .hero-banner {
@@ -722,26 +726,39 @@ main {
   }
 
   .hero-content {
-    padding: 4.5rem 0.75rem 1rem;
+    padding: 0 0.75rem;
+    width: 100%;
+  }
+
+  .main-content > .panel:first-child {
+    margin-top: var(--hero-profile-gap);
   }
 
   .hero-tag {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .hero-subtitle,
+  .hero-meta {
+    letter-spacing: normal;
   }
 
   .hero-subtitle {
-    margin-top: 1rem;
+    margin-top: 0.5rem;
     white-space: nowrap;
+    line-height: 1.4;
   }
 
   .hero-meta {
-    margin-top: 0.55rem;
-    flex-wrap: nowrap;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+    row-gap: 0.2rem;
     white-space: nowrap;
   }
 
   .hero-name-zh {
-    margin-top: 0.4rem;
+    margin-top: 0.2rem;
+    letter-spacing: 0.12em;
   }
 
   .hero-image {
@@ -754,7 +771,61 @@ main {
   }
 }
 
-@media (orientation: landscape) and (max-width: 960px) {
+@media (min-width: 601px) and (max-width: 960px) and (orientation: portrait) {
+  :root {
+    --hero-padding-top: 4.5rem;
+    --hero-padding-bottom: 4.5rem;
+    --hero-profile-gap: 1.75rem;
+  }
+
+  .hero {
+    min-height: unset;
+    margin-bottom: 0;
+    padding: var(--hero-padding-top) 0 var(--hero-padding-bottom);
+  }
+
+  .hero-content {
+    padding: 0 1.5rem;
+  }
+
+  .main-content > .panel:first-child {
+    margin-top: var(--hero-profile-gap);
+  }
+
+  .hero-tag {
+    margin-bottom: 0.35rem;
+  }
+
+  .hero-subtitle,
+  .hero-meta {
+    letter-spacing: normal;
+  }
+
+  .hero-subtitle {
+    margin-top: 0.5rem;
+    white-space: nowrap;
+    line-height: 1.4;
+  }
+
+  .hero-meta {
+    margin-top: 0.5rem;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  .hero-name-zh {
+    margin-top: 0.2rem;
+    letter-spacing: 0.12em;
+  }
+}
+
+@media (orientation: landscape) and (max-width: 960px) and (max-height: 500px) {
+  :root {
+    --hero-padding-top: 3.15rem;
+    --hero-padding-bottom: 3.15rem;
+    --hero-profile-gap: 1.65rem;
+  }
+
   .site-header {
     flex-direction: row;
     align-items: center;
@@ -772,25 +843,37 @@ main {
   }
 
   .hero {
-    min-height: clamp(11rem, 88vh, 16rem);
-    margin-bottom: 1.25rem;
+    min-height: unset;
+    margin-bottom: 0;
+    padding: var(--hero-padding-top) 0 var(--hero-padding-bottom);
   }
 
   .hero-content {
-    padding: 2.25rem 1.25rem 0.85rem;
+    padding: 0 1.25rem;
+    width: 100%;
+  }
+
+  .main-content > .panel:first-child {
+    margin-top: var(--hero-profile-gap);
   }
 
   .hero-tag {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .hero-subtitle,
+  .hero-meta {
+    letter-spacing: normal;
   }
 
   .hero-subtitle {
-    margin-top: 0.65rem;
+    margin-top: 0.45rem;
     white-space: nowrap;
+    line-height: 1.4;
   }
 
   .hero-meta {
-    margin-top: 0.45rem;
+    margin-top: 0.4rem;
     flex-wrap: nowrap;
     white-space: nowrap;
   }
@@ -811,6 +894,14 @@ main {
     font-size: 0.5rem;
     letter-spacing: 0.02em;
     gap: 0.12rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .hero-subtitle,
+  .hero-meta {
+    font-size: 0.75rem;
+    letter-spacing: normal;
   }
 }
 
