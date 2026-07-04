@@ -162,6 +162,77 @@ prune_state_prefix() {
   done <<< "$addrs"
 }
 
+# Search indexes were removed from Terraform; drop any leftover state so apply does not
+# re-attempt destroys or fight address moves.
+prune_retired_ots_search_index_state() {
+  local addrs
+  addrs=$(terraform state list 2>/dev/null | grep '^alicloud_ots_search_index\.indexes' || true)
+  if [ -z "$addrs" ]; then
+    return 0
+  fi
+  echo "Pruning retired OTS search index state (no longer managed in Terraform)"
+  while IFS= read -r addr; do
+    [ -z "$addr" ] && continue
+    echo "  terraform state rm $addr"
+    terraform state rm "$addr"
+  done <<< "$addrs"
+}
+
+# Prevent duplicate api / api[0] FC custom-domain state from destroying the live domain.
+reconcile_fc_custom_domain_state() {
+  local domain="${FC_CUSTOM_DOMAIN:-}"
+  if [ -z "$domain" ] && [ -n "${CDN_DOMAIN:-}" ]; then
+    domain="api.${CDN_DOMAIN}"
+  fi
+  if [ -z "$domain" ]; then
+    return 0
+  fi
+
+  local legacy_addr="alicloud_fcv3_custom_domain.api"
+  local indexed_addr='alicloud_fcv3_custom_domain.api[0]'
+  local has_legacy=0 has_indexed=0
+
+  terraform state show "$legacy_addr" >/dev/null 2>&1 && has_legacy=1
+  terraform state show "$indexed_addr" >/dev/null 2>&1 && has_indexed=1
+
+  if [ "$has_legacy" = "1" ] && [ "$has_indexed" = "1" ]; then
+    echo "Duplicate FC custom domain in state — removing legacy $legacy_addr (cloud resource stays under api[0])"
+    terraform state rm "$legacy_addr"
+    has_legacy=0
+  elif [ "$has_legacy" = "1" ] && [ "$has_indexed" = "0" ]; then
+    echo "Migrating FC custom domain state: $legacy_addr -> $indexed_addr"
+    terraform state mv "$legacy_addr" "$indexed_addr"
+    has_legacy=0
+    has_indexed=1
+  fi
+
+  if ! configure_aliyun_cli; then
+    echo "aliyun CLI unavailable — skipping FC custom domain cloud/state sync"
+    return 0
+  fi
+
+  local cloud_exists=0
+  if fc_api GET "/2023-03-30/custom-domains/${domain}" >/dev/null 2>&1; then
+    cloud_exists=1
+  fi
+
+  if [ "$cloud_exists" = "1" ]; then
+    if [ "$has_indexed" = "0" ]; then
+      import_if_missing "$indexed_addr" "$domain"
+    fi
+    return 0
+  fi
+
+  if [ "$has_indexed" = "1" ]; then
+    echo "FC custom domain ${domain} missing in cloud — removing stale state $indexed_addr so Terraform can recreate"
+    terraform state rm "$indexed_addr"
+  fi
+  if [ "$has_legacy" = "1" ]; then
+    echo "FC custom domain ${domain} missing in cloud — removing stale state $legacy_addr"
+    terraform state rm "$legacy_addr"
+  fi
+}
+
 import_if_missing alicloud_ots_instance.main "$OTS_INSTANCE"
 
 if ! terraform state show alicloud_ots_instance.main >/dev/null 2>&1; then
@@ -183,6 +254,7 @@ if terraform state show alicloud_ots_instance.main >/dev/null 2>&1; then
   for table in "${OTS_TABLES[@]}"; do
     import_if_missing "alicloud_ots_table.tables[\"$table\"]" "${OTS_INSTANCE}:${table}"
   done
+  prune_retired_ots_search_index_state
 fi
 
 migrate_legacy_fc_container_runtime
@@ -198,9 +270,7 @@ else
   else
     import_if_missing alicloud_fcv3_trigger.http "${FC_FUNCTION}:${FC_HTTP_TRIGGER}"
     import_if_missing alicloud_fcv3_provision_config.api "$FC_FUNCTION"
-    if [ -n "${CDN_DOMAIN:-}" ]; then
-      import_if_missing 'alicloud_fcv3_custom_domain.api[0]' "${FC_CUSTOM_DOMAIN:-api.${CDN_DOMAIN}}"
-    fi
+    reconcile_fc_custom_domain_state
   fi
 fi
 
