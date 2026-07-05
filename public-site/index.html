@@ -16,10 +16,13 @@
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <link rel="canonical" href="https://www.huhansen.cn/" />
     <link rel="alternate" hreflang="zh-CN" href="https://www.huhansen.cn/" />
+    <link rel="alternate" hreflang="en" href="https://www.huhansen.cn/?lang=en" />
+    <link rel="alternate" hreflang="x-default" href="https://www.huhansen.cn/" />
     <meta name="theme-color" content="#050508" />
     <meta property="og:type" content="profile" />
     <meta property="og:site_name" content="Hansen Hu" />
     <meta property="og:locale" content="zh_CN" />
+    <meta property="og:locale:alternate" content="en_US" />
     <meta property="og:url" content="https://www.huhansen.cn/" />
     <meta property="og:title" content="胡瀚森 Hansen Hu | 高盛 Engineering Executive Director" />
     <meta
@@ -67,6 +70,7 @@
           "name": "Shanghai University"
         },
         "sameAs": ["https://www.linkedin.com/in/deltamaster"],
+        "knowsLanguage": ["zh-CN", "en"],
         "knowsAbout": [
           "AWS",
           "Azure",
@@ -96,8 +100,14 @@
         <span>SYS.ONLINE</span>
         <span class="divider">|</span>
         <span id="clock">--:--:--</span>
+        <span class="divider">|</span>
+        <div class="lang-switch" role="group" data-i18n-attr="aria-label:sr.lang">
+          <button type="button" class="lang-btn is-active" data-lang="zh" aria-pressed="true">中文</button>
+          <span class="lang-sep" aria-hidden="true">/</span>
+          <button type="button" class="lang-btn" data-lang="en" aria-pressed="false">EN</button>
+        </div>
       </div>
-      <nav class="nav" aria-label="主导航">
+      <nav class="nav" data-i18n-attr="aria-label:sr.nav">
         <a href="#profile">PROFILE</a>
         <a href="#experience">EXPERIENCE</a>
         <a href="#focus">INITIATIVES</a>
@@ -117,19 +127,20 @@
             height="962"
             decoding="async"
             fetchpriority="high"
+            data-i18n-attr="alt:meta.heroAlt"
           />
           <div class="hero-banner-shade"></div>
         </div>
         <div class="hero-content">
-          <p class="hero-tag">// ENGINEERING NODE</p>
+          <p class="hero-tag" data-i18n="hero.tag">// ENGINEERING NODE</p>
           <h1 class="glitch" data-text="HANSEN HU">
-            <span class="sr-only">胡瀚森 </span>HANSEN HU
+            <span class="sr-only" data-i18n="sr.heroName">胡瀚森 </span>HANSEN HU
           </h1>
-          <p class="hero-name-zh">胡瀚森</p>
-          <p class="hero-subtitle">Executive Director · Engineering · Goldman Sachs</p>
+          <p class="hero-name-zh" data-i18n="hero.nameZh">胡瀚森</p>
+          <p class="hero-subtitle" data-i18n="hero.subtitle">Executive Director · Engineering · Goldman Sachs</p>
           <div class="hero-meta">
-            <span>LOC: SHANGHAI</span>
-            <span>SINCE: 2022</span>
+            <span data-i18n="hero.loc">LOC: SHANGHAI</span>
+            <span data-i18n="hero.since">SINCE: 2022</span>
           </div>
         </div>
       </section>
@@ -138,23 +149,23 @@
       <section class="panel" id="profile">
         <div class="panel-header">
           <span class="panel-id">[01]</span>
-          <h2><span class="sr-only">个人简介 · </span>PROFILE</h2>
+          <h2><span class="sr-only" data-i18n="sr.profile">个人简介 · </span>PROFILE</h2>
           <span class="panel-line"></span>
         </div>
         <div class="panel-body">
-          <p class="panel-lead">
+          <p class="panel-lead" data-i18n="profile.lead">
             逾十年深耕金融服务基础设施与平台工程，经历从一线开发、运维到工程领导力的完整路径，深度理解从传统基础设施到云原生架构的演进。
           </p>
-          <p>
+          <p data-i18n-html="profile.p1">
             现任 <strong>高盛（中国）</strong>
             <strong>Executive Director</strong>，自 2022 年 2 月起领导 9 人跨职能团队，覆盖中国区 Developer Experience &amp;
             Runtime、公有云、SRE、SDLC、SecDB、数据平台与 AI 平台。
           </p>
-          <p>
+          <p data-i18n="profile.p2">
             主导云转型战略、高性能存储方案与开发者平台建设，将资源交付从数天缩短至秒级；通过跨团队知识共享与 Prometheus / Grafana /
             PagerDuty 统一监控告警，MTTR 降低 40%。正在推进受监管环境下的 Enterprise AI 评估与合规框架设计，并与纽约、伦敦、新加坡团队协作，对齐全球安全标准。
           </p>
-          <p class="panel-note">
+          <p class="panel-note" data-i18n="profile.note">
             上海大学 · 计算机科学与技术 · 工学学士 · 2008 — 2012 · 创办上海大学开源社区
           </p>
         </div>
@@ -163,7 +174,7 @@
       <section class="panel" id="experience">
         <div class="panel-header">
           <span class="panel-id">[02]</span>
-          <h2><span class="sr-only">工作经历 · </span>EXPERIENCE</h2>
+          <h2><span class="sr-only" data-i18n="sr.experience">工作经历 · </span>EXPERIENCE</h2>
           <span class="panel-line"></span>
         </div>
         <ol class="timeline">
@@ -172,38 +183,12 @@
             <div class="timeline-content">
               <div class="timeline-head">
                 <span class="timeline-org">Goldman Sachs</span>
-                <span class="timeline-period">2022 — Present</span>
+                <span class="timeline-period" data-i18n="experience.gs.period">2022 — Present</span>
               </div>
-              <p class="timeline-role">
+              <p class="timeline-role" data-i18n="experience.gs.role">
                 Executive Director · China Lead · Developer Experience &amp; Runtime · Shanghai
               </p>
-              <ul class="timeline-list">
-                <li>
-                  带领 9 人跨职能团队，负责中国区公有云、官网运维、集中日志、任务调度、SDLC、SecDB、数据平台与 AI 平台
-                </li>
-                <li>
-                  主导 AWS / Azure 中国区公有云战略与端到端运营，满足 data residency 与网络安全等监管合规要求
-                </li>
-                <li>管理 Centralized Logging 平台与 SDLC 工具链，提升跨团队开发效率与运维可见性</li>
-                <li>
-                  领导 China Data Platform：Reference Data、Data Catalog &amp; Governance、External File Transfer 与
-                  Lakehouse 架构
-                </li>
-                <li>
-                  负责中国区 <strong>SecDB</strong> 运维——高盛跨资产类别统一风险计算专有平台，保障平台可靠性、数据完整性与全球
-                  Engineering 协同
-                </li>
-                <li>
-                  主导 Enterprise AI 生产力工具评估，设计涵盖 audit trail、data boundary、TLS encryption、I/O
-                  guardrails、IAM integration 的合规框架
-                </li>
-                <li>
-                  建立跨团队知识共享与 Prometheus / Grafana / PagerDuty 统一监控告警，MTTR 降低 40%
-                </li>
-                <li>
-                  与纽约、伦敦、新加坡全球 Engineering 协作，推进基础设施标准化、安全 posture 提升与运营效率
-                </li>
-              </ul>
+              <ul class="timeline-list" data-i18n-list="experience.gs.bullets"></ul>
             </div>
           </li>
           <li class="timeline-item">
@@ -211,25 +196,10 @@
             <div class="timeline-content">
               <div class="timeline-head">
                 <span class="timeline-org">Morgan Stanley</span>
-                <span class="timeline-period">2014 — 2021</span>
+                <span class="timeline-period" data-i18n="experience.ms.period">2014 — 2021</span>
               </div>
-              <p class="timeline-role">Vice President · Storage &amp; Cloud Engineering · Shanghai</p>
-              <ul class="timeline-list">
-                <li>从 Storage Engineer 成长为 VP；主导中国区 Cloud Transformation（Azure China）与高性能存储工程</li>
-                <li>
-                  主导 Azure China 公有云转型战略：架构设计、迁移规划、合规评估，并与 Morgan Stanley 全球 Technology 团队对齐
-                </li>
-                <li>
-                  IBM Spectrum Scale 高性能存储 + 100Gbps 网络基础设施，near wire-speed throughput，服务低延迟交易负载
-                </li>
-                <li>
-                  设计 iSCSI block storage 方案（Python 全量重写），LUN provisioning 从数天缩短至秒级，支持工程团队自助化
-                </li>
-                <li>
-                  开发 NAS/SAN monitoring tools，执行 NetApp 7-mode → c-mode migration，提升存储管理效率与平台可靠性
-                </li>
-                <li>2019 年晋升 Vice President，表彰技术领导力与中国区基础设施现代化贡献</li>
-              </ul>
+              <p class="timeline-role" data-i18n="experience.ms.role">Vice President · Storage &amp; Cloud Engineering · Shanghai</p>
+              <ul class="timeline-list" data-i18n-list="experience.ms.bullets"></ul>
             </div>
           </li>
           <li class="timeline-item">
@@ -237,14 +207,10 @@
             <div class="timeline-content">
               <div class="timeline-head">
                 <span class="timeline-org">EMC</span>
-                <span class="timeline-period">2012 — 2014</span>
+                <span class="timeline-period" data-i18n="experience.emc.period">2012 — 2014</span>
               </div>
-              <p class="timeline-role">Software Engineer · Midrange Storage · Shanghai</p>
-              <ul class="timeline-list">
-                <li>VNX 中端存储产品线 Linux kernel driver development（user-space &amp; kernel-space）</li>
-                <li>C/C++ 开发与维护 iSCSI、inotify、TCP protocol stack</li>
-                <li>参与 VNX mid-range storage platform——EMC 旗舰 enterprise storage 产品，服务全球数千企业客户</li>
-              </ul>
+              <p class="timeline-role" data-i18n="experience.emc.role">Software Engineer · Midrange Storage · Shanghai</p>
+              <ul class="timeline-list" data-i18n-list="experience.emc.bullets"></ul>
             </div>
           </li>
         </ol>
@@ -253,29 +219,42 @@
       <section class="panel" id="focus">
         <div class="panel-header">
           <span class="panel-id">[03]</span>
-          <h2><span class="sr-only">技术领导力与 initiatives · </span>INITIATIVES</h2>
+          <h2><span class="sr-only" data-i18n="sr.initiatives">技术领导力 · </span>INITIATIVES</h2>
           <span class="panel-line"></span>
         </div>
         <ul class="focus-grid">
-          <li>
+          <li class="focus-card">
             <span class="focus-label">AI</span>
-            Enterprise AI Evaluation — assessing cloud-based AI services for regulated environments; compliance framework
-            covering audit trails, data boundaries, encryption, guardrails, and identity integration
+            <p class="focus-title" data-i18n="initiatives.ai.title">Enterprise AI Evaluation</p>
+            <ul class="focus-points">
+              <li data-i18n="initiatives.ai.points.0"></li>
+              <li data-i18n="initiatives.ai.points.1"></li>
+              <li data-i18n="initiatives.ai.points.2"></li>
+            </ul>
           </li>
-          <li>
+          <li class="focus-card">
             <span class="focus-label">COMPLIANCE</span>
-            Cloud Compliance Framework — infrastructure deployment patterns meeting Chinese financial regulatory
-            requirements while aligning with global security standards
+            <p class="focus-title" data-i18n="initiatives.compliance.title">Cloud Compliance Framework</p>
+            <ul class="focus-points">
+              <li data-i18n="initiatives.compliance.points.0"></li>
+              <li data-i18n="initiatives.compliance.points.1"></li>
+            </ul>
           </li>
-          <li>
+          <li class="focus-card">
             <span class="focus-label">GLOBAL</span>
-            Cross-Regional Architecture — standardizing monitoring, logging, and incident management across China,
-            Singapore, and global sites
+            <p class="focus-title" data-i18n="initiatives.global.title">Cross-Regional Architecture</p>
+            <ul class="focus-points">
+              <li data-i18n="initiatives.global.points.0"></li>
+              <li data-i18n="initiatives.global.points.1"></li>
+            </ul>
           </li>
-          <li>
+          <li class="focus-card">
             <span class="focus-label">PLATFORM</span>
-            Platform Engineering — job scheduling, SDLC toolchain, centralized logging; improving cross-functional
-            productivity and operational reliability
+            <p class="focus-title" data-i18n="initiatives.platform.title">Platform Engineering</p>
+            <ul class="focus-points">
+              <li data-i18n="initiatives.platform.points.0"></li>
+              <li data-i18n="initiatives.platform.points.1"></li>
+            </ul>
           </li>
         </ul>
       </section>
@@ -283,37 +262,37 @@
       <section class="panel" id="skills">
         <div class="panel-header">
           <span class="panel-id">[04]</span>
-          <h2><span class="sr-only">技能专长 · </span>SKILLS</h2>
+          <h2><span class="sr-only" data-i18n="sr.skills">技能专长 · </span>SKILLS</h2>
           <span class="panel-line"></span>
         </div>
         <ul class="skill-grid">
           <li>
             <span class="skill-label">CLOUD</span>
-            AWS · Azure / Azure China · Infrastructure-as-Code · Cloud Migration &amp; Transformation
+            <span data-i18n="skills.cloud">AWS · Azure / Azure China · Infrastructure-as-Code · Cloud Migration &amp; Transformation</span>
           </li>
           <li>
             <span class="skill-label">DATA</span>
-            Reference Data · Data Catalog &amp; Governance · Lakehouse · SecDB
+            <span data-i18n="skills.data">Reference Data · Data Catalog &amp; Governance · Lakehouse · SecDB</span>
           </li>
           <li>
             <span class="skill-label">SRE</span>
-            Prometheus · Grafana · PagerDuty · Centralized Logging · SLA/SLO Management
+            <span data-i18n="skills.sre">Prometheus · Grafana · PagerDuty · Centralized Logging · SLA/SLO Management</span>
           </li>
           <li>
             <span class="skill-label">STORAGE</span>
-            NetApp · EMC VNX · Spectrum Scale · iSCSI · Fibre Channel · NFS · High-Performance Tuning
+            <span data-i18n="skills.storage">NetApp · EMC VNX · Spectrum Scale · iSCSI · Fibre Channel · NFS · High-Performance Tuning</span>
           </li>
           <li>
             <span class="skill-label">CODE</span>
-            Python · C/C++ · Linux Kernel · JavaScript/Angular · Java · Perl
+            <span data-i18n="skills.code">Python · C/C++ · Linux Kernel · JavaScript/Angular · Java · Perl</span>
           </li>
           <li>
             <span class="skill-label">DEVOPS</span>
-            Docker/Containers · CI/CD Pipelines · Scrum/Agile · Platform Engineering
+            <span data-i18n="skills.devops">Docker/Containers · CI/CD Pipelines · Scrum/Agile · Platform Engineering</span>
           </li>
           <li>
             <span class="skill-label">LEAD</span>
-            Cross-Functional Engineering Leadership · Global Stakeholder Management · AI Strategy &amp; Governance
+            <span data-i18n="skills.lead">Cross-Functional Engineering Leadership · Global Stakeholder Management · AI Strategy &amp; Governance</span>
           </li>
         </ul>
       </section>
@@ -321,7 +300,7 @@
       <section class="panel" id="contact">
         <div class="panel-header">
           <span class="panel-id">[05]</span>
-          <h2><span class="sr-only">联系方式 · </span>CONTACT</h2>
+          <h2><span class="sr-only" data-i18n="sr.contact">联系方式 · </span>CONTACT</h2>
           <span class="panel-line"></span>
         </div>
         <div class="link-grid">
@@ -358,6 +337,7 @@
       </p>
     </footer>
 
+    <script src="i18n.js"></script>
     <script src="script.js"></script>
   </body>
 </html>

@@ -7,6 +7,7 @@
   }
 
   function tick() {
+    if (!clockEl) return;
     const now = new Date();
     clockEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
   }
@@ -20,9 +21,90 @@
     );
   }
 
-  yearEl.textContent = String(new Date().getFullYear());
+  function getNested(obj, path) {
+    return path.split(".").reduce((current, key) => current?.[key], obj);
+  }
+
+  function setMeta(name, content, attr) {
+    const selector = attr ? `meta[${attr}="${name}"]` : `meta[name="${name}"]`;
+    const el = document.querySelector(selector);
+    if (el && content) el.setAttribute("content", content);
+  }
+
+  function applyI18n(lang) {
+    const t = window.SITE_I18N?.[lang];
+    if (!t) return;
+
+    document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+
+    document.title = t.meta.title;
+    setMeta("description", t.meta.description);
+    setMeta("og:title", t.meta.ogTitle, "property");
+    setMeta("og:description", t.meta.ogDescription, "property");
+    setMeta("og:locale", lang === "zh" ? "zh_CN" : "en_US", "property");
+    setMeta("twitter:title", t.meta.twitterTitle);
+    setMeta("twitter:description", t.meta.twitterDescription);
+
+    document.querySelectorAll("[data-i18n]").forEach((el) => {
+      const value = getNested(t, el.dataset.i18n);
+      if (typeof value === "string") el.textContent = value;
+    });
+
+    document.querySelectorAll("[data-i18n-html]").forEach((el) => {
+      const value = getNested(t, el.dataset.i18nHtml);
+      if (typeof value === "string") el.innerHTML = value;
+    });
+
+    document.querySelectorAll("[data-i18n-list]").forEach((ul) => {
+      const bullets = getNested(t, ul.dataset.i18nList);
+      if (!Array.isArray(bullets)) return;
+      ul.innerHTML = bullets.map((item) => `<li>${item}</li>`).join("");
+    });
+
+    document.querySelectorAll("[data-i18n-attr]").forEach((el) => {
+      el.dataset.i18nAttr.split(";").forEach((pair) => {
+        const [attr, path] = pair.split(":").map((part) => part.trim());
+        const value = getNested(t, path);
+        if (attr && typeof value === "string") el.setAttribute(attr, value);
+      });
+    });
+
+    document.querySelectorAll(".lang-btn").forEach((btn) => {
+      const active = btn.dataset.lang === lang;
+      btn.classList.toggle("is-active", active);
+      btn.setAttribute("aria-pressed", String(active));
+    });
+  }
+
+  function getInitialLang() {
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get("lang");
+    if (fromUrl === "en" || fromUrl === "zh") return fromUrl;
+    const stored = localStorage.getItem("site-lang");
+    if (stored === "en" || stored === "zh") return stored;
+    return "zh";
+  }
+
+  function setLang(lang) {
+    if (lang !== "zh" && lang !== "en") return;
+    localStorage.setItem("site-lang", lang);
+    applyI18n(lang);
+
+    const url = new URL(window.location.href);
+    if (lang === "zh") url.searchParams.delete("lang");
+    else url.searchParams.set("lang", lang);
+    history.replaceState(null, "", url);
+  }
+
+  if (yearEl) yearEl.textContent = String(new Date().getFullYear());
   tick();
   setInterval(tick, 1000);
   syncHeaderScrollOffset();
   window.addEventListener("resize", syncHeaderScrollOffset);
+
+  applyI18n(getInitialLang());
+
+  document.querySelectorAll(".lang-btn").forEach((btn) => {
+    btn.addEventListener("click", () => setLang(btn.dataset.lang));
+  });
 })();
