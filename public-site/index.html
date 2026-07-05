@@ -163,16 +163,12 @@
             Runtime、公有云、SRE、SDLC、SecDB、数据平台与 AI 平台。
           </p>
           <p data-i18n="profile.p2">
-            主导中国区公有云战略与开发者/SRE 平台建设；通过 Prometheus / Grafana / PagerDuty
-            统一可观测性与跨团队知识共享，MTTR 降低 40%。推进受监管环境下的企业 AI 战略与合规框架，并与纽约、伦敦、新加坡全球工程团队协作。
-          </p>
-          <p class="panel-note" data-i18n="profile.note">
-            上海大学 · 计算机科学与技术 · 工学学士 · 2008 — 2012 · 创办上海大学开源社区
+            主导中国区公有云与工程平台战略，在强监管环境中构建可扩展的技术底座，推动云原生、数据与 AI 能力持续演进，并与全球工程体系保持战略对齐。
           </p>
         </div>
       </section>
 
-      <section class="panel" id="experience">
+      <section class="panel panel--experience" id="experience">
         <div class="panel-header">
           <span class="panel-id">[02]</span>
           <h2><span class="sr-only" data-i18n="sr.experience">工作经历 · </span>EXPERIENCE</h2>
@@ -215,6 +211,20 @@
             </div>
           </li>
         </ol>
+        <div class="timeline-divider" aria-hidden="true"></div>
+        <ol class="timeline timeline--education">
+          <li class="timeline-item">
+            <div class="timeline-marker"></div>
+            <div class="timeline-content">
+              <div class="timeline-head">
+                <span class="timeline-org" data-i18n="experience.edu.org">上海大学</span>
+                <span class="timeline-period" data-i18n="experience.edu.period">2008 — 2012</span>
+              </div>
+              <p class="timeline-role" data-i18n="experience.edu.role">计算机科学与技术 · 工学学士</p>
+              <ul class="timeline-list" data-i18n-list="experience.edu.bullets"></ul>
+            </div>
+          </li>
+        </ol>
       </section>
 
       <section class="panel" id="focus">
@@ -223,40 +233,22 @@
           <h2><span class="sr-only" data-i18n="sr.initiatives">技术领导力 · </span>INITIATIVES</h2>
           <span class="panel-line"></span>
         </div>
-        <ul class="focus-grid">
-          <li class="focus-card">
-            <span class="focus-label">AI</span>
-            <p class="focus-title" data-i18n="initiatives.ai.title">企业 AI 战略</p>
-            <ul class="focus-points">
-              <li data-i18n="initiatives.ai.points.0"></li>
-              <li data-i18n="initiatives.ai.points.1"></li>
-              <li data-i18n="initiatives.ai.points.2"></li>
-            </ul>
+        <ul class="skill-grid">
+          <li class="skill-card">
+            <span class="skill-label">AI</span>
+            <ul class="skill-tags" data-i18n-list="initiatives.ai"></ul>
           </li>
-          <li class="focus-card">
-            <span class="focus-label" data-i18n="initiatives.cloud.label">云</span>
-            <p class="focus-title" data-i18n="initiatives.cloud.title">云合规框架</p>
-            <ul class="focus-points">
-              <li data-i18n="initiatives.cloud.points.0"></li>
-              <li data-i18n="initiatives.cloud.points.1"></li>
-            </ul>
+          <li class="skill-card">
+            <span class="skill-label">CLOUD</span>
+            <ul class="skill-tags" data-i18n-list="initiatives.cloud"></ul>
           </li>
-          <li class="focus-card">
-            <span class="focus-label">PLATFORM</span>
-            <p class="focus-title" data-i18n="initiatives.platform.title">平台工程</p>
-            <ul class="focus-points">
-              <li data-i18n="initiatives.platform.points.0"></li>
-              <li data-i18n="initiatives.platform.points.1"></li>
-              <li data-i18n="initiatives.platform.points.2"></li>
-            </ul>
+          <li class="skill-card">
+            <span class="skill-label">PLATFORM</span>
+            <ul class="skill-tags" data-i18n-list="initiatives.platform"></ul>
           </li>
-          <li class="focus-card">
-            <span class="focus-label" data-i18n="initiatives.data.label">DATA</span>
-            <p class="focus-title" data-i18n="initiatives.data.title">数据平台</p>
-            <ul class="focus-points">
-              <li data-i18n="initiatives.data.points.0"></li>
-              <li data-i18n="initiatives.data.points.1"></li>
-            </ul>
+          <li class="skill-card">
+            <span class="skill-label">DATA</span>
+            <ul class="skill-tags" data-i18n-list="initiatives.data"></ul>
           </li>
         </ul>
       </section>
@@ -305,6 +297,7 @@
           <p class="panel-lead" data-i18n="life.lead">
             工作之余，我几乎在每个大小节假日都会踏上旅途——阅读世界、增长见识、感受多元文化，也是给自己充电的方式。
           </p>
+          <div class="life-poem" data-i18n-html="life.journey" aria-label="Travel journal"></div>
           <div class="life-stats" aria-label="Travel highlights">
             <div class="life-stat">
               <span class="life-stat-num">100+</span>
@@ -315,10 +308,6 @@
               <span class="life-stat-label" data-i18n="life.statCountries">国家与地区</span>
             </div>
           </div>
-          <p data-i18n-html="life.body">
-            足迹遍及中国 <strong>100+</strong> 座城市与乡镇，以及亚洲、欧洲等地的
-            <strong>十几个国家</strong>。旅行让我保持好奇，也把工程之外的生活过得更开阔。
-          </p>
         </div>
       </section>
 
@@ -391,7 +380,7 @@
       </p>
     </footer>
 
-    <script src="i18n.js"></script>
-    <script src="script.js"></script>
+    <script src="i18n.js?v=3"></script>
+    <script src="script.js?v=3"></script>
   </body>
 </html>

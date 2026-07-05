@@ -58,7 +58,16 @@
     document.querySelectorAll("[data-i18n-list]").forEach((ul) => {
       const bullets = getNested(t, ul.dataset.i18nList);
       if (!Array.isArray(bullets)) return;
-      ul.innerHTML = bullets.map((item) => `<li>${item}</li>`).join("");
+      ul.innerHTML = bullets
+        .map((item) => {
+          if (typeof item === "string") return `<li>${item}</li>`;
+          if (item?.sub) {
+            return `<li>${item.t}<ul class="timeline-sublist"><li>${item.sub}</li></ul></li>`;
+          }
+          if (item?.t) return `<li>${item.t}</li>`;
+          return "";
+        })
+        .join("");
     });
 
     document.querySelectorAll("[data-i18n-attr]").forEach((el) => {

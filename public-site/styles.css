@@ -393,13 +393,13 @@ main {
   margin-bottom: 0;
 }
 
-.panel-note {
-  margin-top: 1.25rem !important;
-  padding-top: 1rem;
+.timeline-divider {
+  margin: 0 1.5rem 0 1.25rem;
   border-top: 1px solid rgba(0, 240, 255, 0.15);
-  font-size: var(--text-sm);
-  color: var(--muted);
-  letter-spacing: 0.06em;
+}
+
+.timeline--education {
+  padding-top: 0.85rem;
 }
 
 .timeline {
@@ -489,68 +489,31 @@ main {
   margin-bottom: 0;
 }
 
-.focus-grid {
+.timeline-sublist {
+  margin: 0.4rem 0 0;
+  padding-left: 0.85rem;
   list-style: none;
-  margin: 0;
-  padding: 1rem 1.25rem 1.25rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 0.75rem;
 }
 
-.focus-grid > li,
-.focus-card {
-  padding: 0.9rem 1rem;
-  border: 1px solid var(--border);
-  background: rgba(0, 240, 255, 0.03);
-  font-size: var(--text-base);
-  line-height: 1.55;
-}
-
-.focus-label {
-  display: block;
-  margin-bottom: 0.35rem;
-  font-size: var(--text-xs);
-  letter-spacing: 0.2em;
-  color: var(--magenta);
-}
-
-.focus-title {
-  margin: 0 0 0.5rem;
-  font-size: var(--text-base);
-  color: var(--text);
-  line-height: 1.45;
-}
-
-.focus-points {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.focus-points li {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.4rem;
-  margin: 0 0 0.35rem;
-  padding: 0;
-  border: none;
-  background: none;
+.timeline-sublist li {
+  position: relative;
+  margin-bottom: 0;
+  padding-left: 0.75rem;
   font-size: var(--text-sm);
   color: var(--muted);
-  line-height: 1.5;
+  letter-spacing: 0.04em;
+  line-height: 1.65;
 }
 
-.focus-points li:last-child {
-  margin-bottom: 0;
+.timeline-sublist li::before {
+  content: "–";
+  position: absolute;
+  left: 0;
+  color: rgba(107, 127, 153, 0.65);
 }
 
-.focus-points li::before {
-  content: "▸";
-  flex: 0 0 auto;
-  margin-top: 0.08em;
-  color: var(--cyan);
-  line-height: 1.5;
+.timeline-list > li:has(.timeline-sublist) {
+  margin-bottom: 0.55rem;
 }
 
 .lang-switch {
@@ -643,9 +606,34 @@ main {
   color: var(--cyan);
 }
 
+/* EXPERIENCE — NYC skyline background */
+.panel--experience {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(5, 5, 8, 0.78) 0%, rgba(5, 5, 8, 0.9) 100%),
+    url("experience-bg.jpg") center 45% / cover no-repeat;
+}
+
+.panel--experience .panel-header {
+  position: relative;
+  background: linear-gradient(90deg, rgba(0, 240, 255, 0.1), rgba(5, 5, 8, 0.55));
+  backdrop-filter: blur(4px);
+}
+
 /* LIFE — subtle pride accents on this panel only */
+.panel--life {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(5, 5, 8, 0.72) 0%, rgba(5, 5, 8, 0.88) 100%),
+    url("life-bg.jpg") center 32% / cover no-repeat;
+}
+
 .panel--life .panel-header {
   position: relative;
+  background: linear-gradient(90deg, rgba(0, 240, 255, 0.1), rgba(5, 5, 8, 0.55));
+  backdrop-filter: blur(4px);
 }
 
 .panel--life .panel-header::after {
@@ -660,6 +648,7 @@ main {
 }
 
 .life-body {
+  position: relative;
   display: grid;
   gap: 1.25rem;
 }
@@ -669,6 +658,9 @@ main {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
   max-width: 28rem;
+  margin-top: 0.25rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid rgba(0, 240, 255, 0.12);
 }
 
 .life-stat {
@@ -710,6 +702,123 @@ main {
   font-size: var(--text-sm);
   color: var(--muted);
   line-height: 1.45;
+}
+
+.life-poem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: 1.75;
+  color: var(--text);
+  letter-spacing: 0.03em;
+}
+
+.life-poem-stanza {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.life-poem-stanza--lower {
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(0, 240, 255, 0.12);
+}
+
+.life-poem-line {
+  display: block;
+}
+
+.life-poem-line--in1 {
+  padding-left: 1.25rem;
+}
+
+.life-poem-line--in2 {
+  padding-left: 2.75rem;
+}
+
+.life-poem-line--in3 {
+  padding-left: 4.25rem;
+}
+
+.life-poem-line--gap {
+  margin-top: 0.75rem;
+}
+
+.life-poem-line--closing {
+  margin-top: 0.85rem;
+  padding-left: 0.5rem;
+  color: var(--muted);
+}
+
+.life-poem-row--gap {
+  margin-top: 0.75rem;
+}
+
+.life-poem-row--closing {
+  margin-top: 0.85rem;
+}
+
+html[lang="zh-CN"] .life-poem-row--closing .life-poem-line--closing {
+  margin-top: 0;
+  padding-left: 0;
+}
+
+.life-poem strong {
+  color: var(--yellow);
+  font-weight: 400;
+  text-shadow: 0 0 12px rgba(252, 238, 10, 0.55);
+}
+
+@media (min-width: 960px) {
+  html[lang="zh-CN"] .life-poem-row {
+    display: block;
+  }
+
+  html[lang="zh-CN"] .life-poem-row .life-poem-line {
+    display: inline;
+  }
+
+  html[lang="zh-CN"] .life-poem-row .life-poem-line--in1,
+  html[lang="zh-CN"] .life-poem-row .life-poem-line--in2,
+  html[lang="zh-CN"] .life-poem-row .life-poem-line--in3 {
+    padding-left: 0;
+  }
+
+  html[lang="zh-CN"] .life-poem-stanza--lower {
+    margin-top: 1rem;
+    padding-top: 1rem;
+  }
+}
+
+@media (max-width: 959px) {
+  html[lang="zh-CN"] .life-poem-row {
+    display: block;
+  }
+
+  html[lang="zh-CN"] .life-poem-row .life-poem-line {
+    display: block;
+  }
+
+  html[lang="zh-CN"] .life-poem-row .life-poem-line--in1 {
+    padding-left: 1.25rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .life-poem-line--in1 {
+    padding-left: 0.75rem;
+  }
+
+  .life-poem-line--in2 {
+    padding-left: 1.5rem;
+  }
+
+  .life-poem-line--in3 {
+    padding-left: 2.25rem;
+  }
 }
 
 .nav-life:hover {
@@ -964,7 +1073,6 @@ button.link-card-trigger {
     padding-left: 0.9rem;
   }
 
-  .focus-grid > li,
   .skill-card {
     padding: 0.75rem 0.85rem;
   }
