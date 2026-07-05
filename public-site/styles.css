@@ -9,8 +9,20 @@
   --border: rgba(0, 240, 255, 0.35);
   --glow-cyan: 0 0 12px rgba(0, 240, 255, 0.55);
   --glow-magenta: 0 0 12px rgba(255, 0, 170, 0.45);
-  --font-display: "Orbitron", system-ui, sans-serif;
-  --font-mono: "Share Tech Mono", ui-monospace, monospace;
+  --font-cjk-sans:
+    "PingFang SC",
+    "Hiragino Sans GB",
+    "Heiti SC",
+    "Microsoft YaHei UI",
+    "Microsoft YaHei",
+    "Segoe UI",
+    "Noto Sans SC",
+    "Source Han Sans SC",
+    "WenQuanYi Micro Hei",
+    sans-serif;
+  --font-display: "Orbitron", var(--font-cjk-sans);
+  --font-mono: "Share Tech Mono", "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+  --font-body: var(--font-mono), var(--font-cjk-sans);
   --header-height: 4.5rem;
   --text-xs: 0.72rem;
   --text-sm: 0.78rem;
@@ -39,7 +51,7 @@ body {
   min-height: 100vh;
   color: var(--text);
   background: var(--bg);
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: var(--text-base);
   line-height: 1.65;
   overflow-x: hidden;
