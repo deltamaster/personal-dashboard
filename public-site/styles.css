@@ -469,7 +469,7 @@ main {
   gap: 0.75rem;
 }
 
-.focus-grid li,
+.focus-grid > li,
 .focus-card {
   padding: 0.9rem 1rem;
   border: 1px solid var(--border);
@@ -500,9 +500,11 @@ main {
 }
 
 .focus-points li {
-  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
   margin: 0 0 0.35rem;
-  padding: 0 0 0 0.85rem;
+  padding: 0;
   border: none;
   background: none;
   font-size: var(--text-sm);
@@ -516,10 +518,10 @@ main {
 
 .focus-points li::before {
   content: "▸";
-  position: absolute;
-  left: 0;
-  top: 0;
+  flex: 0 0 auto;
+  margin-top: 0.08em;
   color: var(--cyan);
+  line-height: 1.5;
 }
 
 .lang-switch {
@@ -739,7 +741,7 @@ main {
     padding-left: 0.9rem;
   }
 
-  .focus-grid li,
+  .focus-grid > li,
   .skill-grid li {
     padding: 0.75rem 0.85rem;
   }

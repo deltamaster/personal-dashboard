@@ -3,13 +3,13 @@ window.SITE_I18N = {
     meta: {
       title: "胡瀚森 Hansen Hu | 高盛 Engineering Executive Director | 上海",
       description:
-        "胡瀚森（Hansen Hu），高盛 Engineering Executive Director，领导 9 人跨职能团队负责中国区公有云、SRE、SDLC、SecDB、Data Platform 与 AI 平台。十余年金融服务基础设施与平台工程经验，Base 上海。",
+        "胡瀚森（Hansen Hu），高盛 Engineering Executive Director，领导 9 人跨职能团队负责中国区公有云、SRE、SDLC、SecDB、数据平台与 AI 平台。十余年金融服务基础设施与平台工程经验，常驻上海。",
       ogTitle: "胡瀚森 Hansen Hu | 高盛 Engineering Executive Director",
       ogDescription:
-        "高盛 Engineering Executive Director，领导中国区公有云、SRE、SDLC、SecDB、Data Platform 与 AI 平台。",
+        "高盛 Engineering Executive Director，领导中国区公有云、SRE、SDLC、SecDB、数据平台与 AI 平台。",
       twitterTitle: "胡瀚森 Hansen Hu | 高盛 Engineering Executive Director",
       twitterDescription:
-        "高盛 Engineering Executive Director，领导中国区公有云、SRE、SDLC、SecDB、Data Platform 与 AI 平台。",
+        "高盛 Engineering Executive Director，领导中国区公有云、SRE、SDLC、SecDB、数据平台与 AI 平台。",
       heroAlt: "胡瀚森 Hansen Hu 肖像",
     },
     sr: {
@@ -23,11 +23,11 @@ window.SITE_I18N = {
       lang: "语言",
     },
     hero: {
-      tag: "// ENGINEERING NODE",
+      tag: "// 工程节点",
       nameZh: "胡瀚森",
-      subtitle: "Executive Director · Engineering · Goldman Sachs",
-      loc: "LOC: SHANGHAI",
-      since: "SINCE: 2022",
+      subtitle: "Executive Director · 工程 · Goldman Sachs",
+      loc: "地点：上海",
+      since: "入职：2022",
     },
     profile: {
       lead:
@@ -35,85 +35,85 @@ window.SITE_I18N = {
       p1:
         '现任 <strong>高盛（中国）</strong> <strong>Executive Director</strong>，自 2022 年 2 月起领导 9 人跨职能团队，覆盖中国区 Developer Experience & Runtime、公有云、SRE、SDLC、SecDB、数据平台与 AI 平台。',
       p2:
-        "主导云转型战略、高性能存储方案与开发者平台建设，将资源交付从数天缩短至秒级；通过跨团队知识共享与 Prometheus / Grafana / PagerDuty 统一监控告警，MTTR 降低 40%。正在推进受监管环境下的 Enterprise AI 评估与合规框架设计，并与纽约、伦敦、新加坡团队协作，对齐全球安全标准。",
+        "主导云转型战略、高性能存储方案与开发者平台建设，将资源交付从数天缩短至秒级；通过跨团队知识共享与 Prometheus / Grafana / PagerDuty 统一监控告警，MTTR 降低 40%。正在推进受监管环境下的企业 AI 评估与合规框架设计，并与纽约、伦敦、新加坡团队协作，对齐全球安全标准。",
       note: "上海大学 · 计算机科学与技术 · 工学学士 · 2008 — 2012 · 创办上海大学开源社区",
     },
     experience: {
       gs: {
         period: "2022 — 至今",
-        role: "Executive Director · China Lead · Developer Experience & Runtime · Shanghai",
+        role: "Executive Director · 中国区负责人 · Developer Experience & Runtime · 上海",
         bullets: [
           "带领 9 人跨职能团队，负责中国区公有云、官网运维、集中日志、任务调度、SDLC、SecDB、数据平台与 AI 平台",
-          "主导 AWS / Azure 中国区公有云战略与端到端运营，满足 data residency 与网络安全等监管合规要求",
-          "管理 Centralized Logging 平台与 SDLC 工具链，提升跨团队开发效率与运维可见性",
-          "领导 China Data Platform：Reference Data、Data Catalog & Governance、External File Transfer 与 Lakehouse 架构",
-          "负责中国区 SecDB 运维——高盛跨资产类别统一风险计算专有平台，保障平台可靠性、数据完整性与全球 Engineering 协同",
-          "主导 Enterprise AI 生产力工具评估，设计涵盖 audit trail、data boundary、TLS encryption、I/O guardrails、IAM integration 的合规框架",
+          "主导 AWS / Azure 中国区公有云战略与端到端运营，满足数据驻留与网络安全等监管合规要求",
+          "管理集中日志平台与 SDLC 工具链，提升跨团队开发效率与运维可见性",
+          "领导中国区数据平台：Reference Data、Data Catalog & Governance、External File Transfer 与 Lakehouse 架构",
+          "负责中国区 SecDB 运维——高盛跨资产类别统一风险计算专有平台，保障平台可靠性、数据完整性与全球工程团队协同",
+          "主导企业 AI 生产力工具评估，设计涵盖审计追踪、数据边界、TLS 加密、I/O 防护栏、IAM 集成的合规框架",
           "建立跨团队知识共享与 Prometheus / Grafana / PagerDuty 统一监控告警，MTTR 降低 40%",
-          "与纽约、伦敦、新加坡全球 Engineering 协作，推进基础设施标准化、安全 posture 提升与运营效率",
+          "与纽约、伦敦、新加坡全球工程团队协作，推进基础设施标准化、安全态势提升与运营效率",
         ],
       },
       ms: {
         period: "2014 — 2021",
-        role: "Vice President · Storage & Cloud Engineering · Shanghai",
+        role: "Vice President · 存储与云工程 · 上海",
         bullets: [
-          "从 Storage Engineer 成长为 VP；主导中国区 Cloud Transformation（Azure China）与高性能存储工程",
+          "从存储工程师成长为 VP；主导中国区云转型（Azure China）与高性能存储工程",
           "主导 Azure China 公有云转型战略：架构设计、迁移规划、合规评估，并与 Morgan Stanley 全球 Technology 团队对齐",
-          "IBM Spectrum Scale 高性能存储 + 100Gbps 网络基础设施，near wire-speed throughput，服务低延迟交易负载",
-          "设计 iSCSI block storage 方案（Python 全量重写），LUN provisioning 从数天缩短至秒级，支持工程团队自助化",
-          "开发 NAS/SAN monitoring tools，执行 NetApp 7-mode → c-mode migration，提升存储管理效率与平台可靠性",
+          "IBM Spectrum Scale 高性能存储 + 100Gbps 网络基础设施，接近线速吞吐，服务低延迟交易负载",
+          "设计 iSCSI 块存储方案（Python 全量重写），LUN provisioning 从数天缩短至秒级，支持工程团队自助化",
+          "开发 NAS/SAN 监控工具，执行 NetApp 7-mode → c-mode 迁移，提升存储管理效率与平台可靠性",
           "2019 年晋升 Vice President，表彰技术领导力与中国区基础设施现代化贡献",
         ],
       },
       emc: {
         period: "2012 — 2014",
-        role: "Software Engineer · Midrange Storage · Shanghai",
+        role: "Software Engineer · 中端存储 · 上海",
         bullets: [
-          "VNX 中端存储产品线 Linux kernel driver development（user-space & kernel-space）",
-          "C/C++ 开发与维护 iSCSI、inotify、TCP protocol stack",
-          "参与 VNX mid-range storage platform——EMC 旗舰 enterprise storage 产品，服务全球数千企业客户",
+          "VNX 中端存储产品线 Linux 内核驱动开发（用户态与内核态）",
+          "C/C++ 开发与维护 iSCSI、inotify、TCP 协议栈",
+          "参与 VNX 中端存储平台——EMC 旗舰企业级存储产品，服务全球数千企业客户",
         ],
       },
     },
     initiatives: {
       ai: {
-        title: "Enterprise AI Evaluation",
+        title: "企业 AI 评估",
         points: [
-          "评估受监管环境下的 cloud-based AI services",
-          "Compliance framework：audit trails · data boundaries · encryption",
-          "I/O guardrails · corporate IAM integration",
+          "评估受监管环境下的云端 AI 服务",
+          "合规框架：审计追踪 · 数据边界 · 加密",
+          "I/O 防护栏 · 企业 IAM 集成",
         ],
       },
       compliance: {
-        title: "Cloud Compliance Framework",
+        title: "云合规框架",
         points: [
           "满足中国金融监管机构要求的基础设施部署模式",
-          "与全球 security standards 保持一致",
+          "与全球安全标准保持一致",
         ],
       },
       global: {
-        title: "Cross-Regional Architecture",
+        title: "跨区域架构",
         points: [
-          "统一 monitoring · logging · incident management 实践",
-          "覆盖 China · Singapore · global sites",
+          "统一监控 · 日志 · 事件管理实践",
+          "覆盖中国 · 新加坡 · 全球站点",
         ],
       },
       platform: {
-        title: "Platform Engineering",
+        title: "平台工程",
         points: [
-          "Job scheduling · SDLC toolchain · centralized logging",
-          "提升 cross-functional productivity 与 operational reliability",
+          "任务调度 · SDLC 工具链 · 集中日志",
+          "提升跨职能生产力与运营可靠性",
         ],
       },
     },
     skills: {
-      cloud: "AWS · Azure / Azure China · Infrastructure-as-Code · Cloud Migration & Transformation",
+      cloud: "AWS · Azure / Azure China · 基础设施即代码 · 云迁移与转型",
       data: "Reference Data · Data Catalog & Governance · Lakehouse · SecDB",
-      sre: "Prometheus · Grafana · PagerDuty · Centralized Logging · SLA/SLO Management",
-      storage: "NetApp · EMC VNX · Spectrum Scale · iSCSI · Fibre Channel · NFS · High-Performance Tuning",
-      code: "Python · C/C++ · Linux Kernel · JavaScript/Angular · Java · Perl",
-      devops: "Docker/Containers · CI/CD Pipelines · Scrum/Agile · Platform Engineering",
-      lead: "Cross-Functional Engineering Leadership · Global Stakeholder Management · AI Strategy & Governance",
+      sre: "Prometheus · Grafana · PagerDuty · 集中日志 · SLA/SLO 管理",
+      storage: "NetApp · EMC VNX · Spectrum Scale · iSCSI · Fibre Channel · NFS · 高性能调优",
+      code: "Python · C/C++ · Linux 内核 · JavaScript/Angular · Java · Perl",
+      devops: "Docker/容器 · CI/CD 流水线 · Scrum/敏捷 · 平台工程",
+      lead: "跨职能工程领导力 · 全球利益相关方管理 · AI 战略与治理",
     },
   },
   en: {
