@@ -115,6 +115,14 @@ window.SITE_I18N = {
       devops: "Docker/容器 · CI/CD 流水线 · Scrum/敏捷 · 平台工程",
       lead: "跨职能工程领导力 · 全球利益相关方管理 · AI 战略与治理",
     },
+    contact: {
+      wechat: {
+        title: "微信公众号",
+        desc: "扫码关注",
+        modalHint: "打开微信扫一扫",
+        modalAlt: "微信公众号二维码",
+      },
+    },
   },
   en: {
     meta: {
@@ -232,6 +240,14 @@ window.SITE_I18N = {
       code: "Python · C/C++ · Linux Kernel · JavaScript/Angular · Java · Perl",
       devops: "Docker/Containers · CI/CD Pipelines · Scrum/Agile · Platform Engineering",
       lead: "Cross-Functional Engineering Leadership · Global Stakeholder Management · AI Strategy & Governance",
+    },
+    contact: {
+      wechat: {
+        title: "WeChat Official Account",
+        desc: "Scan to follow",
+        modalHint: "Scan with WeChat to follow",
+        modalAlt: "WeChat Official Account QR code",
+      },
     },
   },
 };

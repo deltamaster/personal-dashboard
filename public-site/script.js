@@ -107,4 +107,26 @@
   document.querySelectorAll(".lang-btn").forEach((btn) => {
     btn.addEventListener("click", () => setLang(btn.dataset.lang));
   });
+
+  const wechatCard = document.getElementById("wechat-card");
+  const wechatToggle = document.getElementById("wechat-toggle");
+  const wechatPanel = document.getElementById("wechat-qr-panel");
+
+  function setWechatExpanded(expanded) {
+    if (!wechatCard || !wechatToggle || !wechatPanel) return;
+    wechatToggle.setAttribute("aria-expanded", String(expanded));
+    wechatPanel.hidden = !expanded;
+    wechatCard.classList.toggle("is-expanded", expanded);
+  }
+
+  wechatToggle?.addEventListener("click", () => {
+    setWechatExpanded(wechatToggle.getAttribute("aria-expanded") !== "true");
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && wechatCard?.classList.contains("is-expanded")) {
+      setWechatExpanded(false);
+      wechatToggle?.focus();
+    }
+  });
 })();
