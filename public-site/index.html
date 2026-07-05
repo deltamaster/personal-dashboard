@@ -112,6 +112,7 @@
         <a href="#experience">EXPERIENCE</a>
         <a href="#focus">INITIATIVES</a>
         <a href="#skills">SKILLS</a>
+        <a href="#life" class="nav-life">LIFE</a>
         <a href="#contact">CONTACT</a>
       </nav>
     </header>
@@ -154,16 +155,16 @@
         </div>
         <div class="panel-body">
           <p class="panel-lead" data-i18n="profile.lead">
-            逾十年深耕金融服务基础设施与平台工程，经历从一线开发、运维到工程领导力的完整路径，深度理解从传统基础设施到云原生架构的演进。
+            逾十年深耕金融服务基础设施与平台工程，从一线开发、运维到工程领导力，亲历传统基础设施、云原生架构到 AI 应用的演进。
           </p>
           <p data-i18n-html="profile.p1">
             现任 <strong>高盛（中国）</strong>
-            <strong>Executive Director</strong>，自 2022 年 2 月起领导 9 人跨职能团队，覆盖中国区 Developer Experience &amp;
+            <strong>Executive Director</strong>，负责中国区 Developer Experience &amp;
             Runtime、公有云、SRE、SDLC、SecDB、数据平台与 AI 平台。
           </p>
           <p data-i18n="profile.p2">
-            主导云转型战略、高性能存储方案与开发者平台建设，将资源交付从数天缩短至秒级；通过跨团队知识共享与 Prometheus / Grafana /
-            PagerDuty 统一监控告警，MTTR 降低 40%。正在推进受监管环境下的 Enterprise AI 评估与合规框架设计，并与纽约、伦敦、新加坡团队协作，对齐全球安全标准。
+            主导中国区公有云战略与开发者/SRE 平台建设；通过 Prometheus / Grafana / PagerDuty
+            统一可观测性与跨团队知识共享，MTTR 降低 40%。推进受监管环境下的企业 AI 战略与合规框架，并与纽约、伦敦、新加坡全球工程团队协作。
           </p>
           <p class="panel-note" data-i18n="profile.note">
             上海大学 · 计算机科学与技术 · 工学学士 · 2008 — 2012 · 创办上海大学开源社区
@@ -186,7 +187,7 @@
                 <span class="timeline-period" data-i18n="experience.gs.period">2022 — Present</span>
               </div>
               <p class="timeline-role" data-i18n="experience.gs.role">
-                Executive Director · China Lead · Developer Experience &amp; Runtime · Shanghai
+                Executive Director · China Lead · Shanghai
               </p>
               <ul class="timeline-list" data-i18n-list="experience.gs.bullets"></ul>
             </div>
@@ -198,7 +199,7 @@
                 <span class="timeline-org">Morgan Stanley</span>
                 <span class="timeline-period" data-i18n="experience.ms.period">2014 — 2021</span>
               </div>
-              <p class="timeline-role" data-i18n="experience.ms.role">Vice President · Storage &amp; Cloud Engineering · Shanghai</p>
+              <p class="timeline-role" data-i18n="experience.ms.role">Associate → Vice President · 存储工程师 → 云架构师</p>
               <ul class="timeline-list" data-i18n-list="experience.ms.bullets"></ul>
             </div>
           </li>
@@ -225,7 +226,7 @@
         <ul class="focus-grid">
           <li class="focus-card">
             <span class="focus-label">AI</span>
-            <p class="focus-title" data-i18n="initiatives.ai.title">企业 AI 评估</p>
+            <p class="focus-title" data-i18n="initiatives.ai.title">企业 AI 战略</p>
             <ul class="focus-points">
               <li data-i18n="initiatives.ai.points.0"></li>
               <li data-i18n="initiatives.ai.points.1"></li>
@@ -233,19 +234,11 @@
             </ul>
           </li>
           <li class="focus-card">
-            <span class="focus-label">COMPLIANCE</span>
-            <p class="focus-title" data-i18n="initiatives.compliance.title">云合规框架</p>
+            <span class="focus-label" data-i18n="initiatives.cloud.label">云</span>
+            <p class="focus-title" data-i18n="initiatives.cloud.title">云合规框架</p>
             <ul class="focus-points">
-              <li data-i18n="initiatives.compliance.points.0"></li>
-              <li data-i18n="initiatives.compliance.points.1"></li>
-            </ul>
-          </li>
-          <li class="focus-card">
-            <span class="focus-label">GLOBAL</span>
-            <p class="focus-title" data-i18n="initiatives.global.title">跨区域架构</p>
-            <ul class="focus-points">
-              <li data-i18n="initiatives.global.points.0"></li>
-              <li data-i18n="initiatives.global.points.1"></li>
+              <li data-i18n="initiatives.cloud.points.0"></li>
+              <li data-i18n="initiatives.cloud.points.1"></li>
             </ul>
           </li>
           <li class="focus-card">
@@ -254,6 +247,15 @@
             <ul class="focus-points">
               <li data-i18n="initiatives.platform.points.0"></li>
               <li data-i18n="initiatives.platform.points.1"></li>
+              <li data-i18n="initiatives.platform.points.2"></li>
+            </ul>
+          </li>
+          <li class="focus-card">
+            <span class="focus-label" data-i18n="initiatives.data.label">DATA</span>
+            <p class="focus-title" data-i18n="initiatives.data.title">数据平台</p>
+            <ul class="focus-points">
+              <li data-i18n="initiatives.data.points.0"></li>
+              <li data-i18n="initiatives.data.points.1"></li>
             </ul>
           </li>
         </ul>
@@ -266,40 +268,63 @@
           <span class="panel-line"></span>
         </div>
         <ul class="skill-grid">
-          <li>
+          <li class="skill-card">
             <span class="skill-label">CLOUD</span>
-            <span data-i18n="skills.cloud">AWS · Azure / Azure China · Infrastructure-as-Code · Cloud Migration &amp; Transformation</span>
+            <ul class="skill-tags" data-i18n-list="skills.cloud"></ul>
           </li>
-          <li>
+          <li class="skill-card">
             <span class="skill-label">DATA</span>
-            <span data-i18n="skills.data">Reference Data · Data Catalog &amp; Governance · Lakehouse · SecDB</span>
+            <ul class="skill-tags" data-i18n-list="skills.data"></ul>
           </li>
-          <li>
+          <li class="skill-card">
             <span class="skill-label">SRE</span>
-            <span data-i18n="skills.sre">Prometheus · Grafana · PagerDuty · Centralized Logging · SLA/SLO Management</span>
+            <ul class="skill-tags" data-i18n-list="skills.sre"></ul>
           </li>
-          <li>
-            <span class="skill-label">STORAGE</span>
-            <span data-i18n="skills.storage">NetApp · EMC VNX · Spectrum Scale · iSCSI · Fibre Channel · NFS · High-Performance Tuning</span>
+          <li class="skill-card">
+            <span class="skill-label">PLATFORM</span>
+            <ul class="skill-tags" data-i18n-list="skills.platform"></ul>
           </li>
-          <li>
-            <span class="skill-label">CODE</span>
-            <span data-i18n="skills.code">Python · C/C++ · Linux Kernel · JavaScript/Angular · Java · Perl</span>
+          <li class="skill-card">
+            <span class="skill-label">AI</span>
+            <ul class="skill-tags" data-i18n-list="skills.ai"></ul>
           </li>
-          <li>
-            <span class="skill-label">DEVOPS</span>
-            <span data-i18n="skills.devops">Docker/Containers · CI/CD Pipelines · Scrum/Agile · Platform Engineering</span>
-          </li>
-          <li>
+          <li class="skill-card">
             <span class="skill-label">LEAD</span>
-            <span data-i18n="skills.lead">Cross-Functional Engineering Leadership · Global Stakeholder Management · AI Strategy &amp; Governance</span>
+            <ul class="skill-tags" data-i18n-list="skills.lead"></ul>
           </li>
         </ul>
       </section>
 
-      <section class="panel" id="contact">
+      <section class="panel panel--life" id="life">
         <div class="panel-header">
           <span class="panel-id">[05]</span>
+          <h2><span class="sr-only" data-i18n="sr.life">个人生活 · </span>LIFE</h2>
+          <span class="panel-line"></span>
+        </div>
+        <div class="panel-body life-body">
+          <p class="panel-lead" data-i18n="life.lead">
+            工作之余，我几乎在每个大小节假日都会踏上旅途——阅读世界、增长见识、感受多元文化，也是给自己充电的方式。
+          </p>
+          <div class="life-stats" aria-label="Travel highlights">
+            <div class="life-stat">
+              <span class="life-stat-num">100+</span>
+              <span class="life-stat-label" data-i18n="life.statChina">中国城市与乡镇</span>
+            </div>
+            <div class="life-stat">
+              <span class="life-stat-num">10+</span>
+              <span class="life-stat-label" data-i18n="life.statCountries">国家与地区</span>
+            </div>
+          </div>
+          <p data-i18n-html="life.body">
+            足迹遍及中国 <strong>100+</strong> 座城市与乡镇，以及亚洲、欧洲等地的
+            <strong>十几个国家</strong>。旅行让我保持好奇，也把工程之外的生活过得更开阔。
+          </p>
+        </div>
+      </section>
+
+      <section class="panel" id="contact">
+        <div class="panel-header">
+          <span class="panel-id">[06]</span>
           <h2><span class="sr-only" data-i18n="sr.contact">联系方式 · </span>CONTACT</h2>
           <span class="panel-line"></span>
         </div>
