@@ -319,48 +319,35 @@
             <span class="link-title">LinkedIn</span>
             <span class="link-desc">linkedin.com/in/deltamaster</span>
           </a>
-          <button type="button" class="link-card link-card--action" id="wechat-open" aria-haspopup="dialog">
-            <span class="link-icon">微</span>
-            <span class="link-title" data-i18n="contact.wechat.title">微信公众号</span>
-            <span class="link-desc" data-i18n="contact.wechat.desc">扫码关注</span>
-          </button>
+          <div class="link-card link-card--wechat" id="wechat-card">
+            <button
+              type="button"
+              class="link-card-trigger"
+              id="wechat-toggle"
+              aria-expanded="false"
+              aria-controls="wechat-qr-panel"
+            >
+              <span class="link-icon">微</span>
+              <span class="link-title" data-i18n="contact.wechat.title">微信公众号</span>
+              <span class="link-desc" data-i18n="contact.wechat.desc">扫码关注</span>
+            </button>
+            <div id="wechat-qr-panel" class="wechat-qr-panel" hidden>
+              <img
+                class="wechat-qr-image"
+                src="official-account-qrcode.jpg"
+                alt="微信公众号二维码"
+                width="180"
+                height="180"
+                decoding="async"
+                data-i18n-attr="alt:contact.wechat.modalAlt"
+              />
+              <p class="wechat-qr-hint" data-i18n="contact.wechat.modalHint">打开微信扫一扫</p>
+            </div>
+          </div>
         </div>
       </section>
       </div>
     </main>
-
-    <div id="wechat-modal" class="qr-modal" hidden>
-      <div class="qr-modal-backdrop" data-qr-close></div>
-      <div
-        class="qr-modal-panel"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="wechat-modal-title"
-      >
-        <button
-          type="button"
-          class="qr-modal-close"
-          data-qr-close
-          data-i18n-attr="aria-label:contact.wechat.close"
-          aria-label="关闭"
-        >
-          ×
-        </button>
-        <h3 id="wechat-modal-title" class="qr-modal-title" data-i18n="contact.wechat.modalTitle">
-          微信公众号
-        </h3>
-        <img
-          class="qr-modal-image"
-          src="official-account-qrcode.jpg"
-          alt="微信公众号二维码"
-          width="240"
-          height="240"
-          decoding="async"
-          data-i18n-attr="alt:contact.wechat.modalAlt"
-        />
-        <p class="qr-modal-hint" data-i18n="contact.wechat.modalHint">打开微信扫一扫</p>
-      </div>
-    </div>
 
     <footer class="site-footer">
       <p class="footer-copy">© <span id="year"></span> Hansen Hu</p>

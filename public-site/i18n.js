@@ -119,10 +119,8 @@ window.SITE_I18N = {
       wechat: {
         title: "微信公众号",
         desc: "扫码关注",
-        modalTitle: "微信公众号",
         modalHint: "打开微信扫一扫",
         modalAlt: "微信公众号二维码",
-        close: "关闭",
       },
     },
   },
@@ -247,10 +245,8 @@ window.SITE_I18N = {
       wechat: {
         title: "WeChat Official Account",
         desc: "Scan to follow",
-        modalTitle: "WeChat Official Account",
         modalHint: "Scan with WeChat to follow",
         modalAlt: "WeChat Official Account QR code",
-        close: "Close",
       },
     },
   },

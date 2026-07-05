@@ -108,28 +108,25 @@
     btn.addEventListener("click", () => setLang(btn.dataset.lang));
   });
 
-  const wechatModal = document.getElementById("wechat-modal");
-  const wechatOpen = document.getElementById("wechat-open");
+  const wechatCard = document.getElementById("wechat-card");
+  const wechatToggle = document.getElementById("wechat-toggle");
+  const wechatPanel = document.getElementById("wechat-qr-panel");
 
-  function openWechatModal() {
-    if (!wechatModal) return;
-    wechatModal.hidden = false;
-    document.body.classList.add("modal-open");
-    wechatModal.querySelector(".qr-modal-close")?.focus();
+  function setWechatExpanded(expanded) {
+    if (!wechatCard || !wechatToggle || !wechatPanel) return;
+    wechatToggle.setAttribute("aria-expanded", String(expanded));
+    wechatPanel.hidden = !expanded;
+    wechatCard.classList.toggle("is-expanded", expanded);
   }
 
-  function closeWechatModal() {
-    if (!wechatModal) return;
-    wechatModal.hidden = true;
-    document.body.classList.remove("modal-open");
-    wechatOpen?.focus();
-  }
-
-  wechatOpen?.addEventListener("click", openWechatModal);
-  wechatModal?.querySelectorAll("[data-qr-close]").forEach((el) => {
-    el.addEventListener("click", closeWechatModal);
+  wechatToggle?.addEventListener("click", () => {
+    setWechatExpanded(wechatToggle.getAttribute("aria-expanded") !== "true");
   });
-  wechatModal?.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeWechatModal();
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && wechatCard?.classList.contains("is-expanded")) {
+      setWechatExpanded(false);
+      wechatToggle?.focus();
+    }
   });
 })();
