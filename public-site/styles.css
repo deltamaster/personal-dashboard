@@ -612,6 +612,95 @@ main {
   box-shadow: var(--glow-cyan);
 }
 
+button.link-card {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  appearance: none;
+}
+
+.link-card--action:focus-visible {
+  outline: 1px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.qr-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+}
+
+.qr-modal[hidden] {
+  display: none;
+}
+
+.qr-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 5, 8, 0.82);
+  backdrop-filter: blur(6px);
+}
+
+.qr-modal-panel {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 320px);
+  padding: 1.25rem 1.25rem 1.1rem;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  box-shadow: var(--glow-cyan);
+  text-align: center;
+}
+
+.qr-modal-close {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.65rem;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.15rem 0.35rem;
+}
+
+.qr-modal-close:hover {
+  color: var(--yellow);
+}
+
+.qr-modal-title {
+  margin: 0 0 1rem;
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  letter-spacing: 0.14em;
+  color: var(--text);
+}
+
+.qr-modal-image {
+  display: block;
+  width: min(100%, 240px);
+  height: auto;
+  margin: 0 auto 0.85rem;
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  background: #fff;
+}
+
+.qr-modal-hint {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
 .link-icon {
   font-size: 1.2rem;
   color: var(--magenta);
