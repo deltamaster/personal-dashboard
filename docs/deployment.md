@@ -17,9 +17,11 @@ Run **Actions → Terraform → apply** for the target stack. Shanghai requires 
 
 After first apply:
 
-1. Add DNS records (Cloudflare for `.com`, Alibaba DNS for `.cn` — see [terraform/README.md § CDN + DNS](../terraform/README.md))
+1. Add DNS records (Alibaba DNS for `.cn` — see [terraform/README.md § CDN + DNS](../terraform/README.md))
 2. Add Azure redirect URI for the stack subdomain
 3. Run **Deploy API** then **Deploy Web** for that stack
+
+**Retired SG prod (`pd.huhansen.com`):** removed Jul 2026. One-off teardown script: `scripts/destroy-sg-prod.sh` (requires AssumeRole). Remove Azure redirect URI and Cloudflare DNS for `pd.huhansen.com` manually.
 
 ---
 
