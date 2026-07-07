@@ -14,10 +14,9 @@ on:
       stack:
         description: "Region stack"
         required: true
-        default: ap-southeast-1
+        default: cn-shanghai
         type: choice
         options:
-          - ap-southeast-1
           - cn-shanghai
           - qa
       action:
@@ -33,7 +32,6 @@ jobs:
   resolve-stacks:
     runs-on: ubuntu-latest
     outputs:
-      run_ap_southeast_1: ${{ steps.out.outputs.run_ap_southeast_1 }}
       run_cn_shanghai: ${{ steps.out.outputs.run_cn_shanghai }}
       run_qa: ${{ steps.out.outputs.run_qa }}
       should_apply: ${{ steps.out.outputs.should_apply }}
@@ -48,148 +46,23 @@ jobs:
           fi
           echo "should_apply=${should_apply}" >> "$GITHUB_OUTPUT"
 
-          run_sg=0
           run_cn=0
           run_qa=0
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             case "${{ github.event.inputs.stack }}" in
-              ap-southeast-1) run_sg=1 ;;
               cn-shanghai) run_cn=1 ;;
               qa) run_qa=1 ;;
             esac
           elif [ "${{ github.event_name }}" = "pull_request" ] || [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            run_sg=1
             run_cn=1
           else
             run_qa=1
           fi
 
-          echo "run_ap_southeast_1=${run_sg}" >> "$GITHUB_OUTPUT"
           echo "run_cn_shanghai=${run_cn}" >> "$GITHUB_OUTPUT"
           echo "run_qa=${run_qa}" >> "$GITHUB_OUTPUT"
-          echo "Terraform targets: sg=${run_sg} cn=${run_cn} qa=${run_qa} apply=${should_apply} (ref=${{ github.ref }})"
-
-  terraform-ap-southeast-1:
-    needs: resolve-stacks
-    if: needs.resolve-stacks.outputs.run_ap_southeast_1 == '1'
-    runs-on: ubuntu-latest
-    environment: personal-dashboard
-    concurrency:
-      group: terraform-ap-southeast-1-${{ github.ref }}
-      cancel-in-progress: false
-    env:
-      TF_STACK: ap-southeast-1
-      TF_WORKING_DIR: terraform
-      TF_VERSION: "1.9.8"
-      TF_VAR_region: ap-southeast-1
-      TFVARS_FILE: env/ap-southeast-1.tfvars
-      STATE_KEY: terraform-state-ap-southeast-1
-      OTS_INSTANCE: pd-dash-sg
-      OSS_WEB_BUCKET: pd-web-sg
-      OSS_VAULT_BUCKET: pd-vault-sg
-      CDN_DOMAIN: pd.huhansen.com
-      ALICLOUD_ACCESS_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
-      ALICLOUD_SECRET_KEY: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
-      ALICLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
-      TF_VAR_role_arn: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
-      TF_VAR_auth_secret: ${{ secrets.AUTH_SECRET }}
-      TF_VAR_auth_microsoft_entra_id_id: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_ID }}
-      TF_VAR_auth_microsoft_entra_id_secret: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_SECRET }}
-      TF_VAR_runtime_access_key: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
-      TF_VAR_runtime_secret_key: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
-    defaults:
-      run:
-        working-directory: ${{ env.TF_WORKING_DIR }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Validate required secrets
-        env:
-          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
-          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
-          ALIBABA_CLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          AUTH_MICROSOFT_ENTRA_ID_ID: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_ID }}
-          AUTH_MICROSOFT_ENTRA_ID_SECRET: ${{ secrets.AUTH_MICROSOFT_ENTRA_ID_SECRET }}
-        run: |
-          missing=()
-          [ -z "$ALIBABA_CLOUD_ACCESS_KEY_ID" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_ID")
-          [ -z "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
-          [ -z "$ALIBABA_CLOUD_ROLE_ARN" ] && missing+=("ALIBABA_CLOUD_ROLE_ARN")
-          [ -z "$AUTH_SECRET" ] && missing+=("AUTH_SECRET")
-          [ -z "$AUTH_MICROSOFT_ENTRA_ID_ID" ] && missing+=("AUTH_MICROSOFT_ENTRA_ID_ID")
-          [ -z "$AUTH_MICROSOFT_ENTRA_ID_SECRET" ] && missing+=("AUTH_MICROSOFT_ENTRA_ID_SECRET")
-          if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::Missing environment secrets (Settings → Environments → personal-dashboard):"
-            printf '  - %s\n' "${missing[@]}"
-            exit 1
-          fi
-
-      - name: Restore Terraform state
-        uses: actions/cache@v4
-        with:
-          path: terraform/terraform.tfstate
-          key: ${{ env.STATE_KEY }}-${{ github.ref_name }}
-          restore-keys: ${{ env.STATE_KEY }}-main
-
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-
-      - name: Terraform init
-        run: terraform init -input=false
-
-      - name: Install aliyun CLI
-        if: needs.resolve-stacks.outputs.should_apply == 'true' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
-        run: |
-          wget -q https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
-          tar -xzf aliyun-cli-linux-latest-amd64.tgz
-          sudo mv aliyun /usr/local/bin/
-
-      - name: Import existing resources (if created outside state)
-        if: needs.resolve-stacks.outputs.should_apply == 'true'
-        env:
-          ALICLOUD_REGION: ap-southeast-1
-        run: bash scripts/import-existing.sh
-
-      - name: Check FC custom domain DNS
-        if: needs.resolve-stacks.outputs.should_apply == 'true' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
-        id: fc_dns
-        continue-on-error: true
-        env:
-          ALICLOUD_REGION: ap-southeast-1
-        run: bash scripts/fc-verify-custom-domain-dns.sh
-
-      - name: Terraform plan
-        if: needs.resolve-stacks.outputs.should_apply != 'true'
-        run: |
-          EXTRA=(-var-file="$TFVARS_FILE")
-          if [ "${{ steps.fc_dns.outcome }}" != "success" ]; then
-            echo "::warning::FC custom domain DNS not ready — planning with create_fc_custom_domain=false"
-            EXTRA+=(-var="create_fc_custom_domain=false")
-          fi
-          terraform plan "${EXTRA[@]}" -input=false -no-color
-
-      - name: Terraform apply
-        if: needs.resolve-stacks.outputs.should_apply == 'true'
-        run: |
-          EXTRA=(-var-file="$TFVARS_FILE")
-          if [ "${{ steps.fc_dns.outcome }}" != "success" ]; then
-            echo "::warning::FC custom domain DNS not ready — applying with create_fc_custom_domain=false"
-            EXTRA+=(-var="create_fc_custom_domain=false")
-          fi
-          terraform apply "${EXTRA[@]}" -input=false -auto-approve
-
-      - name: Upload Terraform state backup
-        if: always() && needs.resolve-stacks.outputs.should_apply == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: terraform-state-ap-southeast-1-${{ github.run_id }}
-          path: terraform/terraform.tfstate
-          retention-days: 90
-          if-no-files-found: ignore
+          echo "Terraform targets: cn=${run_cn} qa=${run_qa} apply=${should_apply} (ref=${{ github.ref }})"
 
   terraform-cn-shanghai:
     needs: resolve-stacks

@@ -3,7 +3,7 @@
 Download one Douban poster and upload to OSS, then update OTS poster_url.
 
 Uses Referer so Douban CDN returns 200 (not 418). Public URL is served via CDN:
-  https://pd.huhansen.com/movies/posters/{douban_subject_id}.jpg
+  https://pd.huhansen.cn/movies/posters/{douban_subject_id}.jpg
 
 Examples:
   python scripts/poster_to_oss.py --douban-id 25750969 --save-local poster.jpg
@@ -50,9 +50,9 @@ def main() -> int:
     )
     parser.add_argument(
         "--stack",
-        choices=("sg", "cn-shanghai"),
-        default="sg",
-        help="Target stack (default: sg = pd-dash-sg + pd-web-sg)",
+        choices=("cn-shanghai", "qa"),
+        default="cn-shanghai",
+        help="Target stack (default: cn-shanghai = pd-dashboard + huhansen-web)",
     )
     parser.add_argument(
         "--dry-run",

@@ -6,9 +6,8 @@ Alibaba Cloud provisioning and deploy steps. Constants and env vars: [AGENTS.md]
 
 | Stack | Region | Domain | Terraform | Deploy on `main` push |
 |---|---|---|---|---|
-| Singapore (overseas) | `ap-southeast-1` | `pd.huhansen.com` | yes | yes |
-| Shanghai (mainland) | `cn-shanghai` | `pd.huhansen.cn` | yes | yes |
-| QA (Singapore only) | `ap-southeast-1` | `pd-qa.huhansen.com` | auto on non-`main` push | other branches only |
+| Shanghai (prod) | `cn-shanghai` | `pd.huhansen.cn` | yes | yes |
+| QA | `ap-southeast-1` | `pd-qa.huhansen.com` | auto on non-`main` push | other branches only |
 
 ---
 
@@ -26,7 +25,7 @@ After first apply:
 
 ## 2. Deploy
 
-**Push to `main`:** **Deploy Web** and **Deploy API** run automatically in parallel for Singapore and Shanghai (matrix). Non-`main` branches deploy QA only. Manual runs: pick a single stack in workflow_dispatch.
+**Push to `main`:** **Deploy Web** and **Deploy API** run automatically for Shanghai prod. Non-`main` branches deploy QA only. Manual runs: pick a single stack in workflow_dispatch.
 
 | Artifact | Build | Destination |
 |---|---|---|
@@ -42,7 +41,7 @@ After first apply:
 
 | Check | Expected |
 |---|---|
-| `https://pd.huhansen.com/` or `https://pd.huhansen.cn/` | Static shell loads |
+| `https://pd.huhansen.cn/` | Static shell loads |
 | `/auth/signin` | Microsoft button |
 | Sign in as allowlisted email | Dashboard + session cookie |
 | Sign in as other account | `/auth/error` |

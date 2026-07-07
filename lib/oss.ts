@@ -5,7 +5,7 @@ const TRAVEL_IMAGE_PREFIX = "travel/images/";
 
 /**
  * Bucket that stores publicly-served visit photos (the CDN `/*` origin).
- * Prod: the public web bucket (`pd-web-sg`); QA: the CDN-fronted bucket
+ * Prod: the public web bucket (`huhansen-web`); QA: the CDN-fronted bucket
  * (`pd-vault-qa`). Configured via OSS_MEDIA_BUCKET, falling back to
  * OSS_WEB_BUCKET then OSS_VAULT_BUCKET.
  */
@@ -21,7 +21,7 @@ function getMediaBucket(): string | undefined {
 function getMediaEndpoint(): string {
   const explicit = process.env.OSS_MEDIA_ENDPOINT?.trim() || process.env.OSS_VAULT_ENDPOINT?.trim();
   if (explicit) return explicit;
-  const region = process.env.ALIBABA_CLOUD_REGION?.trim() || "ap-southeast-1";
+  const region = process.env.ALIBABA_CLOUD_REGION?.trim() || "cn-shanghai";
   return `oss-${region}.aliyuncs.com`;
 }
 
@@ -57,7 +57,7 @@ export function getMediaPublicBaseUrl(): string | undefined {
  * Normalize a stored URL/key to a browser-loadable URL on read.
  * Only rewrites when MEDIA_PUBLIC_BASE_URL is explicitly set (idempotent for
  * values already on that base). When unset (prod), returns the input unchanged
- * so existing full URLs (`https://pd.huhansen.com/...`) are preserved.
+ * so existing full URLs (`https://pd.huhansen.cn/...`) are preserved.
  */
 export function toPublicMediaUrl(ossUrlOrKey: string): string {
   if (!ossUrlOrKey) return ossUrlOrKey;

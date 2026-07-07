@@ -8,7 +8,7 @@ from poster_oss_lib import apply_stack_preset, load_dotenv_local, resolve_creden
 from tablestore import Direction, INF_MAX, INF_MIN, OTSClient
 
 load_dotenv_local()
-ots_endpoint, ots_instance, _, _ = apply_stack_preset("sg")
+ots_endpoint, ots_instance, _, _ = apply_stack_preset("cn-shanghai")
 ak, sk, token = resolve_credentials()
 client = OTSClient(ots_endpoint, ak, sk, ots_instance, sts_token=token)
 

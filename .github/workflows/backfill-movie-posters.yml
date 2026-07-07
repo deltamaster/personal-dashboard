@@ -39,11 +39,11 @@ jobs:
     environment: personal-dashboard
     timeout-minutes: 120
     env:
-      OTS_ENDPOINT: https://pd-dash-sg.ap-southeast-1.ots.aliyuncs.com
-      OTS_INSTANCE_NAME: pd-dash-sg
-      POSTER_PUBLIC_BASE: https://pd.huhansen.com
-      OSS_WEB_BUCKET: pd-web-sg
-      OSS_ENDPOINT: oss-ap-southeast-1.aliyuncs.com
+      OTS_ENDPOINT: https://pd-dashboard.cn-shanghai.ots.aliyuncs.com
+      OTS_INSTANCE_NAME: pd-dashboard
+      POSTER_PUBLIC_BASE: https://pd.huhansen.cn
+      OSS_WEB_BUCKET: huhansen-web
+      OSS_ENDPOINT: oss-cn-shanghai.aliyuncs.com
     steps:
       - uses: actions/checkout@v4
 
@@ -70,7 +70,7 @@ jobs:
             --mode AK \
             --access-key-id "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
             --access-key-secret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
-            --region ap-southeast-1
+            --region cn-shanghai
           CREDS=$(aliyun sts AssumeRole \
             --RoleArn "$ALIBABA_CLOUD_ROLE_ARN" \
             --RoleSessionName "github-backfill-posters" \
@@ -92,4 +92,4 @@ jobs:
           [ "${{ inputs.with_actors }}" = "true" ] && ARGS+=(--with-actors)
           LIMIT="${{ inputs.limit }}"
           [ -n "$LIMIT" ] && [ "$LIMIT" != "0" ] && ARGS+=(--limit "$LIMIT")
-          python scripts/backfill_movie_posters.py --stack sg "${ARGS[@]}"
+          python scripts/backfill_movie_posters.py --stack cn-shanghai "${ARGS[@]}"

@@ -36,7 +36,7 @@ variable "project" {
 }
 
 variable "domain" {
-  description = "CDN accelerated subdomain for this stack, e.g. pd.huhansen.com or pd.huhansen.cn."
+  description = "CDN accelerated subdomain for this stack, e.g. pd.huhansen.cn or pd-qa.huhansen.com."
   type        = string
   default     = "pd.huhansen.cn"
 }
@@ -143,7 +143,7 @@ variable "cas_contact_email" {
 # --- FC runtime secrets (Auth.js + data access) ---
 
 variable "auth_url" {
-  description = "Public app URL for Auth.js, e.g. https://pd.huhansen.com (must match CDN subdomain)."
+  description = "Public app URL for Auth.js, e.g. https://pd.huhansen.cn (must match CDN subdomain)."
   type        = string
   default     = "https://pd.huhansen.cn"
 }

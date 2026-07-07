@@ -5,8 +5,8 @@ Fix pd_visits rows where the destination country was stored in province with cou
 Moves non-Chinese province values into country and clears province.
 
 Examples:
-  python scripts/fix_visit_countries.py --stack sg --dry-run
-  python scripts/fix_visit_countries.py --stack sg
+  python scripts/fix_visit_countries.py --stack cn-shanghai --dry-run
+  python scripts/fix_visit_countries.py --stack cn-shanghai
 """
 
 from __future__ import annotations
@@ -187,7 +187,7 @@ def main() -> int:
     load_dotenv_local()
 
     parser = argparse.ArgumentParser(description="Fix visit country values in OTS")
-    parser.add_argument("--stack", choices=("sg", "cn-shanghai"), default="sg")
+    parser.add_argument("--stack", choices=("cn-shanghai", "qa"), default="cn-shanghai")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 

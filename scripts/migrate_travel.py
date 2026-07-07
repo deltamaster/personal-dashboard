@@ -2,7 +2,7 @@
 """
 Migration script to migrate travel visits and visit images from local SQLite (travel.db)
 to Alibaba Cloud OTS (Tablestore) pd_visits and pd_visit_images tables,
-and upload physical images to the private OSS vault bucket (pd-vault-sg).
+and upload physical images to the private OSS vault bucket (personal-dashboard-vault).
 """
 
 import os
@@ -17,11 +17,11 @@ from tablestore import OTSClient, Row
 
 # Configuration
 TRAVEL_DB = "/home/openclaw/.openclaw/workspace/data/travel.db"
-OTS_ENDPOINT = "https://pd-dash-sg.ap-southeast-1.ots.aliyuncs.com"
-OTS_INSTANCE = "pd-dash-sg"
+OTS_ENDPOINT = "https://pd-dashboard.cn-shanghai.ots.aliyuncs.com"
+OTS_INSTANCE = "pd-dashboard"
 OTS_VISITS_TABLE = "pd_visits"
 OTS_IMAGES_TABLE = "pd_visit_images"
-OSS_VAULT_BUCKET = "pd-web-sg"
+OSS_VAULT_BUCKET = "personal-dashboard-vault"
 
 def get_aliyun_credentials():
     config_path = os.path.expanduser("~/.aliyun/config.json")
@@ -105,7 +105,7 @@ def migrate():
             aws_access_key_id=ak_id,
             aws_secret_access_key=ak_secret,
             aws_session_token=sts_token,
-            endpoint_url="https://oss-ap-southeast-1.aliyuncs.com",
+            endpoint_url="https://oss-cn-shanghai.aliyuncs.com",
             config=Config(s3={"addressing_style": "virtual"})
         )
         print("[+] OSS client connected.")
@@ -193,7 +193,7 @@ def migrate():
         image_id = str(uuid.uuid4())
         _, ext = os.path.splitext(local_path)
         oss_key = f"travel/images/{image_id}{ext}"
-        oss_url = f"https://pd.huhansen.com/{oss_key}"
+        oss_url = f"https://pd.huhansen.cn/{oss_key}"
         
         # Upload physical file to OSS
         try:

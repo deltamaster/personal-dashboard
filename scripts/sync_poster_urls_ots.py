@@ -6,8 +6,8 @@ Use after poster_to_oss.py uploaded to OSS but OTS write failed (e.g. missing OT
 permission locally). Does not call Douban.
 
 Examples:
-  python scripts/sync_poster_urls_ots.py --stack sg --dry-run
-  python scripts/sync_poster_urls_ots.py --stack sg --douban-id 10463953
+  python scripts/sync_poster_urls_ots.py --stack cn-shanghai --dry-run
+  python scripts/sync_poster_urls_ots.py --stack cn-shanghai --douban-id 10463953
 """
 
 from __future__ import annotations
@@ -65,7 +65,7 @@ def main() -> int:
     load_dotenv_local()
 
     parser = argparse.ArgumentParser(description="Sync OTS poster_url from existing OSS objects")
-    parser.add_argument("--stack", choices=("sg", "cn-shanghai"), default="sg")
+    parser.add_argument("--stack", choices=("cn-shanghai", "qa"), default="cn-shanghai")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--douban-id", help="Only sync one movie")
     parser.add_argument(

@@ -1,7 +1,7 @@
 # AGENTS.md — Personal Dashboard
 
 > **Read this first.** Single source of truth for AI agents and implementers.
-> Repo status: **movies module implemented** — portfolio/travel pending. Singapore + Shanghai prod stacks in Terraform; apply/deploy via GitHub Actions.
+> Repo status: **movies module implemented** — portfolio/travel pending. Shanghai prod + SG QA stacks in Terraform; apply/deploy via GitHub Actions.
 
 ## Doc map
 
@@ -39,7 +39,7 @@ Launch with **empty/manual data**. SQLite migration is deferred (see [TECHNICAL_
 | Cloud | **Alibaba Cloud only** — no Vercel, no AWS |
 | Compute billing | **No hourly/always-on cost** — FC pay-per-invocation; static UI on OSS |
 | Domain | `huhansen.cn` (registered with Alibaba) |
-| Region | Singapore `ap-southeast-1` (`pd.huhansen.com`); Shanghai `cn-shanghai` (`pd.huhansen.cn`, ICP) |
+| Region | Shanghai prod `cn-shanghai` (`pd.huhansen.cn`, ICP); QA `ap-southeast-1` (`pd-qa.huhansen.com`) |
 | OSS web bucket | **Public read** — static HTML/JS/CSS only |
 | OSS vault bucket | **Private** — presigned URLs only; block all public access |
 | Auth protocol | OAuth 2.0 Authorization Code — **not** Implicit Flow |
@@ -58,7 +58,7 @@ Launch with **empty/manual data**. SQLite migration is deferred (see [TECHNICAL_
 |---|---|---|
 | Always-on compute | ECS, ECI, ACK nodes, FC **`minInstances` > 0** | Charges 24×7 even with zero requests. **Rule:** `FC_MIN_INSTANCES=0`; Terraform `alicloud_fcv3_provision_config` `target = 0`. |
 | Reserved throughput | OTS **预留读/写 CU** on tables; Tablestore **多元索引** (`#search_index` 预留读) | Hourly per CU / per index, **independent of queries**. Six unused search indexes across three OTS instances cost ~**¥120+/month** in 2026 while actual 按量读/写 stayed in the free tier. **Rule:** no search indexes; no manual reserved CU unless measured need. |
-| Duplicate prod stacks | Running **QA + SG prod + CN prod** all month with the same reserved extras | Multiplies fixed lines (indexes, reserved CU) by stack count. **Rule:** tear down or avoid reserved features on QA; don’t leave QA infra provisioned when not testing. |
+| Duplicate prod stacks | Running **QA + CN prod** all month with the same reserved extras | Multiplies fixed lines (indexes, reserved CU) by stack count. **Rule:** tear down or avoid reserved features on QA; don’t leave QA infra provisioned when not testing. |
 | Always-on networking | NAT Gateway, SLB/ALB with hourly fee, VPN | Hourly + traffic. **Rule:** CDN → OSS / FC HTTP trigger only; no NAT/SLB in architecture. |
 | Managed DB always on | ApsaraDB RDS, Redis **按量但实例常驻** tiers | Hourly instance fee. **Rule:** OTS pay-per-CU + OSS; no RDS. |
 | Over-provisioned storage class | OSS IA/Archive for hot static assets; huge vault without lifecycle | Low traffic but wrong tier still adds cost. **Rule:** standard OSS for web + vault; lifecycle only when vault grows. |
@@ -85,7 +85,7 @@ Some lines are **GB·hour** or **hourly minimums** but stay negligible for one u
 
 1. **Does it bill per hour / per reserved unit while idle?** If yes, reject or gate behind explicit approval.
 2. **Is there a serverless / pay-per-use alternative?** (FC vs ECS, OSS static vs SSR host, GetRange vs search index.)
-3. **Will this multiply across SG + CN + QA?** Estimate **×3** for reserved-style costs.
+3. **Will this multiply across CN prod + QA?** Estimate **×2** for reserved-style costs.
 4. **Check the bill item name** in 费用与成本 → 账单详情 (`预留读能力`, `#search_index`, `预留实例`, NAT, SLB, etc.).
 
 Infrastructure examples and OTS index policy: [terraform/README.md § OTS](./terraform/README.md#ots-no-search-indexes). Rough monthly envelope: [docs/deployment.md § Cost](./docs/deployment.md#4-cost-single-user-light-use).
@@ -95,19 +95,19 @@ Infrastructure examples and OTS index policy: [terraform/README.md § OTS](./ter
 ## Constants
 
 ```
-# Singapore (overseas)
-AUTH_URL_PROD_SG= https://pd.huhansen.com
-OTS_INSTANCE_SG= pd-dash-sg
-OTS_ENDPOINT_SG= https://pd-dash-sg.ap-southeast-1.ots.aliyuncs.com
-OSS_WEB_BUCKET_SG= pd-web-sg
-OSS_VAULT_BUCKET_SG= pd-vault-sg
+# Shanghai (mainland prod, ICP on huhansen.cn)
+AUTH_URL_PROD= https://pd.huhansen.cn
+OTS_INSTANCE= pd-dashboard
+OTS_ENDPOINT= https://pd-dashboard.cn-shanghai.ots.aliyuncs.com
+OSS_WEB_BUCKET= huhansen-web
+OSS_VAULT_BUCKET= personal-dashboard-vault
 
-# Shanghai (mainland, ICP on huhansen.cn)
-AUTH_URL_PROD_CN= https://pd.huhansen.cn
-OTS_INSTANCE_CN= pd-dashboard
-OTS_ENDPOINT_CN= https://pd-dashboard.cn-shanghai.ots.aliyuncs.com
-OSS_WEB_BUCKET_CN= huhansen-web
-OSS_VAULT_BUCKET_CN= personal-dashboard-vault
+# QA (Singapore region, overseas)
+AUTH_URL_QA= https://pd-qa.huhansen.com
+OTS_INSTANCE_QA= pd-dash-qa
+OTS_ENDPOINT_QA= https://pd-dash-qa.ap-southeast-1.ots.aliyuncs.com
+OSS_WEB_BUCKET_QA= pd-web-qa
+OSS_VAULT_BUCKET_QA= pd-vault-qa
 
 DOMAIN= huhansen.cn
 ALLOWED_USER_EMAIL= huhansen318@hotmail.com
@@ -166,18 +166,18 @@ ALIBABA_CLOUD_ACCESS_KEY_SECRET=
 ALIBABA_CLOUD_ROLE_ARN=acs:ram::1197388755513152:role/resourceadmin
 # Local dev session name; FC uses personal-dashboard-fc (set in Terraform / Deploy API)
 ALIBABA_CLOUD_ROLE_SESSION_NAME=personal-dashboard
-ALIBABA_CLOUD_REGION=ap-southeast-1
+ALIBABA_CLOUD_REGION=cn-shanghai
 
 # OTS
-OTS_ENDPOINT=https://pd-dash-sg.ap-southeast-1.ots.aliyuncs.com
-OTS_INSTANCE_NAME=pd-dash-sg
+OTS_ENDPOINT=https://pd-dashboard.cn-shanghai.ots.aliyuncs.com
+OTS_INSTANCE_NAME=pd-dashboard
 
 # OSS
-OSS_WEB_BUCKET=pd-web-sg
-OSS_WEB_REGION=oss-ap-southeast-1
-OSS_VAULT_BUCKET=pd-vault-sg
-OSS_VAULT_REGION=oss-ap-southeast-1
-OSS_VAULT_ENDPOINT=oss-ap-southeast-1.aliyuncs.com
+OSS_WEB_BUCKET=huhansen-web
+OSS_WEB_REGION=oss-cn-shanghai
+OSS_VAULT_BUCKET=personal-dashboard-vault
+OSS_VAULT_REGION=oss-cn-shanghai
+OSS_VAULT_ENDPOINT=oss-cn-shanghai.aliyuncs.com
 ```
 
 ---
@@ -237,13 +237,13 @@ Dev environment is plain Next.js 14 (App Router). **Node 24** Active LTS (see `.
 
 **QA / agent environment (bypass auth):** set `MICROSOFT_AUTH_ENABLED=false` **and** `NEXT_PUBLIC_MICROSOFT_AUTH_ENABLED=false` (both — the `NEXT_PUBLIC_` one is baked into the client bundle at build time). Then auth is bypassed: `requireSession()` returns a stub owner session (API routes skip the 401), `auth.ts` no longer throws on missing OAuth creds, and the client `SessionProvider` reports an authenticated "QA User". Combine with `QA_DUMMY_DATA=1` for a fully offline QA env.
 
-**QA cloud stack (Terraform):** QA is a **third stack on the main root** via `terraform/env/qa.tfvars` (state key `terraform-state-qa-hosted`) — a full hosted clone of prod (`pd-dash-qa`, `pd-web-qa`, `pd-vault-qa`, FC `api-qa`, CDN `pd-qa.huhansen.com`) with **Microsoft auth enforced** (no bypass). **Push to non-`main` branches** that touch `terraform/**` auto-applies QA (same routing as Deploy API/Web); override via **Actions → Terraform → stack `qa`**. The apply adopts the previously-created QA resources via `scripts/import-existing.sh`. Photos upload server-side to `pd-web-qa` (FC env `OSS_MEDIA_BUCKET`). See `terraform/README.md`. The live `pd-dash-sg`/`pd-dashboard` are **production** — never seed/pollute them.
+**QA cloud stack (Terraform):** QA is a **second hosted stack** on the main root via `terraform/env/qa.tfvars` (state key `terraform-state-qa-hosted`) — a full hosted clone of prod (`pd-dash-qa`, `pd-web-qa`, `pd-vault-qa`, FC `api-qa`, CDN `pd-qa.huhansen.com`) with **Microsoft auth enforced** (no bypass). **Push to non-`main` branches** that touch `terraform/**` auto-applies QA (same routing as Deploy API/Web); override via **Actions → Terraform → stack `qa`**. The apply adopts the previously-created QA resources via `scripts/import-existing.sh`. Photos upload server-side to `pd-web-qa` (FC env `OSS_MEDIA_BUCKET`). See `terraform/README.md`. The live `pd-dashboard` instance is **production** — never seed/pollute it.
 
 **Local QA against the cloud:** to run the app locally pointed at the QA data with auth bypassed, set in `.env.local`: `MICROSOFT_AUTH_ENABLED=false`, `NEXT_PUBLIC_MICROSOFT_AUTH_ENABLED=false`, `OTS_INSTANCE_NAME=pd-dash-qa`, `OTS_ENDPOINT=https://pd-dash-qa.ap-southeast-1.ots.aliyuncs.com`. `scripts/qa-seed.mjs` seeds dummy rows into a QA instance (refuses prod instance names).
 
 **Photo URLs (`MEDIA_PUBLIC_BASE_URL`):** visit photos are uploaded to the vault bucket and rendered directly from `oss_url`. When `MEDIA_PUBLIC_BASE_URL` is set (e.g. the QA CDN `https://pd-qa.huhansen.com`), `lib/oss.ts toPublicMediaUrl()` stores/serves `oss_url` as `<base>/<objectKey>` so images load via the CDN custom domain (write-time in the images route + read-time in `normalizeImage`). Unset = bare object key (unchanged prod behavior).
 
-**Region stacks:** Singapore (`ap-southeast-1`, `pd.huhansen.com`) and Shanghai (`cn-shanghai`, `pd.huhansen.cn`) are both production. QA stays on Singapore only (`pd-qa.huhansen.com`). For local dev against live data, pick the stack you need — Singapore: `OTS_INSTANCE_NAME=pd-dash-sg`, `OTS_ENDPOINT=https://pd-dash-sg.ap-southeast-1.ots.aliyuncs.com`; Shanghai: `OTS_INSTANCE_NAME=pd-dashboard`, `OTS_ENDPOINT=https://pd-dashboard.cn-shanghai.ots.aliyuncs.com`, vault `personal-dashboard-vault`, web `huhansen-web`. **Writes need the RAM user to have `ots:PutRow`/`UpdateRow`/`DeleteRow`** — a read-only key returns `OTSNoPermissionAccess` (ImplicitDeny) on create/edit.
+**Region stacks:** Shanghai prod (`cn-shanghai`, `pd.huhansen.cn`) is the sole production stack. QA runs on Singapore region only (`ap-southeast-1`, `pd-qa.huhansen.com`). For local dev against live prod data: `OTS_INSTANCE_NAME=pd-dashboard`, `OTS_ENDPOINT=https://pd-dashboard.cn-shanghai.ots.aliyuncs.com`, vault `personal-dashboard-vault`, web `huhansen-web`. **Writes need the RAM user to have `ots:PutRow`/`UpdateRow`/`DeleteRow`** — a read-only key returns `OTSNoPermissionAccess` (ImplicitDeny) on create/edit.
 
 **What true end-to-end needs (external secrets):** a real Microsoft Entra *consumer* OAuth app (`AUTH_MICROSOFT_ENTRA_ID_ID/SECRET`) plus the allowlisted account (`huhansen318@hotmail.com`) to sign in, and Alibaba OTS creds (`ALIBABA_CLOUD_ACCESS_KEY_ID/SECRET`, `OTS_ENDPOINT`, `OTS_INSTANCE_NAME`) for movie reads/writes. Without these you can still run/lint/build everything and exercise the authenticated UI against dummy Portfolio/Travel data.
 
