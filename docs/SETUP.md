@@ -9,8 +9,8 @@ Complete these **before** the app works in production or locally with real data.
 3. Account type: **Personal Microsoft accounts only**
 4. Redirect URIs (Web):
    - `http://localhost:3000/api/auth/callback/microsoft-entra-id` (local dev)
-   - `https://pd.huhansen.com/api/auth/callback/microsoft-entra-id` (Singapore)
-   - `https://pd.huhansen.cn/api/auth/callback/microsoft-entra-id` (Shanghai, after ICP)
+   - `https://pd.huhansen.cn/api/auth/callback/microsoft-entra-id` (Shanghai prod)
+   - `https://pd-qa.huhansen.com/api/auth/callback/microsoft-entra-id` (QA)
 5. **Certificates & secrets** → New client secret → copy value
 6. **Authentication** → enable ID tokens
 7. Copy **Application (client) ID**
@@ -33,7 +33,7 @@ Pushes to `main` that touch `terraform/` also auto-apply.
 
 ```bash
 cp .env.example .env.local
-# Fill in AUTH_* and ALIBABA_* values (Singapore stack: ap-southeast-1, pd-dash-sg, pd-vault-sg)
+# Fill in AUTH_* and ALIBABA_* values (Shanghai prod: cn-shanghai, pd-dashboard, personal-dashboard-vault)
 
 # Node 24 (see .nvmrc)
 npm install
@@ -61,23 +61,23 @@ Run **Terraform**, **Deploy Web**, and **Deploy API** automatically on push:
 
 | Branch | Targets |
 |---|---|
-| **`main`** | Singapore + Shanghai prod (parallel) |
+| **`main`** | Shanghai prod |
 | **Other branches** | QA only |
 
-Pull requests against `main` run Terraform **plan** (prod stacks) when `terraform/**` changes.
+Pull requests against `main` run Terraform **plan** (Shanghai prod) when `terraform/**` changes.
 
 ## 5. First deploy
 
 1. Push to `main` on GitHub
 2. **Deploy Web** workflow uploads `out/` → `huhansen-web`
 3. **Deploy API** workflow builds Next.js → zip → OSS → updates FC
-4. Verify: https://pd.huhansen.com/auth/signin/ (Singapore) or https://pd.huhansen.cn/auth/signin/ (Shanghai)
+4. Verify: https://pd.huhansen.cn/auth/signin/ (prod) or https://pd-qa.huhansen.com/auth/signin/ (QA)
 
 ## 6. Troubleshooting
 
 | Symptom | Likely cause |
 |---|---|
-| Sign-in redirects to wrong URL | `AUTH_URL` on FC must match the stack subdomain (`https://pd.huhansen.com` or `https://pd.huhansen.cn`) |
+| Sign-in redirects to wrong URL | `AUTH_URL` on FC must match the stack subdomain (`https://pd.huhansen.cn` or `https://pd-qa.huhansen.com`) |
 | `ExternalRedirectForbidden` on Microsoft sign-in | FC blocks OAuth redirects on `*.fcapp.run`. Add DNS CNAME `api.pd` → `{account_id}.{region}.fc.aliyuncs.com` (Cloudflare DNS-only for `.com`, Alibaba DNS for `.cn`), then re-run Terraform to bind the FC custom domain. |
 | Terraform `ConfigParentExceedLimit` on CDN | Each rule-engine condition allows one child config. Terraform CI runs `scripts/cdn-sync-api-origin.sh` before apply to import or prune orphan children under **api-path**. Or delete extras manually in CDN console (duplicate `origin_dns_host`, `/api/` cache rule with parent, etc.), then re-run Terraform. |
 | 401 on `/api/movies` | Not signed in, or session cookie blocked (check CDN forwards `/api/*`) |

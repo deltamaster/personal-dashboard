@@ -10,19 +10,19 @@ Does **not** create RAM users/roles. Uses your existing RAM user + AssumeRole.
 
 | Stack | Region | GitHub environment | State cache key | Auto on push |
 |---|---|---|---|---|
-| **Singapore (overseas prod)** | `ap-southeast-1` | `personal-dashboard` | `terraform-state-ap-southeast-1` | yes |
-| **Shanghai (mainland prod)** | `cn-shanghai` | `personal-dashboard` | `terraform-state-cn-shanghai` | yes |
+| **Shanghai (prod)** | `cn-shanghai` | `personal-dashboard` | `terraform-state-cn-shanghai` | yes (`main`) |
+| **QA** | `ap-southeast-1` | `personal-dashboard` | `terraform-state-qa-hosted` | yes (non-`main`) |
 
-Both stacks use the **same** GitHub environment secrets. `auth_url` / `domain` come from per-stack tfvars (`pd.huhansen.com` / `pd.huhansen.cn`).
+Both stacks use the **same** GitHub environment secrets. `auth_url` / `domain` come from per-stack tfvars (`pd.huhansen.cn` / `pd-qa.huhansen.com`).
 
 | Stack | Subdomain | CDN scope |
 |---|---|---|
-| Singapore | `pd.huhansen.com` | `overseas` (no ICP) |
-| Shanghai | `pd.huhansen.cn` | `domestic` (ICP required) |
+| Shanghai prod | `pd.huhansen.cn` | `domestic` (ICP required) |
+| QA | `pd-qa.huhansen.com` | `overseas` (no ICP) |
 
 ## QA stack — full hosted clone (`env/qa.tfvars`)
 
-QA is a **third stack on this same root** (not a separate root): static frontend on OSS + **FC API** + CDN at `pd-qa.huhansen.com`, with **Microsoft auth enforced** (no bypass). It reuses all prod FC/CDN logic; only the names/domain differ.
+QA is a **hosted clone of prod** on the same Terraform root (not a separate root): static frontend on OSS + **FC API** + CDN at `pd-qa.huhansen.com`, with **Microsoft auth enforced** (no bypass). It reuses all prod FC/CDN logic; only the names/domain differ.
 
 | Resource | QA name |
 |---|---|
@@ -37,7 +37,7 @@ State key: **`terraform-state-qa-hosted`** (distinct from the retired data-only 
 
 Then deploy + DNS (same pattern as prod, just `pd-qa`):
 1. **Push to any non-`main` branch** (or **Actions → Deploy API → stack `qa`**) — builds + ships the API to `api-qa`.
-2. Same for **Deploy Web** — non-`main` pushes target `pd-web-qa` and purge CDN. **`main` pushes deploy both prod stacks (`ap-southeast-1` + `cn-shanghai`) in parallel.**
+2. Same for **Deploy Web** — non-`main` pushes target `pd-web-qa` and purge CDN. **`main` pushes deploy Shanghai prod (`cn-shanghai`).**
 3. Cloudflare: `CNAME pd-qa → <cdn_cname output>` and DNS-only `CNAME api.pd-qa → {account_id}.ap-southeast-1.fc.aliyuncs.com`.
 4. Azure: add redirect URI `https://pd-qa.huhansen.com/api/auth/callback/microsoft-entra-id`.
 
@@ -52,7 +52,7 @@ API runs as **FC Custom Runtime** — no ACR or Docker required. **CDN** (when `
 | `/*` (default) | OSS web bucket |
 | `/api/*` | FC HTTP trigger (`advanced_origin`) |
 
-Both prod stacks use `create_cdn_domain = true` (`env/ap-southeast-1.tfvars`, `env/cn-shanghai.tfvars`). If you already created the domain in the console, the import script adopts it before apply.
+Both prod and QA use `create_cdn_domain = true` (`env/cn-shanghai.tfvars`, `env/qa.tfvars`). If you already created the domain in the console, the import script adopts it before apply.
 
 **Shanghai FC runtime migration:** if an old `custom-container` function exists, `import-existing.sh` deletes it via **AssumeRole** (raw RAM user lacks `fc:DeleteFunction`), clears Terraform state, and skips re-import so apply creates `custom.debian10` zip runtime. Do not re-import the legacy function manually.
 
@@ -64,7 +64,7 @@ Add these to the **`personal-dashboard`** environment:
 |---|---|
 | `ALIBABA_CLOUD_*`, `ALIBABA_CLOUD_ROLE_ARN` | RAM user (AssumeRole only) + `resourceadmin` role — used by Terraform, FC runtime, and local `.env.local` |
 | `AUTH_*` | Auth.js + Azure OAuth |
-| `AUTH_URL` | Shanghai only — `https://pd.huhansen.cn` (overrides tfvars on cn-shanghai apply) |
+| `AUTH_URL` | Shanghai prod — `https://pd.huhansen.cn` (overrides tfvars on cn-shanghai apply) |
 
 ## 2. Run provisioning
 
@@ -72,39 +72,26 @@ Add these to the **`personal-dashboard`** environment:
 
 | Trigger | Terraform targets |
 |---|---|
-| **Push to `main`** (`terraform/**`) | `ap-southeast-1` + `cn-shanghai` (apply) |
+| **Push to `main`** (`terraform/**`) | `cn-shanghai` (apply) |
 | **Push to other branches** (`terraform/**`) | `qa` (apply) |
-| **Pull request** | `ap-southeast-1` + `cn-shanghai` (plan only) |
-| **workflow_dispatch** | Pick stack + plan or apply |
+| **Pull request** | `cn-shanghai` (plan only) |
+| **workflow_dispatch** | Pick stack (`cn-shanghai` or `qa`) + plan or apply |
 
-**Singapore + Shanghai:** push changes under `terraform/` to `main` (both stacks apply in parallel), or  
+**Shanghai prod:** push changes under `terraform/` to `main`, or  
 **Actions → Terraform → pick stack → plan/apply** (single stack)
 
 After first apply:
 
 1. Copy `fc_http_trigger_url` from workflow output
-2. Update `auth_url` in `env/ap-southeast-1.tfvars` (Singapore) or keep `AUTH_URL` secret (Shanghai)
+2. Keep `AUTH_URL` secret as `https://pd.huhansen.cn` (Shanghai)
 3. Re-run Terraform apply if auth env changed
 4. Run **Deploy API** then **Deploy Web**
 
 ## 3. CDN + DNS
 
-Terraform manages CDN when `create_cdn_domain = true` (Singapore: enabled). After apply, copy output `cdn_cname` to Cloudflare.
+Terraform manages CDN when `create_cdn_domain = true`. After apply, copy output `cdn_cname` to DNS.
 
-### Singapore — `pd.huhansen.com` (Cloudflare)
-
-1. **Terraform apply** creates/updates CDN + OSS/FC routing (or imports existing domain)
-2. Cloudflare DNS (**灰云 / DNS only**):
-
-| 类型 | 名称 | 目标 |
-|---|---|---|
-| CNAME | `pd` | Terraform output `cdn_cname` |
-
-3. Azure redirect URI: `https://pd.huhansen.com/api/auth/callback/microsoft-entra-id`
-
-If the domain already exists in the CDN console, the import step adopts it — no need to delete first.
-
-### Shanghai — `pd.huhansen.cn` (Alibaba DNS, ICP complete)
+### Shanghai prod — `pd.huhansen.cn` (Alibaba DNS, ICP complete)
 
 **Before first CDN apply:** verify root domain `huhansen.cn` in CDN (one-time). CI runs `scripts/cdn-verify-root-domain.sh`; if verification fails, Terraform still applies OTS/OSS/FC but skips CDN (`create_cdn_domain=false`).
 
@@ -173,21 +160,13 @@ Terraform provisions **7 data tables only** (`terraform/ots.tf`). We intentional
 | Billing | Each index on a 高性能型 instance accrues automatic **预留读能力** on the `#search_index` billing line (~¥5–6 per instance every few days in 2026), while actual 按量读/写 CU stayed within the free tier |
 | Data safety | Removing indexes does **not** delete table rows |
 
-**Apply to drop existing indexes:** merge to `main` applies Singapore + Shanghai prod; push to any other branch applies QA first (see [terraform/README § Branch routing](./README.md#2-run-provisioning)). Review the plan — expect `destroy` on six `alicloud_ots_search_index` resources per stack that still has them in state. If indexes were created outside Terraform, delete in the [OTS console](https://otsnext.console.aliyun.com/) (数据表 → 索引管理).
+**Apply to drop existing indexes:** merge to `main` applies Shanghai prod; push to any other branch applies QA first (see [terraform/README § Branch routing](./README.md#2-run-provisioning)). Review the plan — expect `destroy` on six `alicloud_ots_search_index` resources per stack that still has them in state. If indexes were created outside Terraform, delete in the [OTS console](https://otsnext.console.aliyun.com/) (数据表 → 索引管理).
 
 Previously removed indexes: `idx_holdings`, `idx_visits`, `idx_flights`, `idx_trains`, `idx_movies`, `idx_visit_images`. Re-add only when implementing server-side filtered queries (see [TECHNICAL_SPEC.md § Query strategy](../TECHNICAL_SPEC.md#query-strategy--no-search-indexes)).
 
 ## What gets created
 
-### Singapore (`env/ap-southeast-1.tfvars`)
-
-| Resource | Name |
-|---|---|
-| OTS | `pd-dash-sg` + 7 tables (no search indexes) |
-| OSS | `pd-web-sg` (public), `pd-vault-sg` (private, holds `fc/api.zip`) |
-| FC v3 | `api` custom runtime + HTTP trigger |
-
-### Shanghai (`env/cn-shanghai.tfvars`)
+### Shanghai prod (`env/cn-shanghai.tfvars`)
 
 | Resource | Name |
 |---|---|
@@ -201,7 +180,7 @@ Previously removed indexes: `idx_holdings`, `idx_visits`, `idx_flights`, `idx_tr
 ```bash
 cd terraform
 terraform init
-terraform apply -var-file=env/ap-southeast-1.tfvars
+terraform apply -var-file=env/cn-shanghai.tfvars
 ```
 
 Copy `terraform.tfvars.example` for local credentials (gitignored).

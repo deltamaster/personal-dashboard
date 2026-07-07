@@ -24,8 +24,8 @@ jobs:
     environment: personal-dashboard
     timeout-minutes: 30
     env:
-      OTS_ENDPOINT: https://pd-dash-sg.ap-southeast-1.ots.aliyuncs.com
-      OTS_INSTANCE_NAME: pd-dash-sg
+      OTS_ENDPOINT: https://pd-dashboard.cn-shanghai.ots.aliyuncs.com
+      OTS_INSTANCE_NAME: pd-dashboard
     steps:
       - uses: actions/checkout@v4
 
@@ -52,7 +52,7 @@ jobs:
             --mode AK \
             --access-key-id "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
             --access-key-secret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
-            --region ap-southeast-1
+            --region cn-shanghai
           CREDS=$(aliyun sts AssumeRole \
             --RoleArn "$ALIBABA_CLOUD_ROLE_ARN" \
             --RoleSessionName "github-sync-poster-ots" \
@@ -67,7 +67,7 @@ jobs:
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ steps.sts.outputs.access_key_secret }}
           ALIBABA_CLOUD_SECURITY_TOKEN: ${{ steps.sts.outputs.security_token }}
         run: |
-          ARGS=(--stack sg)
+          ARGS=(--stack cn-shanghai)
           [ "${{ inputs.dry_run }}" = "true" ] && ARGS+=(--dry-run)
           ID="${{ inputs.douban_id }}"
           [ -n "$ID" ] && ARGS+=(--douban-id "$ID")

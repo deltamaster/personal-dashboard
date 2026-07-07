@@ -34,7 +34,7 @@ def scan_flights(client, table: str):
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--stack", default="sg")
+    parser.add_argument("--stack", default="cn-shanghai")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 

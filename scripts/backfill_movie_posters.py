@@ -5,9 +5,9 @@ Backfill movie posters: Douban → download → OSS → OTS poster_url (CDN path
 Also optionally fills missing actors from Douban.
 
 Examples:
-  python scripts/backfill_movie_posters.py --stack sg --dry-run --limit 5
-  python scripts/backfill_movie_posters.py --stack sg --migrate-douban
-  python scripts/backfill_movie_posters.py --stack sg --all
+  python scripts/backfill_movie_posters.py --stack cn-shanghai --dry-run --limit 5
+  python scripts/backfill_movie_posters.py --stack cn-shanghai --migrate-douban
+  python scripts/backfill_movie_posters.py --stack cn-shanghai --all
 """
 
 from __future__ import annotations
@@ -142,9 +142,9 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true", help="Do not write OSS/OTS")
     parser.add_argument(
         "--stack",
-        choices=("sg", "cn-shanghai"),
-        default="sg",
-        help="Target stack (default: sg)",
+        choices=("cn-shanghai", "qa"),
+        default="cn-shanghai",
+        help="Target stack (default: cn-shanghai = pd-dashboard + huhansen-web)",
     )
     parser.add_argument(
         "--all",

@@ -14,8 +14,8 @@ from tablestore import OTSClient, Row
 
 # Configuration
 LOCAL_DB = "/home/openclaw/.openclaw/workspace/data/movies.db"
-OTS_ENDPOINT = "https://pd-dash-sg.ap-southeast-1.ots.aliyuncs.com"
-OTS_INSTANCE = "pd-dash-sg"
+OTS_ENDPOINT = "https://pd-dashboard.cn-shanghai.ots.aliyuncs.com"
+OTS_INSTANCE = "pd-dashboard"
 OTS_TABLE = "pd_movies"
 
 def get_aliyun_credentials():

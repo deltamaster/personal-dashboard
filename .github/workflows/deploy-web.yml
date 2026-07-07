@@ -10,10 +10,9 @@ on:
       stack:
         description: "Region stack"
         required: true
-        default: ap-southeast-1
+        default: cn-shanghai
         type: choice
         options:
-          - ap-southeast-1
           - cn-shanghai
           - qa
 
@@ -28,7 +27,7 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             stacks='["${{ github.event.inputs.stack }}"]'
           elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            stacks='["ap-southeast-1","cn-shanghai"]'
+            stacks='["cn-shanghai"]'
           else
             stacks='["qa"]'
           fi
@@ -67,10 +66,8 @@ jobs:
               echo "ALICLOUD_REGION=ap-southeast-1" >> "$GITHUB_ENV"
               ;;
             *)
-              echo "OSS_ENDPOINT=oss-ap-southeast-1.aliyuncs.com" >> "$GITHUB_ENV"
-              echo "OSS_WEB_BUCKET=pd-web-sg" >> "$GITHUB_ENV"
-              echo "CDN_DOMAIN=pd.huhansen.com" >> "$GITHUB_ENV"
-              echo "ALICLOUD_REGION=ap-southeast-1" >> "$GITHUB_ENV"
+              echo "::error::Unknown stack: $STACK"
+              exit 1
               ;;
           esac
           echo "Deploying stack=$STACK (ref=${{ github.ref }}, event=${{ github.event_name }})"

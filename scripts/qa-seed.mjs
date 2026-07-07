@@ -22,7 +22,7 @@ const TableStore = TableStorePkg.default ?? TableStorePkg;
 
 const DRY_RUN = process.argv.includes("--dry-run");
 const FORCE = process.argv.includes("--force");
-const PROD_INSTANCES = new Set(["pd-dashboard", "pd-dash-sg"]);
+const PROD_INSTANCES = new Set(["pd-dashboard"]);
 
 // --- load .env.local if present (does not override real env) ---
 function loadEnvLocal() {

@@ -1,7 +1,7 @@
 # Copy to terraform.tfvars (gitignored). Do not commit.
-# Or use env/*.tfvars per stack: terraform apply -var-file=env/ap-southeast-1.tfvars
+# Or use env/*.tfvars per stack: terraform apply -var-file=env/cn-shanghai.tfvars
 
-region     = "ap-southeast-1"
+region     = "cn-shanghai"
 access_key = "LTAI..."
 secret_key = "..."
 role_arn   = "acs:ram::1234567890123456:role/your-provision-role"

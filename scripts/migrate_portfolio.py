@@ -14,8 +14,8 @@ from tablestore import OTSClient, Row
 
 # Configuration
 PORTFOLIO_DB = "/home/openclaw/.openclaw/workspace/data/portfolio.db"
-OTS_ENDPOINT = "https://pd-dash-sg.ap-southeast-1.ots.aliyuncs.com"
-OTS_INSTANCE = "pd-dash-sg"
+OTS_ENDPOINT = "https://pd-dashboard.cn-shanghai.ots.aliyuncs.com"
+OTS_INSTANCE = "pd-dashboard"
 OTS_HOLDINGS_TABLE = "pd_holdings"
 OTS_SNAPSHOTS_TABLE = "pd_snapshots"
 

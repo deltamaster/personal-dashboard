@@ -19,11 +19,11 @@ USER_AGENT = (
     "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1"
 )
 
-DEFAULT_OTS_ENDPOINT = "https://pd-dash-sg.ap-southeast-1.ots.aliyuncs.com"
-DEFAULT_OTS_INSTANCE = "pd-dash-sg"
-DEFAULT_OSS_BUCKET = "pd-web-sg"
-DEFAULT_OSS_ENDPOINT = "oss-ap-southeast-1.aliyuncs.com"
-DEFAULT_PUBLIC_BASE = "https://pd.huhansen.com"
+DEFAULT_OTS_ENDPOINT = "https://pd-dashboard.cn-shanghai.ots.aliyuncs.com"
+DEFAULT_OTS_INSTANCE = "pd-dashboard"
+DEFAULT_OSS_BUCKET = "huhansen-web"
+DEFAULT_OSS_ENDPOINT = "oss-cn-shanghai.aliyuncs.com"
+DEFAULT_PUBLIC_BASE = "https://pd.huhansen.cn"
 OTS_TABLE = "pd_movies"
 
 
@@ -82,7 +82,7 @@ def _assume_role(
     from aliyunsdkcore.client import AcsClient
     from aliyunsdksts.request.v20150401 import AssumeRoleRequest
 
-    region = os.environ.get("ALIBABA_CLOUD_REGION", "ap-southeast-1")
+    region = os.environ.get("ALIBABA_CLOUD_REGION", "cn-shanghai")
     client = AcsClient(ak, sk, region)
     req = AssumeRoleRequest.AssumeRoleRequest()
     req.set_RoleArn(role_arn)
@@ -315,23 +315,24 @@ def ots_client(
 
 def apply_stack_preset(stack: str) -> tuple[str, str, str, str]:
     """Return (ots_endpoint, ots_instance, oss_bucket, oss_endpoint)."""
-    if stack == "sg":
+    if stack in ("cn-shanghai", "cn"):
         return (
             DEFAULT_OTS_ENDPOINT,
             DEFAULT_OTS_INSTANCE,
-            DEFAULT_OSS_BUCKET,
-            DEFAULT_OSS_ENDPOINT,
-        )
-    if stack == "cn-shanghai":
-        return (
-            "https://pd-dashboard.cn-shanghai.ots.aliyuncs.com",
-            "pd-dashboard",
-            os.environ.get("OSS_WEB_BUCKET", "huhansen-web"),
-            os.environ.get("OSS_WEB_REGION", "oss-cn-shanghai") + ".aliyuncs.com"
+            os.environ.get("OSS_WEB_BUCKET", DEFAULT_OSS_BUCKET),
+            os.environ.get("OSS_WEB_REGION", DEFAULT_OSS_ENDPOINT).removesuffix(".aliyuncs.com")
+            + ".aliyuncs.com"
             if os.environ.get("OSS_WEB_REGION", "").startswith("oss-")
-            else "oss-cn-shanghai.aliyuncs.com",
+            else DEFAULT_OSS_ENDPOINT,
         )
-    raise ValueError(f"Unknown stack: {stack}")
+    if stack == "qa":
+        return (
+            "https://pd-dash-qa.ap-southeast-1.ots.aliyuncs.com",
+            "pd-dash-qa",
+            "pd-web-qa",
+            "oss-ap-southeast-1.aliyuncs.com",
+        )
+    raise ValueError(f"Unknown stack: {stack}. Use cn-shanghai or qa.")
 
 
 def get_movie_row(client: OTSClient, douban_subject_id: str) -> dict[str, Any] | None:
