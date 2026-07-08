@@ -117,6 +117,8 @@ Wait ~10 minutes, then re-run **Terraform apply**. After verification succeeds, 
 
 **HTTPS:** `env/cn-shanghai.tfvars` sets `cdn_https_enabled = true` and `cdn_cas_cert_id` to the CAS **CertificateId** (numeric — not the `cas_dv-cn-…` InstanceId). Terraform attaches the cert via `certificate_config` (`cert_type = cas`, `cert_region = cn-hangzhou`) and enables HTTP→HTTPS redirect (`https_force`). Order/renew the cert in the CAS console; update `cdn_cas_cert_id` when it changes.
 
+**TLS policy:** Terraform sets CDN `https_tls_version` on HTTPS domains (`cdn_tls.tf`): TLS 1.0/1.1 off, TLS 1.2/1.3 on, `ciphersuitegroup = strict` (Enhanced cipher suite). Applies to `pd.huhansen.cn` and `www.huhansen.cn` when HTTPS is active.
+
 Optional: `scripts/cdn-ensure-cas-cert.sh` can order a free DV cert locally/CI if you leave `cdn_cas_cert_id` empty — not used in the default Shanghai workflow.
 
 CDN scope: **仅中国内地**. Static origin: `huhansen-web.oss-cn-shanghai.aliyuncs.com`.

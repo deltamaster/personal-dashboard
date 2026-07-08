@@ -147,6 +147,30 @@ import_if_missing() {
   fi
 }
 
+import_cdn_tls_config() {
+  local domain="$1"
+  local tf_addr="$2"
+  if [ -z "$domain" ]; then
+    return 0
+  fi
+  if ! configure_aliyun_cli; then
+    echo "aliyun CLI unavailable — skipping TLS import for $domain"
+    return 0
+  fi
+  local config_id
+  config_id=$(aliyun cdn DescribeCdnDomainConfigs \
+    --DomainName "$domain" \
+    --FunctionNames https_tls_version \
+    --profile import-base \
+    --region "${ALICLOUD_REGION:-cn-shanghai}" 2>/dev/null \
+    | jq -r '.DomainConfigs.DomainConfig[0].ConfigId // empty')
+  if [ -z "$config_id" ]; then
+    echo "No https_tls_version on $domain — Terraform will create tls policy"
+    return 0
+  fi
+  import_if_missing "$tf_addr" "${domain}:https_tls_version:${config_id}"
+}
+
 prune_state_prefix() {
   local prefix="$1"
   local addrs
@@ -302,6 +326,8 @@ if [ -n "${CDN_DOMAIN:-}" ]; then
   if [ -f scripts/cdn-sync-api-origin.sh ]; then
     bash scripts/cdn-sync-api-origin.sh
   fi
+
+  import_cdn_tls_config "$CDN_DOMAIN" 'alicloud_cdn_domain_config.tls_policy[0]'
 fi
 
 OSS_WWW_BUCKET="${OSS_WWW_BUCKET:-huhansen-www}"
@@ -314,4 +340,5 @@ import_if_missing 'alicloud_oss_bucket_website.www[0]' "$OSS_WWW_BUCKET"
 
 if [ -n "${WWW_CDN_DOMAIN:-}" ]; then
   import_if_missing 'alicloud_cdn_domain_new.www[0]' "$WWW_CDN_DOMAIN"
+  import_cdn_tls_config "$WWW_CDN_DOMAIN" 'alicloud_cdn_domain_config.www_tls_policy[0]'
 fi
