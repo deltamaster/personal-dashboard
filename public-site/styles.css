@@ -586,8 +586,8 @@ main {
 .skill-tags li {
   position: relative;
   padding-left: 0.85rem;
-  font-size: var(--text-sm);
-  line-height: 1.45;
+  font-size: var(--text-base);
+  line-height: 1.65;
   color: var(--text);
   letter-spacing: 0.02em;
 }
