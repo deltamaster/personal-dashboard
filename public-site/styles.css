@@ -601,8 +601,8 @@ main {
 
 .skill-label {
   display: block;
-  font-size: var(--text-xs);
-  letter-spacing: 0.2em;
+  font-size: var(--text-base);
+  letter-spacing: 0.14em;
   color: var(--cyan);
 }
 
