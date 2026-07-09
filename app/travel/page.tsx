@@ -34,7 +34,7 @@ export default function TravelPage() {
     };
   }, []);
 
-  const { data, loading, error, patchData } = useOtsCache("travel", fetchTravel);
+  const { data, loading, error, patchData, refresh } = useOtsCache("travel", fetchTravel);
 
   const handleVisitUpdated = useCallback((updated: VisitWithImages) => {
     patchData((current) => ({
@@ -48,6 +48,17 @@ export default function TravelPage() {
         .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? "")),
     }));
   }, [patchData]);
+
+  const handleVisitDeleted = useCallback(
+    (visitId: string) => {
+      patchData((current) => ({
+        ...current,
+        visits: current.visits.filter((visit) => visit.visit_id !== visitId),
+      }));
+      void refresh();
+    },
+    [patchData, refresh]
+  );
 
   const visits = data?.visits ?? [];
   const flights = data?.flights ?? [];
@@ -115,7 +126,11 @@ export default function TravelPage() {
             {isSearching && filteredVisits.length === 0 ? (
               <p className="text-[var(--muted)]">No visits match your search.</p>
             ) : (
-              <VisitTimeline visits={filteredVisits} onVisitUpdated={handleVisitUpdated} />
+              <VisitTimeline
+                visits={filteredVisits}
+                onVisitUpdated={handleVisitUpdated}
+                onVisitDeleted={handleVisitDeleted}
+              />
             )}
           </div>
         )}

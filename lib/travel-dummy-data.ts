@@ -512,6 +512,7 @@ type DummyVisitPatch = Partial<
 };
 
 const dummyVisitPatches = new Map<string, DummyVisitPatch>();
+const deletedDummyVisitIds = new Set<string>();
 
 function mergeDummyVisit(base: VisitWithImages, patch?: DummyVisitPatch): VisitWithImages {
   if (!patch) return base;
@@ -525,7 +526,9 @@ function mergeDummyVisit(base: VisitWithImages, patch?: DummyVisitPatch): VisitW
 }
 
 function getDummyVisitsMerged(): VisitWithImages[] {
-  return dummyVisits.map((visit) => mergeDummyVisit(visit, dummyVisitPatches.get(visit.visit_id)));
+  return dummyVisits
+    .filter((visit) => !deletedDummyVisitIds.has(visit.visit_id))
+    .map((visit) => mergeDummyVisit(visit, dummyVisitPatches.get(visit.visit_id)));
 }
 
 export function updateDummyVisit(
@@ -539,6 +542,12 @@ export function updateDummyVisit(
   const existing = dummyVisitPatches.get(visitId) ?? {};
   dummyVisitPatches.set(visitId, { ...existing, ...patch });
   return mergeDummyVisit(base, dummyVisitPatches.get(visitId));
+}
+
+export function deleteDummyVisit(visitId: string): boolean {
+  if (!dummyVisits.some((visit) => visit.visit_id === visitId)) return false;
+  deletedDummyVisitIds.add(visitId);
+  return true;
 }
 
 export function addDummyVisitImage(visitId: string, image: VisitImage): VisitWithImages | null {

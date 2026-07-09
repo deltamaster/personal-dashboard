@@ -97,6 +97,16 @@ async function deleteVisitPhoto(visitId: string, imageId: string): Promise<void>
   }
 }
 
+async function deleteVisit(visitId: string): Promise<void> {
+  const res = await fetch(`/api/travel/visits/${visitId}/`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? "Failed to delete visit");
+  }
+}
+
 type VisitPatch = {
   rating?: number;
   date?: string;
@@ -151,9 +161,11 @@ async function patchVisit(visitId: string, patch: VisitPatch): Promise<VisitWith
 function VisitCard({
   visit,
   onVisitUpdated,
+  onVisitDeleted,
 }: {
   visit: VisitWithImages;
   onVisitUpdated?: (visit: VisitWithImages) => void;
+  onVisitDeleted?: (visitId: string) => void;
 }) {
   const [expandedPhoto, setExpandedPhoto] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -168,6 +180,7 @@ function VisitCard({
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingVisit, setDeletingVisit] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const attractionInputRef = useRef<HTMLInputElement>(null);
@@ -328,6 +341,23 @@ function VisitCard({
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function handleDeleteVisit() {
+    const label = visit.attraction || "this visit";
+    if (typeof window !== "undefined" && !window.confirm(`Delete "${label}"? This cannot be undone.`)) {
+      return;
+    }
+    setSaveError(null);
+    setDeletingVisit(true);
+    try {
+      await deleteVisit(visit.visit_id);
+      onVisitDeleted?.(visit.visit_id);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "Failed to delete visit");
+    } finally {
+      setDeletingVisit(false);
     }
   }
 
@@ -547,11 +577,19 @@ function VisitCard({
         />
         <button
           type="button"
-          disabled={uploading}
+          disabled={uploading || deletingVisit}
           onClick={() => fileInputRef.current?.click()}
           className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm hover:bg-[var(--background)] disabled:opacity-50"
         >
           {uploading ? "Uploading…" : "Add photos"}
+        </button>
+        <button
+          type="button"
+          disabled={saving || uploading || deletingVisit}
+          onClick={() => void handleDeleteVisit()}
+          className="rounded-lg border border-red-900/60 px-3 py-1.5 text-sm text-red-400 hover:bg-red-950/30 disabled:opacity-50"
+        >
+          {deletingVisit ? "Deleting…" : "Delete visit"}
         </button>
         {saving && <span className="text-xs text-[var(--muted)]">Saving…</span>}
       </div>
@@ -587,9 +625,11 @@ function VisitCard({
 export function VisitTimeline({
   visits,
   onVisitUpdated,
+  onVisitDeleted,
 }: {
   visits: VisitWithImages[];
   onVisitUpdated?: (visit: VisitWithImages) => void;
+  onVisitDeleted?: (visitId: string) => void;
 }) {
   const grouped = useMemo(() => {
     const map = new Map<string, VisitWithImages[]>();
@@ -613,7 +653,12 @@ export function VisitTimeline({
           <h2 className="mb-4 text-lg font-semibold">{year}</h2>
           <div className="space-y-4 border-l border-[var(--border)] pl-4 sm:pl-6">
             {yearVisits.map((visit) => (
-              <VisitCard key={visit.visit_id} visit={visit} onVisitUpdated={onVisitUpdated} />
+              <VisitCard
+                key={visit.visit_id}
+                visit={visit}
+                onVisitUpdated={onVisitUpdated}
+                onVisitDeleted={onVisitDeleted}
+              />
             ))}
           </div>
         </section>
