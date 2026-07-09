@@ -76,7 +76,7 @@ resource "alicloud_cdn_domain_config" "www_force_https" {
   }
 }
 
-# HTML: 1s edge TTL so index.html updates quickly; css/js/images use cdn_cache.tf rules.
+# HTML: 1-day edge TTL; deploy purge refreshes immediately on release.
 resource "alicloud_cdn_domain_config" "www_html_short_cache" {
   count = var.create_www_site && var.create_cdn_domain ? 1 : 0
 
@@ -96,7 +96,11 @@ resource "alicloud_cdn_domain_config" "www_html_short_cache" {
     arg_value = "90"
   }
   function_args {
-    arg_name  = "swift_no_cache_low"
+    arg_name  = "swift_origin_cache_high"
+    arg_value = "on"
+  }
+  function_args {
+    arg_name  = "swift_follow_cachetime"
     arg_value = "on"
   }
 }

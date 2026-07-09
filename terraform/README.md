@@ -141,7 +141,7 @@ Static cyberpunk intro page (no API). Source: `public-site/` → OSS `huhansen-w
 
 | Asset | CDN edge TTL | OSS `Cache-Control` |
 |---|---|---|
-| `.html` | 1 second (deploy also purges CDN) | `max-age=0, must-revalidate` |
+| `.html` | 1 day (deploy purge refreshes on release) | `max-age=86400` |
 | `.css`, `.js`, images, fonts | 30 days | `max-age=2592000` |
 | `robots.txt`, `sitemap.xml` | 1 hour | `max-age=3600` |
 

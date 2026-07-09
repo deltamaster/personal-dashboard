@@ -129,7 +129,7 @@ resource "alicloud_cdn_domain_config" "no_cache_redirect_status" {
   }
 }
 
-# HTML: 1s edge TTL; Next.js hashed assets under _next/static use cdn_cache.tf rules.
+# HTML: 1-day edge TTL; deploy purge refreshes immediately on release.
 resource "alicloud_cdn_domain_config" "html_short_cache" {
   count = var.create_cdn_domain ? 1 : 0
 
@@ -149,7 +149,11 @@ resource "alicloud_cdn_domain_config" "html_short_cache" {
     arg_value = "90"
   }
   function_args {
-    arg_name  = "swift_no_cache_low"
+    arg_name  = "swift_origin_cache_high"
+    arg_value = "on"
+  }
+  function_args {
+    arg_name  = "swift_follow_cachetime"
     arg_value = "on"
   }
 }

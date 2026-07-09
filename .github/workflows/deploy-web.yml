@@ -140,7 +140,7 @@ jobs:
             rel="${f#out/}"
             case "$f" in
               *.html)
-                meta="Cache-Control:public, max-age=0, must-revalidate"
+                meta="Cache-Control:public, max-age=86400"
                 ;;
               */_next/static/*)
                 meta="Cache-Control:public, max-age=31536000, immutable"

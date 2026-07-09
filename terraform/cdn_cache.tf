@@ -1,11 +1,11 @@
 # CDN cache TTLs — see deploy-public-site.yml / deploy-web.yml for matching OSS Cache-Control.
 
 locals {
-  # HTML: always revalidate after deploy (workflow also purges CDN). 1s ≈ no edge cache.
-  cdn_ttl_html_seconds = 1
+  # HTML: long edge cache for hit rate; deploy workflow purges CDN when content changes.
+  cdn_ttl_html_seconds = 86400 # 1 day
   # Static assets (css/js/images/fonts): long edge cache; deploy purge refreshes on release.
   cdn_ttl_static_seconds = 2592000 # 30 days
-  # robots.txt, sitemap.xml — short enough for SEO updates without full purge.
+  # robots.txt, sitemap.xml
   cdn_ttl_seo_meta_seconds = 3600 # 1 hour
 }
 

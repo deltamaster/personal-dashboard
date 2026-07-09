@@ -87,7 +87,7 @@ jobs:
             rel="${f#public-site/}"
             case "$f" in
               *.html)
-                meta="Cache-Control:public, max-age=0, must-revalidate"
+                meta="Cache-Control:public, max-age=86400"
                 ;;
               *.css|*.js)
                 meta="Cache-Control:public, max-age=2592000"
