@@ -637,9 +637,20 @@ function VisitInsertButton({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--card)] text-base leading-none text-[var(--muted)] shadow-sm transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent)] hover:text-white"
+      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--card)] text-[var(--muted)] shadow-sm transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent)] hover:text-white"
     >
-      +
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 14 14"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        aria-hidden
+      >
+        <path d="M7 2.5v9M2.5 7h9" />
+      </svg>
     </button>
   );
 }
@@ -672,6 +683,7 @@ function VisitTimelineRow({
   const insertBelow =
     insertSlot?.anchorVisitId === visit.visit_id && insertSlot.position === "below";
   const showInsertControls = !insertSlot && showInsertOnTap;
+  const rowExpanded = showInsertOnTap || insertAbove || insertBelow;
 
   const insertBtnVisibility = showInsertControls
     ? "flex"
@@ -688,7 +700,11 @@ function VisitTimelineRow({
   return (
     <div
       data-visit-row
-      className="group/row relative py-3"
+      className={
+        rowExpanded
+          ? "group/row relative py-3 transition-[padding] duration-150"
+          : "group/row relative py-0 transition-[padding] duration-150 group-hover/row:py-3"
+      }
       onClick={handleRowClick}
     >
       {!insertSlot && (
