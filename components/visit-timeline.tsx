@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { VisitInsertForm } from "@/components/visit-insert-form";
+import type { VisitInsertPosition } from "@/lib/visit-create-client";
 import type { VisitImage, VisitWithImages } from "@/lib/types/travel";
 
 function starCount(rating?: number): number {
@@ -622,15 +624,172 @@ function VisitCard({
   );
 }
 
+function VisitInsertButton({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: (e: React.MouseEvent) => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--card)] text-base leading-none text-[var(--muted)] shadow-sm transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent)] hover:text-white"
+    >
+      +
+    </button>
+  );
+}
+
+type InsertSlot = VisitInsertPosition;
+
+function VisitTimelineRow({
+  visit,
+  showInsertOnTap,
+  insertSlot,
+  onRowActivate,
+  onInsertClick,
+  onInsertSaved,
+  onInsertCancel,
+  onVisitUpdated,
+  onVisitDeleted,
+}: {
+  visit: VisitWithImages;
+  showInsertOnTap: boolean;
+  insertSlot: InsertSlot | null;
+  onRowActivate: (visitId: string) => void;
+  onInsertClick: (visit: VisitWithImages, position: InsertSlot["position"]) => void;
+  onInsertSaved: (visit: VisitWithImages, position: InsertSlot) => void;
+  onInsertCancel: () => void;
+  onVisitUpdated?: (visit: VisitWithImages) => void;
+  onVisitDeleted?: (visitId: string) => void;
+}) {
+  const insertAbove =
+    insertSlot?.anchorVisitId === visit.visit_id && insertSlot.position === "above";
+  const insertBelow =
+    insertSlot?.anchorVisitId === visit.visit_id && insertSlot.position === "below";
+  const showInsertControls = !insertSlot && showInsertOnTap;
+
+  const insertBtnVisibility = showInsertControls
+    ? "flex"
+    : insertSlot
+      ? "hidden"
+      : "hidden group-hover/row:flex";
+
+  function handleRowClick(e: React.MouseEvent) {
+    const el = e.target as HTMLElement;
+    if (el.closest("button, a, input, textarea, select, label, [role='dialog']")) return;
+    onRowActivate(visit.visit_id);
+  }
+
+  return (
+    <div
+      data-visit-row
+      className="group/row relative py-3"
+      onClick={handleRowClick}
+    >
+      {!insertSlot && (
+        <div
+          className={`pointer-events-none absolute -top-3 left-0 right-0 z-10 justify-center ${insertBtnVisibility}`}
+        >
+          <div className="pointer-events-auto">
+            <VisitInsertButton
+              label="Add visit above"
+              onClick={(e) => {
+                e.stopPropagation();
+                onInsertClick(visit, "above");
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {insertAbove && (
+        <div className="mb-3">
+          <VisitInsertForm
+            template={visit}
+            onSaved={(created) =>
+              onInsertSaved(created, { anchorVisitId: visit.visit_id, position: "above" })
+            }
+            onCancel={onInsertCancel}
+          />
+        </div>
+      )}
+
+      <VisitCard
+        visit={visit}
+        onVisitUpdated={onVisitUpdated}
+        onVisitDeleted={onVisitDeleted}
+      />
+
+      {insertBelow && (
+        <div className="mt-3">
+          <VisitInsertForm
+            template={visit}
+            onSaved={(created) =>
+              onInsertSaved(created, { anchorVisitId: visit.visit_id, position: "below" })
+            }
+            onCancel={onInsertCancel}
+          />
+        </div>
+      )}
+
+      {!insertSlot && (
+        <div
+          className={`pointer-events-none absolute -bottom-3 left-0 right-0 z-10 justify-center ${insertBtnVisibility}`}
+        >
+          <div className="pointer-events-auto">
+            <VisitInsertButton
+              label="Add visit below"
+              onClick={(e) => {
+                e.stopPropagation();
+                onInsertClick(visit, "below");
+              }}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function VisitTimeline({
   visits,
   onVisitUpdated,
   onVisitDeleted,
+  onVisitAdded,
 }: {
   visits: VisitWithImages[];
   onVisitUpdated?: (visit: VisitWithImages) => void;
   onVisitDeleted?: (visitId: string) => void;
+  onVisitAdded?: (visit: VisitWithImages, relative?: VisitInsertPosition) => void;
 }) {
+  const [tappedVisitId, setTappedVisitId] = useState<string | null>(null);
+  const [insertSlot, setInsertSlot] = useState<InsertSlot | null>(null);
+  const [coarsePointer, setCoarsePointer] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: none), (pointer: coarse)");
+    const update = () => setCoarsePointer(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    if (!tappedVisitId) return;
+    function onDocumentClick(e: MouseEvent) {
+      if (!(e.target as Element).closest("[data-visit-row]")) {
+        setTappedVisitId(null);
+      }
+    }
+    document.addEventListener("click", onDocumentClick);
+    return () => document.removeEventListener("click", onDocumentClick);
+  }, [tappedVisitId]);
+
   const grouped = useMemo(() => {
     const map = new Map<string, VisitWithImages[]>();
     for (const visit of visits) {
@@ -646,6 +805,26 @@ export function VisitTimeline({
     return <p className="text-[var(--muted)]">No visits recorded yet.</p>;
   }
 
+  function handleRowActivate(visitId: string) {
+    if (!coarsePointer) return;
+    setTappedVisitId((current) => (current === visitId ? null : visitId));
+  }
+
+  function handleInsertClick(visit: VisitWithImages, position: InsertSlot["position"]) {
+    setInsertSlot({ anchorVisitId: visit.visit_id, position });
+    setTappedVisitId(null);
+  }
+
+  function handleInsertSaved(visit: VisitWithImages, relative: InsertSlot) {
+    setInsertSlot(null);
+    setTappedVisitId(null);
+    onVisitAdded?.(visit, relative);
+  }
+
+  function handleInsertCancel() {
+    setInsertSlot(null);
+  }
+
   return (
     <div className="space-y-8">
       {grouped.map(([year, yearVisits]) => (
@@ -653,9 +832,15 @@ export function VisitTimeline({
           <h2 className="mb-4 text-lg font-semibold">{year}</h2>
           <div className="space-y-4 border-l border-[var(--border)] pl-4 sm:pl-6">
             {yearVisits.map((visit) => (
-              <VisitCard
+              <VisitTimelineRow
                 key={visit.visit_id}
                 visit={visit}
+                showInsertOnTap={coarsePointer && tappedVisitId === visit.visit_id}
+                insertSlot={insertSlot}
+                onRowActivate={handleRowActivate}
+                onInsertClick={handleInsertClick}
+                onInsertSaved={handleInsertSaved}
+                onInsertCancel={handleInsertCancel}
                 onVisitUpdated={onVisitUpdated}
                 onVisitDeleted={onVisitDeleted}
               />
