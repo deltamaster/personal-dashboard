@@ -129,7 +129,7 @@ resource "alicloud_cdn_domain_config" "no_cache_redirect_status" {
   }
 }
 
-# HTML pages change on every deploy; avoid serving stale index.html for sub-routes.
+# HTML: 1-day edge TTL; deploy purge refreshes immediately on release.
 resource "alicloud_cdn_domain_config" "html_short_cache" {
   count = var.create_cdn_domain ? 1 : 0
 
@@ -142,14 +142,18 @@ resource "alicloud_cdn_domain_config" "html_short_cache" {
   }
   function_args {
     arg_name  = "ttl"
-    arg_value = "1"
+    arg_value = tostring(local.cdn_ttl_html_seconds)
   }
   function_args {
     arg_name  = "weight"
     arg_value = "90"
   }
   function_args {
-    arg_name  = "swift_no_cache_low"
+    arg_name  = "swift_origin_cache_high"
+    arg_value = "on"
+  }
+  function_args {
+    arg_name  = "swift_follow_cachetime"
     arg_value = "on"
   }
 }

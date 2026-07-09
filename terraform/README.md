@@ -137,6 +137,16 @@ Static cyberpunk intro page (no API). Source: `public-site/` → OSS `huhansen-w
 3. **HTTPS:** order a CAS DV cert for `www.huhansen.cn` (`CDN_DOMAIN=www.huhansen.cn bash scripts/cdn-ensure-cas-cert.sh`), set `www_cdn_cas_cert_id` in `env/cn-shanghai.tfvars`, re-apply
 4. **Deploy:** push changes under `public-site/` or run **Actions → Deploy Public Site**
 
+**CDN cache (`cdn_cache.tf` + deploy workflows):**
+
+| Asset | CDN edge TTL | OSS `Cache-Control` |
+|---|---|---|
+| `.html` | 1 day (deploy purge refreshes on release) | `max-age=86400` |
+| `.css`, `.js`, images, fonts | 30 days | `max-age=2592000` |
+| `robots.txt`, `sitemap.xml` | 1 hour | `max-age=3600` |
+
+Dashboard (`pd.huhansen.cn`) uses the same static-asset CDN rules; Next.js hashed files under `_next/static/` get `immutable` + 1 year at upload.
+
 Footer displays ICP: 沪ICP备2026030261号-1
 
 ## FC custom domain state (all stacks)
