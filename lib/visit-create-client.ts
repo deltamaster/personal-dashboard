@@ -10,7 +10,6 @@ export function visitCreateTemplateFromVisit(
     province: visit.province,
     type: visit.type ?? "景点",
     country: visit.country ?? "中国",
-    attraction_en: visit.attraction_en,
     thoughts: visit.thoughts,
     highlights: visit.highlights,
     tips: visit.tips,

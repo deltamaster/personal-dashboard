@@ -6,7 +6,7 @@ import { postNewVisit, visitCreateTemplateFromVisit } from "@/lib/visit-create-c
 import type { VisitCreateInput, VisitWithImages } from "@/lib/types/travel";
 
 const fieldInputClass =
-  "mt-0.5 w-full rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-sm";
+  "mt-0.5 w-full rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-sm text-[var(--foreground)]";
 
 function OptionalRating({
   value,
@@ -60,7 +60,6 @@ export function VisitInsertForm({
   const [date, setDate] = useState(defaults.date);
   const [type, setType] = useState(defaults.type ?? "景点");
   const [attraction, setAttraction] = useState("");
-  const [attractionEn, setAttractionEn] = useState(defaults.attraction_en ?? "");
   const [city, setCity] = useState(defaults.city);
   const [province, setProvince] = useState(defaults.province);
   const [country, setCountry] = useState(defaults.country ?? "中国");
@@ -102,7 +101,6 @@ export function VisitInsertForm({
       date,
       type,
       attraction: name,
-      attraction_en: attractionEn.trim() || undefined,
       city: cityValue,
       province: provinceValue,
       country: country.trim() || "中国",
@@ -165,16 +163,6 @@ export function VisitInsertForm({
             disabled={loading}
             placeholder="Attraction name"
             onChange={(e) => setAttraction(e.target.value)}
-            className={fieldInputClass}
-          />
-        </label>
-        <label className="block text-xs text-[var(--muted)] sm:col-span-2">
-          English name
-          <input
-            type="text"
-            value={attractionEn}
-            disabled={loading}
-            onChange={(e) => setAttractionEn(e.target.value)}
             className={fieldInputClass}
           />
         </label>
