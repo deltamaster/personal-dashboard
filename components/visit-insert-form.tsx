@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { VISIT_TYPE_OPTIONS } from "@/lib/travel-visit-input";
 import { postNewVisit, visitCreateTemplateFromVisit } from "@/lib/visit-create-client";
 import type { VisitCreateInput, VisitWithImages } from "@/lib/types/travel";
 
 const fieldInputClass =
-  "rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-sm";
+  "mt-0.5 w-full rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-sm";
 
 function OptionalRating({
   value,
@@ -55,32 +56,42 @@ export function VisitInsertForm({
   onSaved: (visit: VisitWithImages) => void;
   onCancel: () => void;
 }) {
-  const base = visitCreateTemplateFromVisit(template);
+  const defaults = visitCreateTemplateFromVisit(template);
+  const [date, setDate] = useState(defaults.date);
+  const [type, setType] = useState(defaults.type ?? "景点");
   const [attraction, setAttraction] = useState("");
+  const [attractionEn, setAttractionEn] = useState(defaults.attraction_en ?? "");
+  const [city, setCity] = useState(defaults.city);
+  const [province, setProvince] = useState(defaults.province);
+  const [country, setCountry] = useState(defaults.country ?? "中国");
+  const [thoughts, setThoughts] = useState(defaults.thoughts ?? "");
+  const [highlights, setHighlights] = useState(defaults.highlights ?? "");
+  const [tips, setTips] = useState(defaults.tips ?? "");
   const [rating, setRating] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const attractionRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    inputRef.current?.focus();
+    attractionRef.current?.focus();
   }, []);
-
-  const contextLabel = [
-    template.date,
-    template.city,
-    template.province,
-    template.country !== "中国" ? template.country : null,
-    template.type,
-  ]
-    .filter(Boolean)
-    .join(" · ");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const name = attraction.trim();
+    const cityValue = city.trim();
+    const provinceValue = province.trim();
+
     if (!name) {
       setError("Attraction name is required");
+      return;
+    }
+    if (!cityValue) {
+      setError("City is required");
+      return;
+    }
+    if (!provinceValue) {
+      setError("Province is required");
       return;
     }
 
@@ -88,8 +99,16 @@ export function VisitInsertForm({
     setError(null);
 
     const body: VisitCreateInput = {
-      ...base,
+      date,
+      type,
       attraction: name,
+      attraction_en: attractionEn.trim() || undefined,
+      city: cityValue,
+      province: provinceValue,
+      country: country.trim() || "中国",
+      thoughts: thoughts.trim() || undefined,
+      highlights: highlights.trim() || undefined,
+      tips: tips.trim() || undefined,
       rating,
     };
 
@@ -109,18 +128,122 @@ export function VisitInsertForm({
       className="rounded-lg border border-dashed border-[var(--accent)] bg-[var(--card)] p-3 shadow-sm"
       onClick={(e) => e.stopPropagation()}
     >
-      <p className="text-xs text-[var(--muted)]">{contextLabel}</p>
-      <div className="mt-2 flex flex-wrap items-center gap-3">
-        <input
-          ref={inputRef}
-          type="text"
-          value={attraction}
-          disabled={loading}
-          placeholder="Attraction name *"
-          onChange={(e) => setAttraction(e.target.value)}
-          className={`${fieldInputClass} min-w-0 flex-1`}
-        />
-        <OptionalRating value={rating} onChange={setRating} disabled={loading} />
+      <p className="text-xs font-medium text-[var(--muted)]">New visit (copied from nearby)</p>
+      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+        <label className="block text-xs text-[var(--muted)]">
+          Date *
+          <input
+            type="date"
+            value={date}
+            disabled={loading}
+            required
+            onChange={(e) => setDate(e.target.value)}
+            className={fieldInputClass}
+          />
+        </label>
+        <label className="block text-xs text-[var(--muted)]">
+          Type
+          <select
+            value={type}
+            disabled={loading}
+            onChange={(e) => setType(e.target.value)}
+            className={fieldInputClass}
+          >
+            {VISIT_TYPE_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block text-xs text-[var(--muted)] sm:col-span-2">
+          Attraction *
+          <input
+            ref={attractionRef}
+            type="text"
+            value={attraction}
+            disabled={loading}
+            placeholder="Attraction name"
+            onChange={(e) => setAttraction(e.target.value)}
+            className={fieldInputClass}
+          />
+        </label>
+        <label className="block text-xs text-[var(--muted)] sm:col-span-2">
+          English name
+          <input
+            type="text"
+            value={attractionEn}
+            disabled={loading}
+            onChange={(e) => setAttractionEn(e.target.value)}
+            className={fieldInputClass}
+          />
+        </label>
+        <label className="block text-xs text-[var(--muted)]">
+          City *
+          <input
+            type="text"
+            value={city}
+            disabled={loading}
+            onChange={(e) => setCity(e.target.value)}
+            className={fieldInputClass}
+          />
+        </label>
+        <label className="block text-xs text-[var(--muted)]">
+          Province *
+          <input
+            type="text"
+            value={province}
+            disabled={loading}
+            onChange={(e) => setProvince(e.target.value)}
+            className={fieldInputClass}
+          />
+        </label>
+        <label className="block text-xs text-[var(--muted)]">
+          Country
+          <input
+            type="text"
+            value={country}
+            disabled={loading}
+            onChange={(e) => setCountry(e.target.value)}
+            className={fieldInputClass}
+          />
+        </label>
+        <div className="block text-xs text-[var(--muted)]">
+          Rating
+          <div className="mt-1">
+            <OptionalRating value={rating} onChange={setRating} disabled={loading} />
+          </div>
+        </div>
+        <label className="block text-xs text-[var(--muted)] sm:col-span-2">
+          Thoughts
+          <textarea
+            value={thoughts}
+            disabled={loading}
+            rows={2}
+            onChange={(e) => setThoughts(e.target.value)}
+            className={`${fieldInputClass} resize-y`}
+          />
+        </label>
+        <label className="block text-xs text-[var(--muted)] sm:col-span-2">
+          Highlights
+          <textarea
+            value={highlights}
+            disabled={loading}
+            rows={2}
+            onChange={(e) => setHighlights(e.target.value)}
+            className={`${fieldInputClass} resize-y`}
+          />
+        </label>
+        <label className="block text-xs text-[var(--muted)] sm:col-span-2">
+          Tips
+          <textarea
+            value={tips}
+            disabled={loading}
+            rows={2}
+            onChange={(e) => setTips(e.target.value)}
+            className={`${fieldInputClass} resize-y`}
+          />
+        </label>
       </div>
       {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
       <div className="mt-3 flex gap-2">
