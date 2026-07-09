@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { VISIT_TYPE_OPTIONS } from "@/lib/travel-visit-input";
-import type { VisitWithImages } from "@/lib/types/travel";
+import { postNewVisit } from "@/lib/visit-create-client";
+import type { VisitCreateInput, VisitWithImages } from "@/lib/types/travel";
 
 const inputClass =
   "mt-1 w-full rounded border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm";
@@ -19,7 +20,7 @@ export function AddVisitForm({ onAdded }: { onAdded: (visit: VisitWithImages) =>
 
     const form = new FormData(e.currentTarget);
     const ratingRaw = String(form.get("rating") ?? "").trim();
-    const body = {
+    const body: VisitCreateInput = {
       date: String(form.get("date")),
       attraction: String(form.get("attraction")),
       city: String(form.get("city")),
@@ -31,21 +32,16 @@ export function AddVisitForm({ onAdded }: { onAdded: (visit: VisitWithImages) =>
       highlights: String(form.get("highlights") || "") || undefined,
     };
 
-    const res = await fetch("/api/travel/visits/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-
-    setLoading(false);
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Failed to add visit");
+    let visit: VisitWithImages;
+    try {
+      visit = await postNewVisit(body);
+    } catch (err) {
+      setLoading(false);
+      setError(err instanceof Error ? err.message : "Failed to add visit");
       return;
     }
 
-    const visit = (await res.json()) as VisitWithImages;
+    setLoading(false);
     setOpen(false);
     onAdded(visit);
     (e.target as HTMLFormElement).reset();

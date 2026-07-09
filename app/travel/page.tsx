@@ -8,6 +8,7 @@ import { TravelStatsPanel } from "@/components/travel-stats-panel";
 import { VisitTimeline } from "@/components/visit-timeline";
 import { filterVisitsBySearch } from "@/lib/travel-search";
 import type { Flight, Train, TravelStats, VisitWithImages } from "@/lib/types/travel";
+import type { VisitInsertPosition } from "@/lib/visit-create-client";
 import { OTS_FETCH_INIT, useOtsCache } from "@/lib/use-ots-cache";
 
 interface TravelCache {
@@ -62,13 +63,24 @@ export default function TravelPage() {
   );
 
   const handleVisitAdded = useCallback(
-    (visit: VisitWithImages) => {
-      patchData((current) => ({
-        ...current,
-        visits: [visit, ...current.visits].sort((a, b) =>
-          (b.date ?? "").localeCompare(a.date ?? "")
-        ),
-      }));
+    (visit: VisitWithImages, relative?: VisitInsertPosition) => {
+      patchData((current) => {
+        if (relative) {
+          const idx = current.visits.findIndex((v) => v.visit_id === relative.anchorVisitId);
+          if (idx !== -1) {
+            const insertAt = relative.position === "above" ? idx : idx + 1;
+            const visits = [...current.visits];
+            visits.splice(insertAt, 0, visit);
+            return { ...current, visits };
+          }
+        }
+        return {
+          ...current,
+          visits: [visit, ...current.visits].sort((a, b) =>
+            (b.date ?? "").localeCompare(a.date ?? "")
+          ),
+        };
+      });
       void refresh();
     },
     [patchData, refresh]
@@ -147,6 +159,7 @@ export default function TravelPage() {
                 visits={filteredVisits}
                 onVisitUpdated={handleVisitUpdated}
                 onVisitDeleted={handleVisitDeleted}
+                onVisitAdded={handleVisitAdded}
               />
             )}
           </div>
