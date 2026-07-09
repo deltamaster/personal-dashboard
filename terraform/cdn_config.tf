@@ -129,7 +129,7 @@ resource "alicloud_cdn_domain_config" "no_cache_redirect_status" {
   }
 }
 
-# HTML pages change on every deploy; avoid serving stale index.html for sub-routes.
+# HTML: 1s edge TTL; Next.js hashed assets under _next/static use cdn_cache.tf rules.
 resource "alicloud_cdn_domain_config" "html_short_cache" {
   count = var.create_cdn_domain ? 1 : 0
 
@@ -142,7 +142,7 @@ resource "alicloud_cdn_domain_config" "html_short_cache" {
   }
   function_args {
     arg_name  = "ttl"
-    arg_value = "1"
+    arg_value = tostring(local.cdn_ttl_html_seconds)
   }
   function_args {
     arg_name  = "weight"

@@ -83,9 +83,26 @@ jobs:
             exit 1
           fi
           ossutil cp -r public-site/ "oss://${OSS_WWW_BUCKET}/" --update --force --disable-dir-object
-          find public-site -name '*.html' | while read -r f; do
+          find public-site -type f | while read -r f; do
             rel="${f#public-site/}"
-            ossutil cp "$f" "oss://${OSS_WWW_BUCKET}/${rel}" --update --meta "Cache-Control:public, max-age=0, must-revalidate" --disable-dir-object
+            case "$f" in
+              *.html)
+                meta="Cache-Control:public, max-age=0, must-revalidate"
+                ;;
+              *.css|*.js)
+                meta="Cache-Control:public, max-age=2592000"
+                ;;
+              *.jpg|*.jpeg|*.png|*.gif|*.svg|*.webp|*.ico)
+                meta="Cache-Control:public, max-age=2592000"
+                ;;
+              *.txt|*.xml)
+                meta="Cache-Control:public, max-age=3600"
+                ;;
+              *)
+                continue
+                ;;
+            esac
+            ossutil cp "$f" "oss://${OSS_WWW_BUCKET}/${rel}" --update --meta "$meta" --disable-dir-object
           done
 
       - name: Purge CDN cache

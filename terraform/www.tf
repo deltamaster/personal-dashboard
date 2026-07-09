@@ -76,6 +76,7 @@ resource "alicloud_cdn_domain_config" "www_force_https" {
   }
 }
 
+# HTML: 1s edge TTL so index.html updates quickly; css/js/images use cdn_cache.tf rules.
 resource "alicloud_cdn_domain_config" "www_html_short_cache" {
   count = var.create_www_site && var.create_cdn_domain ? 1 : 0
 
@@ -88,7 +89,7 @@ resource "alicloud_cdn_domain_config" "www_html_short_cache" {
   }
   function_args {
     arg_name  = "ttl"
-    arg_value = "1"
+    arg_value = tostring(local.cdn_ttl_html_seconds)
   }
   function_args {
     arg_name  = "weight"
