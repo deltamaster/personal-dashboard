@@ -22,6 +22,7 @@ import type {
   TrainTypeStat,
   TravelStats,
   Visit,
+  VisitCreateInput,
   VisitImage,
   VisitWithImages,
 } from "@/lib/types/travel";
@@ -258,6 +259,29 @@ export async function softDeleteVisit(visitId: string): Promise<boolean> {
     updateOfAttributeColumns: updateColumns,
   });
   return true;
+}
+
+export async function createVisit(input: VisitCreateInput): Promise<VisitWithImages> {
+  const ts = nowIso();
+  const visit: Visit = {
+    visit_id: randomUUID(),
+    date: input.date,
+    province: input.province,
+    city: input.city,
+    attraction: input.attraction,
+    attraction_en: input.attraction_en,
+    type: input.type ?? "景点",
+    country: input.country ?? "中国",
+    rating: input.rating,
+    thoughts: input.thoughts,
+    highlights: input.highlights,
+    tips: input.tips,
+    created_at: ts,
+    updated_at: ts,
+  };
+
+  await replaceVisit(visit);
+  return { ...visit, images: [] };
 }
 
 /** Replace all attribute columns on a visit row (used for recovery / full rewrite). */

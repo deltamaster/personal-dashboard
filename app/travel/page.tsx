@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { AddVisitForm } from "@/components/add-visit-form";
 import { AuthGuard } from "@/components/auth-guard";
 import { TravelMap } from "@/components/travel-map";
 import { TravelStatsPanel } from "@/components/travel-stats-panel";
@@ -60,6 +61,19 @@ export default function TravelPage() {
     [patchData, refresh]
   );
 
+  const handleVisitAdded = useCallback(
+    (visit: VisitWithImages) => {
+      patchData((current) => ({
+        ...current,
+        visits: [visit, ...current.visits].sort((a, b) =>
+          (b.date ?? "").localeCompare(a.date ?? "")
+        ),
+      }));
+      void refresh();
+    },
+    [patchData, refresh]
+  );
+
   const visits = data?.visits ?? [];
   const flights = data?.flights ?? [];
   const trains = data?.trains ?? [];
@@ -73,12 +87,15 @@ export default function TravelPage() {
 
   return (
     <AuthGuard>
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-2xl font-bold">Travel Log</h1>
-          <p className="mt-1 text-[var(--muted)]">
-            Visits, photos, flights, and rail journeys
-          </p>
+      <div className="min-w-0 space-y-8">
+        <div className="flex min-w-0 flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Travel Log</h1>
+            <p className="mt-1 text-[var(--muted)]">
+              Visits, photos, flights, and rail journeys
+            </p>
+          </div>
+          <AddVisitForm onAdded={handleVisitAdded} />
         </div>
 
         {!loading && !error && (

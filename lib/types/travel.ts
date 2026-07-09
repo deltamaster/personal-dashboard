@@ -38,6 +38,20 @@ export interface VisitWithImages extends Visit {
   images: VisitImage[];
 }
 
+export interface VisitCreateInput {
+  date: string;
+  province: string;
+  city: string;
+  attraction: string;
+  attraction_en?: string;
+  type?: string;
+  country?: string;
+  rating?: number;
+  thoughts?: string;
+  highlights?: string;
+  tips?: string;
+}
+
 export interface Flight {
   flight_id: string;
   flight_date: string;
