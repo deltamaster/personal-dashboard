@@ -1,5 +1,5 @@
 import { computeTravelStats } from "@/lib/ots/travel";
-import type { Flight, Train, Visit, VisitImage, VisitWithImages } from "@/lib/types/travel";
+import type { Flight, Train, Visit, VisitCreateInput, VisitImage, VisitWithImages } from "@/lib/types/travel";
 import { randomUUID } from "node:crypto";
 
 const CREATED = "2024-06-01T00:00:00Z";
@@ -512,6 +512,8 @@ type DummyVisitPatch = Partial<
 };
 
 const dummyVisitPatches = new Map<string, DummyVisitPatch>();
+const deletedDummyVisitIds = new Set<string>();
+const addedDummyVisits: VisitWithImages[] = [];
 
 function mergeDummyVisit(base: VisitWithImages, patch?: DummyVisitPatch): VisitWithImages {
   if (!patch) return base;
@@ -525,7 +527,10 @@ function mergeDummyVisit(base: VisitWithImages, patch?: DummyVisitPatch): VisitW
 }
 
 function getDummyVisitsMerged(): VisitWithImages[] {
-  return dummyVisits.map((visit) => mergeDummyVisit(visit, dummyVisitPatches.get(visit.visit_id)));
+  const base = dummyVisits
+    .filter((visit) => !deletedDummyVisitIds.has(visit.visit_id))
+    .map((visit) => mergeDummyVisit(visit, dummyVisitPatches.get(visit.visit_id)));
+  return [...addedDummyVisits, ...base].sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
 }
 
 export function updateDummyVisit(
@@ -539,6 +544,35 @@ export function updateDummyVisit(
   const existing = dummyVisitPatches.get(visitId) ?? {};
   dummyVisitPatches.set(visitId, { ...existing, ...patch });
   return mergeDummyVisit(base, dummyVisitPatches.get(visitId));
+}
+
+export function deleteDummyVisit(visitId: string): boolean {
+  if (!dummyVisits.some((visit) => visit.visit_id === visitId)) return false;
+  deletedDummyVisitIds.add(visitId);
+  return true;
+}
+
+export function createDummyVisit(input: VisitCreateInput): VisitWithImages {
+  const ts = new Date().toISOString();
+  const visit: VisitWithImages = {
+    visit_id: `dummy-visit-${randomUUID()}`,
+    date: input.date,
+    province: input.province,
+    city: input.city,
+    attraction: input.attraction,
+    attraction_en: input.attraction_en,
+    type: input.type ?? "景点",
+    country: input.country ?? "中国",
+    rating: input.rating,
+    thoughts: input.thoughts,
+    highlights: input.highlights,
+    tips: input.tips,
+    created_at: ts,
+    updated_at: ts,
+    images: [],
+  };
+  addedDummyVisits.push(visit);
+  return visit;
 }
 
 export function addDummyVisitImage(visitId: string, image: VisitImage): VisitWithImages | null {

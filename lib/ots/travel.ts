@@ -22,6 +22,7 @@ import type {
   TrainTypeStat,
   TravelStats,
   Visit,
+  VisitCreateInput,
   VisitImage,
   VisitWithImages,
 } from "@/lib/types/travel";
@@ -142,7 +143,9 @@ async function scanTable<T>(
 
 export async function listVisits(): Promise<Visit[]> {
   const visits = await scanTable(VISITS_TABLE, "visit_id", normalizeVisit);
-  return visits.sort((a, b) => compareDesc(a.date, b.date));
+  return visits
+    .filter((visit) => !visit.deleted_at)
+    .sort((a, b) => compareDesc(a.date, b.date));
 }
 
 export async function listVisitImages(): Promise<VisitImage[]> {
@@ -183,6 +186,12 @@ export async function listVisitsWithImages(): Promise<VisitWithImages[]> {
 }
 
 export async function getVisit(visitId: string): Promise<Visit | null> {
+  const visit = await getVisitRowIncludingDeleted(visitId);
+  if (!visit || visit.deleted_at) return null;
+  return visit;
+}
+
+async function getVisitRowIncludingDeleted(visitId: string): Promise<Visit | null> {
   const client = await getOtsClient();
   try {
     const result = await otsCall<{ row?: unknown }>(client.getRow.bind(client), {
@@ -230,6 +239,49 @@ export async function updateVisit(
   });
 
   return updated;
+}
+
+/** Soft-delete: mark the visit row deleted in OTS (keeps the row and image records). */
+export async function softDeleteVisit(visitId: string): Promise<boolean> {
+  const existing = await getVisitRowIncludingDeleted(visitId);
+  if (!existing) return false;
+  if (existing.deleted_at) return true;
+
+  const updateColumns = toUpdatePutColumns({
+    deleted_at: nowIso(),
+    updated_at: nowIso(),
+  });
+  const client = await getOtsClient();
+  await otsCall(client.updateRow.bind(client), {
+    tableName: VISITS_TABLE,
+    condition: new TableStore.Condition(TableStore.RowExistenceExpectation.IGNORE, null),
+    primaryKey: [{ visit_id: visitId }],
+    updateOfAttributeColumns: updateColumns,
+  });
+  return true;
+}
+
+export async function createVisit(input: VisitCreateInput): Promise<VisitWithImages> {
+  const ts = nowIso();
+  const visit: Visit = {
+    visit_id: randomUUID(),
+    date: input.date,
+    province: input.province,
+    city: input.city,
+    attraction: input.attraction,
+    attraction_en: input.attraction_en,
+    type: input.type ?? "景点",
+    country: input.country ?? "中国",
+    rating: input.rating,
+    thoughts: input.thoughts,
+    highlights: input.highlights,
+    tips: input.tips,
+    created_at: ts,
+    updated_at: ts,
+  };
+
+  await replaceVisit(visit);
+  return { ...visit, images: [] };
 }
 
 /** Replace all attribute columns on a visit row (used for recovery / full rewrite). */

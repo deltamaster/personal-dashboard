@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/api-auth";
 import { isOtsConfigured } from "@/lib/ots-config";
-import { getVisitWithImages, updateVisit } from "@/lib/ots/travel";
-import { shouldUseTravelDummyData, updateDummyVisit } from "@/lib/travel-dummy-data";
+import { getVisitWithImages, softDeleteVisit, updateVisit } from "@/lib/ots/travel";
+import { deleteDummyVisit, shouldUseTravelDummyData, updateDummyVisit } from "@/lib/travel-dummy-data";
 
 type RouteContext = { params: { id: string } };
 
@@ -123,6 +123,44 @@ export async function PUT(request: Request, context: RouteContext) {
     console.error(`PUT /api/travel/visits/${visitId}`, e);
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Failed to update visit" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Soft-delete a visit: marks the pd_visits row as deleted in OTS so it stops
+ * appearing in listings. Image rows and OSS objects are intentionally retained.
+ */
+export async function DELETE(_request: Request, context: RouteContext) {
+  const { error } = await requireSession();
+  if (error) return error;
+
+  const visitId = context.params.id;
+
+  try {
+    if (shouldUseTravelDummyData()) {
+      const deleted = deleteDummyVisit(visitId);
+      if (!deleted) {
+        return NextResponse.json({ error: "Visit not found" }, { status: 404 });
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    if (!isOtsConfigured()) {
+      return NextResponse.json({ error: "OTS is not configured" }, { status: 503 });
+    }
+
+    const deleted = await softDeleteVisit(visitId);
+    if (!deleted) {
+      return NextResponse.json({ error: "Visit not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error(`DELETE /api/travel/visits/${visitId}`, e);
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Failed to delete visit" },
       { status: 500 }
     );
   }

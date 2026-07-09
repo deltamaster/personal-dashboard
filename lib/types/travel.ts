@@ -18,6 +18,8 @@ export interface Visit {
   revisit?: number;
   created_at: string;
   updated_at: string;
+  /** Soft-delete marker (ISO timestamp). Present => hidden from listings. */
+  deleted_at?: string;
 }
 
 export interface VisitImage {
@@ -34,6 +36,20 @@ export interface VisitImage {
 
 export interface VisitWithImages extends Visit {
   images: VisitImage[];
+}
+
+export interface VisitCreateInput {
+  date: string;
+  province: string;
+  city: string;
+  attraction: string;
+  attraction_en?: string;
+  type?: string;
+  country?: string;
+  rating?: number;
+  thoughts?: string;
+  highlights?: string;
+  tips?: string;
 }
 
 export interface Flight {
