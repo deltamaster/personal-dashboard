@@ -105,7 +105,11 @@ resource "alicloud_cdn_domain_config" "www_html_short_cache" {
   }
 }
 
-# /songs and /songs/ → /songs/index.html. Skip /api/* so the song list function keeps that path.
+# /songs/ → /songs/index.html. Skip /api/* so the song list function keeps that path.
+# OSS REST has no directory index: /songs/ was returning the bucket homepage.
+# Already live on www.huhansen.cn (ConfigId 524411497766912, sequence 2).
+# Import before the next Shanghai apply, or Terraform creates a second copy:
+#   terraform import 'alicloud_cdn_domain_config.www_subdir_index_rewrite[0]' 'www.huhansen.cn:back_to_origin_url_rewrite:524411497766912'
 resource "alicloud_cdn_domain_config" "www_subdir_index_rewrite" {
   count = var.create_www_site && var.create_cdn_domain ? 1 : 0
 
@@ -124,8 +128,14 @@ resource "alicloud_cdn_domain_config" "www_subdir_index_rewrite" {
     arg_name  = "flag"
     arg_value = "break"
   }
+  function_args {
+    arg_name  = "sequence"
+    arg_value = "2"
+  }
 }
 
+# /songs → /songs/index.html. Already live (ConfigId 524411497766913, sequence 3).
+#   terraform import 'alicloud_cdn_domain_config.www_no_slash_index_rewrite[0]' 'www.huhansen.cn:back_to_origin_url_rewrite:524411497766913'
 resource "alicloud_cdn_domain_config" "www_no_slash_index_rewrite" {
   count = var.create_www_site && var.create_cdn_domain ? 1 : 0
 
@@ -143,6 +153,10 @@ resource "alicloud_cdn_domain_config" "www_no_slash_index_rewrite" {
   function_args {
     arg_name  = "flag"
     arg_value = "break"
+  }
+  function_args {
+    arg_name  = "sequence"
+    arg_value = "3"
   }
 }
 
