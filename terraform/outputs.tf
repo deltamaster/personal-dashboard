@@ -74,6 +74,14 @@ output "www_cdn_https_enabled" {
   value       = local.www_cdn_https_active
 }
 
+output "www_songs_function_name" {
+  value = var.create_www_site ? alicloud_fcv3_function.www_songs[0].function_name : null
+}
+
+output "www_songs_http_trigger_url" {
+  value = var.create_www_site ? alicloud_fcv3_trigger.www_songs[0].http_trigger[0].url_internet : null
+}
+
 output "github_actions_secrets" {
   description = "Values to copy into GitHub Actions repository secrets."
   value = {

@@ -125,6 +125,9 @@ window.SITE_I18N = {
         modalAlt: "微信公众号二维码",
       },
     },
+    footer: {
+      songs: "歌单",
+    },
   },
   en: {
     meta: {
@@ -252,6 +255,9 @@ window.SITE_I18N = {
         modalHint: "Scan with WeChat to follow",
         modalAlt: "WeChat Official Account QR code",
       },
+    },
+    footer: {
+      songs: "Songs",
     },
   },
 };

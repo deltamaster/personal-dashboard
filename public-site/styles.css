@@ -978,6 +978,12 @@ button.link-card-trigger {
   color: var(--muted);
 }
 
+.footer-songs {
+  margin: 0 0 0.5rem;
+  font-size: var(--text-sm);
+  letter-spacing: 0.12em;
+}
+
 .footer-icp {
   margin: 0;
   font-size: var(--text-sm);

@@ -125,7 +125,7 @@ CDN scope: **仅中国内地**. Static origin: `huhansen-web.oss-cn-shanghai.ali
 
 ### Public personal site — `www.huhansen.cn`
 
-Static cyberpunk intro page (no API). Source: `public-site/` → OSS `huhansen-www` → CDN `www.huhansen.cn`.
+Static cyberpunk intro page plus the song list at `/songs/`. Source: `public-site/` → OSS `huhansen-www` → CDN `www.huhansen.cn`. `GET /api/songs` on that CDN is a separate FC function `www-songs` (`minInstances` 0) that reads OTS table `www_songs` (PK `song_id`, no search index). Song rows are managed with `scripts/www-songs.mjs`, not checked into git.
 
 1. **Terraform apply** (stack `cn-shanghai`, `create_www_site = true` in tfvars) creates bucket + CDN
 2. Alibaba DNS for `huhansen.cn`:
@@ -135,7 +135,8 @@ Static cyberpunk intro page (no API). Source: `public-site/` → OSS `huhansen-w
 | CNAME | `www` | Terraform output `www_cdn_cname` |
 
 3. **HTTPS:** order a CAS DV cert for `www.huhansen.cn` (`CDN_DOMAIN=www.huhansen.cn bash scripts/cdn-ensure-cas-cert.sh`), set `www_cdn_cas_cert_id` in `env/cn-shanghai.tfvars`, re-apply
-4. **Deploy:** push changes under `public-site/` or run **Actions → Deploy Public Site**
+4. **Deploy:** push changes under `public-site/` or run **Actions → Deploy Public Site**. Song API code (`functions/www-songs/`) deploys with **Deploy www songs API** after this stack creates the function.
+5. **Import the playlist** (once the table exists): `node scripts/www-songs.mjs --prod import --from mysonglist`
 
 **CDN cache (`cdn_cache.tf` + deploy workflows):**
 
@@ -164,7 +165,7 @@ Without this, a cached pre-`count` state causes Terraform to **destroy** the liv
 
 ## OTS (no search indexes)
 
-Terraform provisions **7 data tables only** (`terraform/ots.tf`). We intentionally do **not** create Tablestore **多元索引** (search indexes).
+Terraform provisions **7 data tables** on every stack (`terraform/ots.tf`) plus `www_songs` on the www site stack only (`terraform/www_songs.tf`). We intentionally do **not** create Tablestore **多元索引** (search indexes).
 
 | Reason | Detail |
 |---|---|
@@ -185,7 +186,8 @@ Previously removed indexes: `idx_holdings`, `idx_visits`, `idx_flights`, `idx_tr
 | OTS | `pd-dashboard` (7 tables, no search indexes) |
 | OSS | `huhansen-web`, `personal-dashboard-vault` |
 | OSS (public site) | `huhansen-www` → CDN `www.huhansen.cn` |
-| FC v3 | `api` |
+| FC v3 | `api`, `www-songs` (`/api/songs` on `www.huhansen.cn`, provision target 0) |
+| OTS (www) | `www_songs` — song list for `/songs/`, no search index |
 
 ## Local Terraform (optional)
 

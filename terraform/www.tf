@@ -105,6 +105,47 @@ resource "alicloud_cdn_domain_config" "www_html_short_cache" {
   }
 }
 
+# /songs and /songs/ → /songs/index.html. Skip /api/* so the song list function keeps that path.
+resource "alicloud_cdn_domain_config" "www_subdir_index_rewrite" {
+  count = var.create_www_site && var.create_cdn_domain ? 1 : 0
+
+  domain_name   = alicloud_cdn_domain_new.www[0].domain_name
+  function_name = "back_to_origin_url_rewrite"
+
+  function_args {
+    arg_name  = "source_url"
+    arg_value = "^/(?!api/)(.+/)$"
+  }
+  function_args {
+    arg_name  = "target_url"
+    arg_value = "/$1index.html"
+  }
+  function_args {
+    arg_name  = "flag"
+    arg_value = "break"
+  }
+}
+
+resource "alicloud_cdn_domain_config" "www_no_slash_index_rewrite" {
+  count = var.create_www_site && var.create_cdn_domain ? 1 : 0
+
+  domain_name   = alicloud_cdn_domain_new.www[0].domain_name
+  function_name = "back_to_origin_url_rewrite"
+
+  function_args {
+    arg_name  = "source_url"
+    arg_value = "^/(?!api/)((?:[^./]+/)*[^./]+)$"
+  }
+  function_args {
+    arg_name  = "target_url"
+    arg_value = "/$1/index.html"
+  }
+  function_args {
+    arg_name  = "flag"
+    arg_value = "break"
+  }
+}
+
 resource "alicloud_cdn_domain_config" "www_root_index_rewrite" {
   count = var.create_www_site && var.create_cdn_domain ? 1 : 0
 

@@ -1,0 +1,131 @@
+:root {
+  color-scheme: dark;
+  --gold: #c7b38b;
+  --bg: #000;
+  --text: #fff;
+  --muted: #9a917f;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+body {
+  font-family: "Sarasa Gothic SC", "更纱黑体 SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans SC", "Source Han Sans SC", "Segoe UI", sans-serif;
+}
+
+.top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 14px 20px 0;
+}
+
+.home {
+  color: var(--gold);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+}
+
+.home:hover {
+  color: #fff;
+}
+
+h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-shadow: 0 0 3px var(--gold);
+}
+
+.page {
+  padding: 12px 20px 20px;
+}
+
+.search {
+  width: 100%;
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid #333;
+  background: #111;
+  color: #fff;
+  font: 16px/1.4 inherit;
+}
+
+.search:focus {
+  outline: 1px solid var(--gold);
+  outline-offset: 1px;
+}
+
+.status {
+  margin: 2rem 0;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.stage {
+  max-height: calc(100vh - 7.5rem);
+  overflow: hidden;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(30px, max-content));
+  gap: 10px;
+  align-content: start;
+}
+
+.grid.is-marquee {
+  animation: song-scroll 100s linear infinite;
+}
+
+.grid:not(.is-marquee) {
+  animation: none;
+  transform: none;
+}
+
+.song {
+  position: relative;
+  padding: 0;
+  color: #fff;
+  font-size: 20px;
+  line-height: 1.35;
+  white-space: nowrap;
+  text-shadow: 0 0 3px var(--gold);
+  transition: transform 0.3s ease;
+}
+
+.song:hover {
+  transform: scale(2);
+  z-index: 10;
+}
+
+@keyframes song-scroll {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grid.is-marquee {
+    animation: none;
+  }
+}

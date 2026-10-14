@@ -12,7 +12,7 @@ cdn_https_enabled = true
 # CAS InstanceId cas_dv-cn-o8p4uiogy03q → CertificateId for CDN cert_type=cas
 cdn_cas_cert_id = "25887176"
 
-# Public personal site — www.huhansen.cn (static, no API)
+# Public personal site — www.huhansen.cn (static pages + /api/songs → FC www-songs)
 create_www_site   = true
 www_domain        = "www.huhansen.cn"
 oss_www_bucket    = "huhansen-www"

@@ -15,6 +15,8 @@
 /.fc-stage/
 /.fc-node-cache/
 /api.zip
+/www-songs.zip
+functions/www-songs/node_modules/
 
 # production
 /build
