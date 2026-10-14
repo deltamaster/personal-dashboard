@@ -48,7 +48,7 @@ jobs:
         run: |
           cd functions/www-songs
           npm ci --omit=dev
-          zip -qr "$GITHUB_WORKSPACE/www-songs.zip" index.js http.js song-record.js credentials.js node_modules package.json
+          zip -qr "$GITHUB_WORKSPACE/www-songs.zip" index.js http.js song-record.js singer-tokens.js credentials.js node_modules package.json
 
       - name: Install aliyun CLI
         run: |

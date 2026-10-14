@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const { splitSingerText } = require("./singer-tokens");
 
 const TABLE = "www_songs";
 const PK = "song_id";
@@ -20,10 +21,7 @@ function parseSingers(value) {
       /* plain text below */
     }
   }
-  return text
-    .split(/[、,/]/)
-    .map((singer) => singer.trim())
-    .filter(Boolean);
+  return splitSingerText(text);
 }
 
 function normalizeSongInput(song) {

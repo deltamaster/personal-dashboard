@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { SingerField, type SingerFieldHandle } from "@/components/singer-field";
 import { OTS_FETCH_INIT, useOtsCache } from "@/lib/use-ots-cache";
 import type { Song } from "@/lib/types/song";
 
@@ -25,7 +26,8 @@ function SongEditor({
 }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(song.name);
-  const [singers, setSingers] = useState(song.singers.join("、"));
+  const [singers, setSingers] = useState(song.singers);
+  const singerField = useRef<SingerFieldHandle>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hidden = song.status === "HIDDEN";
@@ -33,10 +35,16 @@ function SongEditor({
   async function saveEdit() {
     setBusy(true);
     setError(null);
+    const nextSingers = singerField.current?.getSingers() ?? singers;
+    if (!nextSingers.length) {
+      setBusy(false);
+      setError("Enter at least one singer");
+      return;
+    }
     const res = await fetch(`/api/songs/${encodeURIComponent(song.id)}/`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, singers }),
+      body: JSON.stringify({ name, singers: nextSingers }),
     });
     setBusy(false);
     if (!res.ok) {
@@ -84,15 +92,15 @@ function SongEditor({
             Name
             <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
           </label>
-          <label className="block text-sm">
+          <div className="block text-sm">
             Singers
-            <input
-              value={singers}
-              onChange={(e) => setSingers(e.target.value)}
-              className={inputClass}
-              placeholder="用顿号、逗号分隔"
+            <SingerField
+              ref={singerField}
+              singers={singers}
+              onChange={setSingers}
+              disabled={busy}
             />
-          </label>
+          </div>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -107,7 +115,7 @@ function SongEditor({
               disabled={busy}
               onClick={() => {
                 setName(song.name);
-                setSingers(song.singers.join("、"));
+                setSingers(song.singers);
                 setError(null);
                 setEditing(false);
               }}
@@ -173,6 +181,8 @@ export function SongsManager() {
   const [visibility, setVisibility] = useState<Visibility>("all");
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [singerChips, setSingerChips] = useState<string[]>([]);
+  const singerField = useRef<SingerFieldHandle>(null);
 
   const fetchSongs = useCallback(async (): Promise<Song[]> => {
     const res = await fetch("/api/songs/", OTS_FETCH_INIT);
@@ -205,12 +215,18 @@ export function SongsManager() {
     setSaving(true);
     setFormError(null);
     const form = new FormData(e.currentTarget);
+    const singers = singerField.current?.getSingers() ?? singerChips;
+    if (!singers.length) {
+      setSaving(false);
+      setFormError("Enter at least one singer");
+      return;
+    }
     const res = await fetch("/api/songs/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: String(form.get("name") ?? ""),
-        singers: String(form.get("singers") ?? ""),
+        singers,
       }),
     });
     setSaving(false);
@@ -218,6 +234,7 @@ export function SongsManager() {
       setFormError(await readError(res, "Failed to add song"));
       return;
     }
+    setSingerChips([]);
     setOpen(false);
     (e.target as HTMLFormElement).reset();
     await refresh();
@@ -258,10 +275,10 @@ export function SongsManager() {
               Name *
               <input name="name" required className={inputClass} />
             </label>
-            <label className="block text-sm">
+            <div className="block text-sm">
               Singers *
-              <input name="singers" required className={inputClass} placeholder="周杰伦，或 周杰伦、方文山" />
-            </label>
+              <SingerField ref={singerField} singers={singerChips} onChange={setSingerChips} disabled={saving} />
+            </div>
           </div>
           {formError && <p className="text-sm text-red-300">{formError}</p>}
           <div className="flex flex-wrap gap-2">
@@ -275,6 +292,7 @@ export function SongsManager() {
             <button
               type="button"
               onClick={() => {
+                setSingerChips([]);
                 setOpen(false);
                 setFormError(null);
               }}
