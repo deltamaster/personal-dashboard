@@ -7,7 +7,11 @@ import type { SongInput } from "@/lib/types/song";
 
 function songError(e: unknown, fallback: string) {
   const message = e instanceof Error ? e.message : fallback;
-  const status = /already exists/.test(message) ? 409 : /needs a name|At least one field|status must/.test(message) ? 400 : 500;
+  const status = /already exists/.test(message)
+    ? 409
+    : /needs a name|At least one field|status must|tag |too many tags/.test(message)
+      ? 400
+      : 500;
   return NextResponse.json({ error: message }, { status });
 }
 

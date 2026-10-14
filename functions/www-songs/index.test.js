@@ -23,7 +23,7 @@ test("handler returns 500 when OTS is not configured", async () => {
   }
 });
 
-test("listSongs follows the range cursor and omits hidden rows", async () => {
+test("listSongs follows the range cursor and omits hidden and learning rows", async () => {
   const pages = [
     {
       rows: [
@@ -53,6 +53,7 @@ test("listSongs follows the range cursor and omits hidden rows", async () => {
           attributes: [
             { columnName: "name", columnValue: "丙" },
             { columnName: "singers", columnValue: '["丙歌手"]' },
+            { columnName: "tags", columnValue: '["learning"]' },
             { columnName: "status", columnValue: "OK" },
           ],
         },
@@ -70,8 +71,5 @@ test("listSongs follows the range cursor and omits hidden rows", async () => {
   const songs = await listSongs(client);
   assert.equal(calls.length, 2);
   assert.deepEqual(calls[1], [{ song_id: "c" }]);
-  assert.deepEqual(songs, [
-    { id: "a", name: "甲", singers: ["歌手"] },
-    { id: "c", name: "丙", singers: ["丙歌手"] },
-  ]);
+  assert.deepEqual(songs, [{ id: "a", name: "甲", singers: ["歌手"] }]);
 });

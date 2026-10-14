@@ -2,7 +2,8 @@ export interface Song {
   id: string;
   name: string;
   singers: string[];
-  status: "OK" | "HIDDEN";
+  /** Empty means public. `hidden` and `learning` stay off the public page. */
+  tags: string[];
 }
 
 export interface SongInput {
@@ -10,5 +11,7 @@ export interface SongInput {
   singers?: string[] | string;
   singer?: string;
   id?: string;
+  tags?: string[] | string;
+  tag?: string;
   status?: string;
 }

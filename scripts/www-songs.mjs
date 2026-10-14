@@ -9,8 +9,8 @@
  *   node scripts/www-songs.mjs --prod list
  *
  * --prod is required when OTS_INSTANCE_NAME is pd-dashboard (the live www site).
- * A name+singers pair that already exists is skipped. Set status to HIDDEN in
- * OTS to drop a song from the page without deleting the row.
+ * A name+singers pair that already exists is skipped. Add a `hidden` or
+ * `learning` tag to drop a song from the page without deleting the row.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -24,6 +24,7 @@ const {
   normalizeSongInput,
   rowToSong,
   planSongWrites,
+  storedStatus,
 } = require("../functions/www-songs/song-record.js");
 
 const UPSTREAM =
@@ -233,7 +234,8 @@ async function putSong(client, TableStore, song) {
     attributeColumns: [
       { name: song.name },
       { singers: JSON.stringify(song.singers) },
-      { status: song.status },
+      { tags: JSON.stringify(song.tags ?? []) },
+      { status: storedStatus(song) },
     ],
   });
 }
