@@ -125,7 +125,7 @@ CDN scope: **仅中国内地**. Static origin: `huhansen-web.oss-cn-shanghai.ali
 
 ### Public personal site — `www.huhansen.cn`
 
-Static cyberpunk intro page plus the song list at `/songs/`. Source: `public-site/` → OSS `huhansen-www` → CDN `www.huhansen.cn`. `GET /api/songs` on that CDN is a separate FC function `www-songs` (`minInstances` 0) that reads OTS table `www_songs` (PK `song_id`, no search index). Song rows are managed with `scripts/www-songs.mjs`, not checked into git.
+Static cyberpunk intro page plus the song list at `/songs/`. Source: `public-site/` → OSS `huhansen-www` → CDN `www.huhansen.cn`. `GET /api/songs` on that CDN is a separate FC function `www-songs` (`minInstances` 0) that reads OTS table `www_songs` (PK `song_id`, no search index). The signed-in dashboard edits that table at `pd.huhansen.cn/songs/`. `scripts/www-songs.mjs` can still import rows. The playlist is not checked into git.
 
 1. **Terraform apply** (stack `cn-shanghai`, `create_www_site = true` in tfvars) creates bucket + CDN
 2. Alibaba DNS for `huhansen.cn`:
@@ -165,7 +165,7 @@ Without this, a cached pre-`count` state causes Terraform to **destroy** the liv
 
 ## OTS (no search indexes)
 
-Terraform provisions **7 data tables** on every stack (`terraform/ots.tf`) plus `www_songs` on the www site stack only (`terraform/www_songs.tf`). We intentionally do **not** create Tablestore **多元索引** (search indexes).
+Terraform provisions **8 data tables** on every stack (`terraform/ots.tf`), including `www_songs` so the dashboard can edit the public playlist. We intentionally do **not** create Tablestore **多元索引** (search indexes).
 
 | Reason | Detail |
 |---|---|
@@ -183,11 +183,11 @@ Previously removed indexes: `idx_holdings`, `idx_visits`, `idx_flights`, `idx_tr
 
 | Resource | Name |
 |---|---|
-| OTS | `pd-dashboard` (7 tables, no search indexes) |
+| OTS | `pd-dashboard` (8 tables, including `www_songs`, no search indexes) |
 | OSS | `huhansen-web`, `personal-dashboard-vault` |
 | OSS (public site) | `huhansen-www` → CDN `www.huhansen.cn` |
 | FC v3 | `api`, `www-songs` (`/api/songs` on `www.huhansen.cn`, provision target 0) |
-| OTS (www) | `www_songs` — song list for `/songs/`, no search index |
+| Songs | `www_songs` on the dashboard instance; public read is FC `www-songs` |
 
 ## Local Terraform (optional)
 

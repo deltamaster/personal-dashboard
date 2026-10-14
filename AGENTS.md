@@ -25,6 +25,7 @@ Personal dashboard for one user (`huhansen318@hotmail.com`):
 | **Portfolio** | Holdings, NAV, PnL, risk (R1–R5), staleness alerts |
 | **Travel** | Visits, flights, trains, private photo gallery |
 | **Movies** | Douban-linked watch log, ratings, director stats |
+| **Songs** | Public playlist (`www.huhansen.cn/songs`), edited on the dashboard |
 
 Launch with **empty/manual data**. SQLite migration is deferred (see [TECHNICAL_SPEC.md § Migration](./TECHNICAL_SPEC.md#migration-deferred)).
 
@@ -233,7 +234,7 @@ Dev environment is plain Next.js 14 (App Router). **Node 24** Active LTS (see `.
 
 **Critical gotcha — API routes need OAuth vars to even load:** `auth.ts` calls `getOAuthCredentials()` at module load and *throws* if `AUTH_MICROSOFT_ENTRA_ID_ID` / `AUTH_MICROSOFT_ENTRA_ID_SECRET` are missing (outside production build). Because every `app/api/**` route imports `@/auth`, a missing pair makes **all** API routes (including `/api/auth/session`) return HTTP 500, not 401. For any local API work set both vars — placeholder strings are enough to load the modules and exercise the 401 auth-gate; real Azure values are only needed for an actual Microsoft login.
 
-**Running without cloud backends:** set `QA_DUMMY_DATA=1` to serve built-in sample data for **all** modules (movies/portfolio/travel) without Alibaba OTS, or use the per-module flags `PORTFOLIO_DUMMY_DATA=1` / `TRAVEL_DUMMY_DATA=1` / `MOVIES_DUMMY_DATA=1` (these per-module flags are dev-only; `QA_DUMMY_DATA` works in any env). All routes still require a valid session unless auth is bypassed (below).
+**Running without cloud backends:** set `QA_DUMMY_DATA=1` to serve built-in sample data for **all** modules (movies/portfolio/travel/songs) without Alibaba OTS, or use the per-module flags `PORTFOLIO_DUMMY_DATA=1` / `TRAVEL_DUMMY_DATA=1` / `MOVIES_DUMMY_DATA=1` / `SONGS_DUMMY_DATA=1` (these per-module flags are dev-only; `QA_DUMMY_DATA` works in any env). All routes still require a valid session unless auth is bypassed (below).
 
 **QA / agent environment (bypass auth):** set `MICROSOFT_AUTH_ENABLED=false` **and** `NEXT_PUBLIC_MICROSOFT_AUTH_ENABLED=false` (both — the `NEXT_PUBLIC_` one is baked into the client bundle at build time). Then auth is bypassed: `requireSession()` returns a stub owner session (API routes skip the 401), `auth.ts` no longer throws on missing OAuth creds, and the client `SessionProvider` reports an authenticated "QA User". Combine with `QA_DUMMY_DATA=1` for a fully offline QA env.
 

@@ -9,6 +9,10 @@ const {
   rowToSong,
   toPublicSong,
   planSongWrites,
+  normalizeStatus,
+  createSongRecord,
+  applySongPatch,
+  updateSongRecord,
 } = require("./song-record");
 
 test("parseSingers splits Chinese and ASCII separators and JSON arrays", () => {
@@ -58,6 +62,37 @@ test("planSongWrites skips duplicates and keeps provided ids", () => {
   assert.equal(planned.added.length, 1);
   assert.equal(planned.added[0].id, "rNew111");
   assert.throws(() => planSongWrites(existing, [{ id: "rExist", name: "另一首", singers: ["甲"] }]));
+});
+
+test("createSongRecord rejects a duplicate name and singer list", () => {
+  const existing = [{ id: "rExist", name: "妥协", singers: ["en"], status: "OK" }];
+  const created = createSongRecord(existing, { name: "不将就", singer: "李荣浩" });
+  assert.match(created.id, /^r[0-9a-zA-Z]{5}$/);
+  assert.equal(created.status, "OK");
+  assert.throws(
+    () => createSongRecord(existing, { name: "妥协", singers: ["en"] }),
+    /already exists/
+  );
+});
+
+test("updateSongRecord edits fields and can hide a song", () => {
+  const existing = [
+    { id: "r1", name: "安静", singers: ["周杰伦"], status: "OK" },
+    { id: "r2", name: "晴天", singers: ["周杰伦"], status: "OK" },
+  ];
+  assert.throws(() => applySongPatch(existing[0], {}), /At least one field/);
+  assert.deepEqual(updateSongRecord(existing, "r1", { status: "hidden" }), {
+    id: "r1",
+    name: "安静",
+    singers: ["周杰伦"],
+    status: "HIDDEN",
+  });
+  assert.equal(updateSongRecord(existing, "missing", { name: "新歌", singers: ["甲"] }), null);
+  assert.throws(
+    () => updateSongRecord(existing, "r1", { name: "晴天", singers: ["周杰伦"] }),
+    /already exists/
+  );
+  assert.throws(() => normalizeStatus("DRAFT"), /status must be OK or HIDDEN/);
 });
 
 test("rowToSong reads OTS columns and drops incomplete rows", () => {

@@ -78,6 +78,53 @@ function toPublicSong(song) {
   return { id: song.id, name: song.name, singers: song.singers };
 }
 
+function normalizeStatus(status) {
+  const value = String(status == null || status === "" ? "OK" : status).trim().toUpperCase();
+  if (value !== "OK" && value !== "HIDDEN") {
+    throw new Error("status must be OK or HIDDEN");
+  }
+  return value;
+}
+
+function createSongRecord(existing, input) {
+  const normalized = normalizeSongInput(input);
+  const planned = planSongWrites(existing, [normalized]);
+  if (planned.added.length !== 1) {
+    throw new Error("A song with that name and singers already exists");
+  }
+  return planned.added[0];
+}
+
+function applySongPatch(current, patch) {
+  const hasName = Object.prototype.hasOwnProperty.call(patch, "name");
+  const hasSingers =
+    Object.prototype.hasOwnProperty.call(patch, "singers") ||
+    Object.prototype.hasOwnProperty.call(patch, "singer");
+  const hasStatus = Object.prototype.hasOwnProperty.call(patch, "status");
+  if (!hasName && !hasSingers && !hasStatus) {
+    throw new Error("At least one field is required");
+  }
+  const name = hasName ? patch.name : current.name;
+  const singers = hasSingers ? (patch.singers != null ? patch.singers : patch.singer) : current.singers;
+  const normalized = normalizeSongInput({ id: current.id, name, singers });
+  const status = hasStatus ? normalizeStatus(patch.status) : normalizeStatus(current.status || "OK");
+  return { id: current.id, name: normalized.name, singers: normalized.singers, status };
+}
+
+function updateSongRecord(existing, id, patch) {
+  const current = existing.find((song) => song.id === id);
+  if (!current) return null;
+  const next = applySongPatch(current, patch);
+  const identity = songIdentity(next.name, next.singers);
+  const duplicate = existing.find(
+    (song) => song.id !== id && songIdentity(song.name, song.singers) === identity
+  );
+  if (duplicate) {
+    throw new Error("A song with that name and singers already exists");
+  }
+  return next;
+}
+
 function planSongWrites(existing, incoming) {
   const ids = new Set(existing.map((song) => song.id));
   const identities = new Set(existing.map((song) => songIdentity(song.name, song.singers)));
@@ -114,4 +161,8 @@ module.exports = {
   rowToSong,
   toPublicSong,
   planSongWrites,
+  normalizeStatus,
+  createSongRecord,
+  applySongPatch,
+  updateSongRecord,
 };

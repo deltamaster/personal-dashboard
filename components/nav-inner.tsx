@@ -10,6 +10,7 @@ const links = [
   { href: "/movies/", label: "Movies" },
   { href: "/portfolio/", label: "Portfolio" },
   { href: "/travel/", label: "Travel" },
+  { href: "/songs/", label: "Songs" },
 ];
 
 export function NavInner() {

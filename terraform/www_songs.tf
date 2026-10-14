@@ -26,19 +26,8 @@ resource "alicloud_oss_bucket_object" "www_songs_code" {
   }
 }
 
-resource "alicloud_ots_table" "www_songs" {
-  count = var.create_www_site ? 1 : 0
-
-  instance_name = alicloud_ots_instance.main.name
-  table_name    = "www_songs"
-  time_to_live  = -1
-  max_version   = 1
-
-  primary_key {
-    name = "song_id"
-    type = "String"
-  }
-}
+# Table www_songs is created with the other dashboard tables (terraform/locals.tf)
+# so pd.huhansen.cn can edit it. This function only serves the public read.
 
 resource "alicloud_fcv3_function" "www_songs" {
   count = var.create_www_site ? 1 : 0
