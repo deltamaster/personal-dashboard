@@ -61,6 +61,10 @@
   }
 
   fetchSongList("/api/songs")
+    .then(function (data) {
+      if (!Array.isArray(data) || data.length === 0) throw new Error("empty song list");
+      return data;
+    })
     .catch(function () {
       return fetchSongList("/songs/songs.json");
     })

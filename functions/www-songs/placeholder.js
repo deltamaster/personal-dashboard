@@ -1,8 +1,8 @@
 exports.handler = async () => ({
-  statusCode: 200,
+  statusCode: 503,
   headers: {
     "content-type": "application/json; charset=utf-8",
     "cache-control": "no-store",
   },
-  body: "[]",
+  body: JSON.stringify({ error: "song list unavailable" }),
 });
