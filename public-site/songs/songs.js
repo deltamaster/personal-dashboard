@@ -52,10 +52,17 @@
     grid.style.animationPlayState = document.hidden ? "paused" : "running";
   });
 
-  fetch("/api/songs", { cache: "no-store" })
-    .then(function (res) {
-      if (!res.ok) throw new Error("HTTP " + res.status);
+  function fetchSongList(url) {
+    return fetch(url, { cache: "no-store" }).then(function (res) {
+      var type = res.headers.get("content-type") || "";
+      if (!res.ok || type.indexOf("json") === -1) throw new Error("HTTP " + res.status);
       return res.json();
+    });
+  }
+
+  fetchSongList("/api/songs")
+    .catch(function () {
+      return fetchSongList("/songs/songs.json");
     })
     .then(function (data) {
       if (!Array.isArray(data)) throw new Error("bad payload");
