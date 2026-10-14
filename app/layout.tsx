@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Personal Dashboard",
-  description: "Portfolio, travel, and movies",
+  description: "Portfolio, travel, movies, and songs",
 };
 
 export const viewport: Viewport = {

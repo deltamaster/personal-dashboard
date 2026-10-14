@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>认真的小影歌单</title>
+    <meta name="description" content="认真的小影歌单。搜索歌名或歌手，曲目来自在线歌单。" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://www.huhansen.cn/songs/" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/songs/songs.css" />
+  </head>
+  <body>
+    <header class="top">
+      <a class="home" href="/">huhansen.cn</a>
+      <h1>认真的小影歌单</h1>
+    </header>
+    <main class="page">
+      <input
+        id="song-search"
+        class="search"
+        type="search"
+        placeholder="搜索歌名或歌手"
+        autocomplete="off"
+        enterkeyhint="search"
+        aria-label="搜索歌名或歌手"
+      />
+      <p id="song-status" class="status">加载中…</p>
+      <div class="stage">
+        <div id="song-grid" class="grid"></div>
+      </div>
+    </main>
+    <script src="/songs/songs-logic.js"></script>
+    <script src="/songs/songs.js"></script>
+  </body>
+</html>

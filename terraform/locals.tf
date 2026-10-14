@@ -49,6 +49,11 @@ locals {
       pk_name = "douban_subject_id"
       pk_type = "String"
     }
+    # Public playlist. The dashboard edits it; www-songs reads it. No search index.
+    www_songs = {
+      pk_name = "song_id"
+      pk_type = "String"
+    }
   }
 
   fc_env = {

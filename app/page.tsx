@@ -9,11 +9,12 @@ export default function HomePage() {
       <div>
         <h1 className="text-2xl font-bold">Personal Dashboard</h1>
         <p className="mt-2 text-[var(--muted)]">Welcome back.</p>
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { href: "/movies/", label: "Movies", desc: "Watch log & director stats" },
             { href: "/portfolio/", label: "Portfolio", desc: "Holdings, risk & NAV" },
             { href: "/travel/", label: "Travel", desc: "Visits, photos & journey stats" },
+            { href: "/songs/", label: "Songs", desc: "Public playlist, hidden rows & edits" },
           ].map(({ href, label, desc }) => (
             <Link
               key={href}

@@ -1,0 +1,123 @@
+name: Deploy www songs API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "functions/www-songs/**"
+      - ".github/workflows/deploy-www-songs.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: personal-dashboard
+    concurrency:
+      group: deploy-www-songs-${{ github.ref }}
+      cancel-in-progress: true
+    env:
+      FC_REGION: cn-shanghai
+      FC_FUNCTION: www-songs
+      FC_CODE_KEY: fc/www-songs.zip
+      OSS_ENDPOINT: oss-cn-shanghai.aliyuncs.com
+      OSS_VAULT_BUCKET: personal-dashboard-vault
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          ALIBABA_CLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
+        run: |
+          missing=()
+          [ -z "$ALIBABA_CLOUD_ACCESS_KEY_ID" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_ID")
+          [ -z "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" ] && missing+=("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
+          [ -z "$ALIBABA_CLOUD_ROLE_ARN" ] && missing+=("ALIBABA_CLOUD_ROLE_ARN")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing environment secrets for www songs deploy"
+            printf '  - %s\n' "${missing[@]}"
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Package function zip
+        run: |
+          cd functions/www-songs
+          npm ci --omit=dev
+          zip -qr "$GITHUB_WORKSPACE/www-songs.zip" index.js http.js song-record.js singer-tokens.js credentials.js node_modules package.json
+
+      - name: Install aliyun CLI
+        run: |
+          wget -q https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-amd64.tgz
+          tar -xzf aliyun-cli-linux-latest-amd64.tgz
+          sudo mv aliyun /usr/local/bin/
+
+      - name: Install ossutil
+        run: curl -fsSL https://gosspublic.alicdn.com/ossutil/install.sh | sudo bash
+
+      - name: Assume provision role
+        id: sts
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          ALIBABA_CLOUD_ROLE_ARN: ${{ secrets.ALIBABA_CLOUD_ROLE_ARN }}
+        run: |
+          aliyun configure set \
+            --profile default \
+            --mode AK \
+            --access-key-id "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
+            --access-key-secret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
+            --region "$FC_REGION"
+
+          CREDS=$(aliyun sts AssumeRole \
+            --RoleArn "$ALIBABA_CLOUD_ROLE_ARN" \
+            --RoleSessionName "github-deploy-www-songs" \
+            --DurationSeconds 3600)
+
+          echo "access_key_id=$(echo "$CREDS" | jq -r '.Credentials.AccessKeyId')" >> "$GITHUB_OUTPUT"
+          echo "access_key_secret=$(echo "$CREDS" | jq -r '.Credentials.AccessKeySecret')" >> "$GITHUB_OUTPUT"
+          echo "security_token=$(echo "$CREDS" | jq -r '.Credentials.SecurityToken')" >> "$GITHUB_OUTPUT"
+
+      - name: Upload function zip
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ steps.sts.outputs.access_key_id }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ steps.sts.outputs.access_key_secret }}
+          ALIBABA_CLOUD_SECURITY_TOKEN: ${{ steps.sts.outputs.security_token }}
+        run: |
+          ossutil config -e "$OSS_ENDPOINT" -i "$ALIBABA_CLOUD_ACCESS_KEY_ID" -k "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" -t "$ALIBABA_CLOUD_SECURITY_TOKEN" -L CH
+          ossutil cp www-songs.zip "oss://${OSS_VAULT_BUCKET}/${FC_CODE_KEY}" --force
+
+      - name: Update FC function code
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ steps.sts.outputs.access_key_id }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ steps.sts.outputs.access_key_secret }}
+          ALIBABA_CLOUD_SECURITY_TOKEN: ${{ steps.sts.outputs.security_token }}
+        run: |
+          aliyun configure set \
+            --profile default \
+            --mode StsToken \
+            --access-key-id "$ALIBABA_CLOUD_ACCESS_KEY_ID" \
+            --access-key-secret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" \
+            --sts-token "$ALIBABA_CLOUD_SECURITY_TOKEN" \
+            --region "$FC_REGION"
+
+          # Terraform creates the function on the same main push. Wait if this job starts first.
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if aliyun fc PUT "/2023-03-30/functions/${FC_FUNCTION}" \
+              --body "{
+                \"code\": {
+                  \"ossBucketName\": \"${OSS_VAULT_BUCKET}\",
+                  \"ossObjectName\": \"${FC_CODE_KEY}\"
+                }
+              }"; then
+              exit 0
+            fi
+            echo "Function update failed (attempt ${attempt}/10). Waiting for Terraform to create ${FC_FUNCTION}."
+            sleep 30
+          done
+          echo "::error::www-songs function was not updated. Apply the cn-shanghai Terraform stack, then re-run this workflow."
+          exit 1

@@ -35,7 +35,7 @@ After first apply:
 | Public site | `public-site/` (static HTML) | OSS `huhansen-www` → `www.huhansen.cn` |
 | API | `npm run build:api` → `api.zip` | OSS vault → FC custom runtime |
 
-**Public site (`www.huhansen.cn`):** provision via Terraform (Shanghai stack, `create_www_site = true`). Deploy with **Actions → Deploy Public Site** or push changes under `public-site/`. DNS: CNAME `www` → Terraform output `www_cdn_cname`. Hero layout/typography constraints: [public-site/LAYOUT.md](../public-site/LAYOUT.md).
+**Public site (`www.huhansen.cn`):** provision via Terraform (Shanghai stack, `create_www_site = true`). Deploy pages with **Actions → Deploy Public Site** or push changes under `public-site/`. The song list page is `public-site/songs/` (`/songs/`). Its data is OTS table `www_songs`, read by FC `www-songs` at `GET /api/songs` (pay-per-invocation, `minInstances` 0). Signed-in edits happen on the dashboard at `/songs/` (`requireSession` on every songs API handler). Deploy that function with **Actions → Deploy www songs API** after Terraform creates it, then import rows with `node scripts/www-songs.mjs --prod import --from mysonglist`. DNS: CNAME `www` → Terraform output `www_cdn_cname`. Hero layout/typography constraints: [public-site/LAYOUT.md](../public-site/LAYOUT.md).
 
 ---
 

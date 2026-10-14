@@ -1,0 +1,9 @@
+{
+  "name": "www-songs",
+  "private": true,
+  "description": "Public song list for www.huhansen.cn/songs. Reads OTS table www_songs.",
+  "main": "index.js",
+  "dependencies": {
+    "tablestore": "^5.5.1"
+  }
+}
