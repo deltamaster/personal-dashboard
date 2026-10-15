@@ -10,16 +10,44 @@ const inputClass =
 
 type Visibility = "all" | "public" | "learning" | "hidden";
 
-const UNLISTED_TAGS = new Set(["hidden", "learning"]);
+const SONG_TAGS = [
+  { id: "learning", label: "Learning" },
+  { id: "hidden", label: "Hidden" },
+] as const;
+
+const UNLISTED_TAGS = new Set<string>(SONG_TAGS.map((tag) => tag.id));
 
 function isPublicSong(song: Song): boolean {
   return !(song.tags ?? []).some((tag) => UNLISTED_TAGS.has(tag));
 }
 
-function tagLabel(tag: string): string {
-  if (tag === "learning") return "Learning";
-  if (tag === "hidden") return "Hidden";
-  return tag;
+function TagToggle({
+  tag,
+  label,
+  active,
+  disabled,
+  onClick,
+}: {
+  tag: string;
+  label: string;
+  active: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  const color = tag === "learning" ? "bg-amber-700 text-amber-50" : "bg-rose-800 text-rose-50";
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      disabled={disabled}
+      onClick={onClick}
+      className={`rounded-full px-2 py-0.5 text-xs font-medium disabled:opacity-50 ${color} ${
+        active ? "" : "grayscale opacity-40"
+      }`}
+    >
+      {label}
+    </button>
+  );
 }
 
 async function readError(res: Response, fallback: string): Promise<string> {
@@ -42,8 +70,7 @@ function SongEditor({
   const singerField = useRef<SingerFieldHandle>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const hidden = (song.tags ?? []).includes("hidden");
-  const learning = (song.tags ?? []).includes("learning");
+  const tags = song.tags ?? [];
 
   async function saveEdit() {
     setBusy(true);
@@ -143,24 +170,20 @@ function SongEditor({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg font-medium">{song.name}</h2>
-              {(song.tags ?? []).length === 0 ? (
-                <span className="rounded-full bg-emerald-950 px-2 py-0.5 text-xs text-emerald-300">Public</span>
-              ) : (
-                (song.tags ?? []).map((tag) => (
-                   <span
-                    key={tag}
-                    className={`rounded-full px-2 py-0.5 text-xs ${
-                      tag === "learning"
-                        ? "bg-amber-950 text-amber-200"
-                        : tag === "hidden"
-                          ? "bg-[var(--border)] text-[var(--muted)]"
-                          : "border border-[var(--border)] text-[var(--foreground)]"
-                    }`}
-                  >
-                    {tagLabel(tag)}
-                  </span>
-                ))
-              )}
+              {SONG_TAGS.map((tag) => (
+                <TagToggle
+                  key={tag.id}
+                  tag={tag.id}
+                  label={tag.label}
+                  active={tags.includes(tag.id)}
+                  disabled={busy}
+                  onClick={() =>
+                    void setTags(
+                      tags.includes(tag.id) ? tags.filter((item) => item !== tag.id) : [...tags, tag.id]
+                    )
+                  }
+                />
+              ))}
             </div>
             <p className="mt-1 text-sm text-[var(--muted)]">{song.singers.join("、")}</p>
           </div>
@@ -172,28 +195,6 @@ function SongEditor({
               className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm"
             >
               Edit
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() =>
-                void setTags(
-                  learning ? (song.tags ?? []).filter((tag) => tag !== "learning") : [...(song.tags ?? []), "learning"]
-                )
-              }
-              className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm"
-            >
-              {learning ? "Stop learning" : "Learning"}
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() =>
-                void setTags(hidden ? (song.tags ?? []).filter((tag) => tag !== "hidden") : [...(song.tags ?? []), "hidden"])
-              }
-              className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm"
-            >
-              {hidden ? "Show" : "Hide"}
             </button>
             <button
               type="button"
@@ -218,7 +219,7 @@ export function SongsManager() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [singerChips, setSingerChips] = useState<string[]>([]);
-  const [learning, setLearning] = useState(false);
+  const [draftTags, setDraftTags] = useState<string[]>([]);
   const singerField = useRef<SingerFieldHandle>(null);
 
   const fetchSongs = useCallback(async (): Promise<Song[]> => {
@@ -265,7 +266,7 @@ export function SongsManager() {
       body: JSON.stringify({
         name: String(form.get("name") ?? ""),
         singers,
-        tags: learning ? ["learning"] : [],
+        tags: draftTags,
       }),
     });
     setSaving(false);
@@ -274,7 +275,7 @@ export function SongsManager() {
       return;
     }
     setSingerChips([]);
-    setLearning(false);
+    setDraftTags([]);
     setOpen(false);
     (e.target as HTMLFormElement).reset();
     await refresh();
@@ -290,7 +291,7 @@ export function SongsManager() {
             <a className="underline" href="https://www.huhansen.cn/songs/" target="_blank" rel="noreferrer">
               www.huhansen.cn/songs
             </a>
-            . Songs tagged learning or hidden stay here and leave the public page. No tag means public.
+            . Click Learning or Hidden beside a title. Gray means off. Either tag keeps the song off the public page.
           </p>
         </div>
         {!open && (
@@ -320,15 +321,22 @@ export function SongsManager() {
               <SingerField ref={singerField} singers={singerChips} onChange={setSingerChips} disabled={saving} />
             </div>
           </div>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={learning}
-              onChange={(e) => setLearning(e.target.checked)}
-              disabled={saving}
-            />
-            Still learning
-          </label>
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            {SONG_TAGS.map((tag) => (
+              <TagToggle
+                key={tag.id}
+                tag={tag.id}
+                label={tag.label}
+                active={draftTags.includes(tag.id)}
+                disabled={saving}
+                onClick={() =>
+                  setDraftTags((current) =>
+                    current.includes(tag.id) ? current.filter((item) => item !== tag.id) : [...current, tag.id]
+                  )
+                }
+              />
+            ))}
+          </div>
           {formError && <p className="text-sm text-red-300">{formError}</p>}
           <div className="flex flex-wrap gap-2">
             <button
@@ -342,7 +350,7 @@ export function SongsManager() {
               type="button"
               onClick={() => {
                 setSingerChips([]);
-                setLearning(false);
+                setDraftTags([]);
                 setOpen(false);
                 setFormError(null);
               }}
