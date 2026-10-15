@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SingerField, type SingerFieldHandle } from "@/components/singer-field";
+import { createLatestSaveQueue, type LatestSaveQueue } from "@/lib/latest-save-queue";
 import { OTS_FETCH_INIT, useOtsCache } from "@/lib/use-ots-cache";
 import type { Song } from "@/lib/types/song";
 
@@ -19,6 +20,17 @@ const UNLISTED_TAGS = new Set<string>(SONG_TAGS.map((tag) => tag.id));
 
 function isPublicSong(song: Song): boolean {
   return !(song.tags ?? []).some((tag) => UNLISTED_TAGS.has(tag));
+}
+
+function sameTags(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((tag, index) => tag === b[index]);
+}
+
+interface TagOverride {
+  /** Null once the loaded song already has these tags. */
+  tags: string[] | null;
+  /** Click count. A later click wins over a render that still has an older list. */
+  rev: number;
 }
 
 function TagToggle({
@@ -57,10 +69,18 @@ async function readError(res: Response, fallback: string): Promise<string> {
 
 function SongEditor({
   song,
+  tagRevision,
+  tagError,
+  onToggleTags,
+  onTagsIdle,
   onChanged,
   onDeleted,
 }: {
   song: Song;
+  tagRevision: number;
+  tagError: string | null;
+  onToggleTags: (tags: string[]) => void;
+  onTagsIdle: () => Promise<void>;
   onChanged: () => Promise<void>;
   onDeleted: () => Promise<void>;
 }) {
@@ -70,7 +90,21 @@ function SongEditor({
   const singerField = useRef<SingerFieldHandle>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const tags = song.tags ?? [];
+  const tagsRef = useRef<string[]>(song.tags ?? []);
+  const clickRevision = useRef(tagRevision);
+
+  useEffect(() => {
+    if (tagRevision < clickRevision.current) return;
+    tagsRef.current = song.tags ?? [];
+  }, [song.tags, tagRevision]);
+
+  function toggleTag(tagId: string) {
+    const current = tagsRef.current;
+    const next = current.includes(tagId) ? current.filter((item) => item !== tagId) : [...current, tagId];
+    clickRevision.current += 1;
+    tagsRef.current = next;
+    onToggleTags(next);
+  }
 
   async function saveEdit() {
     setBusy(true);
@@ -81,6 +115,7 @@ function SongEditor({
       setError("Enter at least one singer");
       return;
     }
+    await onTagsIdle();
     const res = await fetch(`/api/songs/${encodeURIComponent(song.id)}/`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -95,26 +130,11 @@ function SongEditor({
     await onChanged();
   }
 
-  async function setTags(tags: string[]) {
-    setBusy(true);
-    setError(null);
-    const res = await fetch(`/api/songs/${encodeURIComponent(song.id)}/`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tags }),
-    });
-    setBusy(false);
-    if (!res.ok) {
-      setError(await readError(res, "Failed to update song"));
-      return;
-    }
-    await onChanged();
-  }
-
   async function remove() {
     if (!window.confirm(`Delete “${song.name}”? This removes it from the public list.`)) return;
     setBusy(true);
     setError(null);
+    await onTagsIdle();
     const res = await fetch(`/api/songs/${encodeURIComponent(song.id)}/`, { method: "DELETE" });
     setBusy(false);
     if (!res.ok) {
@@ -175,13 +195,8 @@ function SongEditor({
                   key={tag.id}
                   tag={tag.id}
                   label={tag.label}
-                  active={tags.includes(tag.id)}
-                  disabled={busy}
-                  onClick={() =>
-                    void setTags(
-                      tags.includes(tag.id) ? tags.filter((item) => item !== tag.id) : [...tags, tag.id]
-                    )
-                  }
+                  active={(song.tags ?? []).includes(tag.id)}
+                  onClick={() => toggleTag(tag.id)}
                 />
               ))}
             </div>
@@ -207,7 +222,7 @@ function SongEditor({
           </div>
         </div>
       )}
-      {error && <p className="mt-2 text-sm text-red-300">{error}</p>}
+      {(error || tagError) && <p className="mt-2 text-sm text-red-300">{error || tagError}</p>}
     </li>
   );
 }
@@ -220,7 +235,14 @@ export function SongsManager() {
   const [formError, setFormError] = useState<string | null>(null);
   const [singerChips, setSingerChips] = useState<string[]>([]);
   const [draftTags, setDraftTags] = useState<string[]>([]);
+  const [tagOverrides, setTagOverrides] = useState<Record<string, TagOverride>>({});
+  const [tagErrors, setTagErrors] = useState<Record<string, string | null>>({});
   const singerField = useRef<SingerFieldHandle>(null);
+  const tagQueues = useRef(new Map<string, LatestSaveQueue<string[]>>());
+  const tagErrorSink = useRef<(id: string, message: string | null) => void>(() => {});
+  tagErrorSink.current = (id, message) => {
+    setTagErrors((prev) => ({ ...prev, [id]: message }));
+  };
 
   const fetchSongs = useCallback(async (): Promise<Song[]> => {
     const res = await fetch("/api/songs/", OTS_FETCH_INIT);
@@ -230,7 +252,68 @@ export function SongsManager() {
   }, []);
 
   const { data, loading, error, refresh } = useOtsCache("songs", fetchSongs);
-  const songs = data ?? [];
+
+  useEffect(() => {
+    if (!data) return;
+    setTagOverrides((current) => {
+      let changed = false;
+      const next = { ...current };
+      for (const song of data) {
+        const override = next[song.id];
+        if (!override?.tags) continue;
+        if (!sameTags(override.tags, song.tags ?? [])) continue;
+        next[song.id] = { tags: null, rev: override.rev };
+        changed = true;
+      }
+      return changed ? next : current;
+    });
+  }, [data]);
+
+  const songs = useMemo(
+    () =>
+      (data ?? []).map((song) => {
+        const tags = tagOverrides[song.id]?.tags;
+        return tags ? { ...song, tags } : song;
+      }),
+    [data, tagOverrides]
+  );
+
+  function queueFor(id: string): LatestSaveQueue<string[]> {
+    let queue = tagQueues.current.get(id);
+    if (!queue) {
+      queue = createLatestSaveQueue(
+        async (tags) => {
+          const res = await fetch(`/api/songs/${encodeURIComponent(id)}/`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tags }),
+          });
+          if (!res.ok) throw new Error(await readError(res, "Failed to update song"));
+        },
+        {
+          attempts: 3,
+          retryDelayMs: 250,
+          onSuccess: () => tagErrorSink.current(id, null),
+          onError: (saveError) =>
+            tagErrorSink.current(
+              id,
+              saveError instanceof Error ? saveError.message : "Failed to update song"
+            ),
+        }
+      );
+      tagQueues.current.set(id, queue);
+    }
+    return queue;
+  }
+
+  function toggleSongTag(id: string, tags: string[]) {
+    setTagOverrides((current) => ({
+      ...current,
+      [id]: { tags, rev: (current[id]?.rev ?? 0) + 1 },
+    }));
+    tagErrorSink.current(id, null);
+    queueFor(id).push(tags);
+  }
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -409,7 +492,16 @@ export function SongsManager() {
 
       <ul className="space-y-3">
         {visible.map((song) => (
-          <SongEditor key={song.id} song={song} onChanged={refresh} onDeleted={refresh} />
+          <SongEditor
+            key={song.id}
+            song={song}
+            tagRevision={tagOverrides[song.id]?.rev ?? 0}
+            tagError={tagErrors[song.id] ?? null}
+            onToggleTags={(tags) => toggleSongTag(song.id, tags)}
+            onTagsIdle={() => tagQueues.current.get(song.id)?.whenIdle() ?? Promise.resolve()}
+            onChanged={refresh}
+            onDeleted={refresh}
+          />
         ))}
       </ul>
     </div>
