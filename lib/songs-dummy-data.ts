@@ -9,13 +9,13 @@ export function shouldUseSongsDummyData(): boolean {
 }
 
 const dummySongs: Song[] = [
-  { id: "rQuiet", name: "安静", singers: ["周杰伦"], status: "OK" },
-  { id: "rSunny", name: "晴天", singers: ["周杰伦"], status: "OK" },
-  { id: "rHide1", name: "内部彩排", singers: ["测试"], status: "HIDDEN" },
+  { id: "rQuiet", name: "安静", singers: ["周杰伦"], tags: [] },
+  { id: "rSunny", name: "晴天", singers: ["周杰伦"], tags: ["learning"] },
+  { id: "rHide1", name: "内部彩排", singers: ["测试"], tags: ["hidden"] },
 ];
 
 function clone(song: Song): Song {
-  return { id: song.id, name: song.name, singers: [...song.singers], status: song.status };
+  return { id: song.id, name: song.name, singers: [...song.singers], tags: [...song.tags] };
 }
 
 export function listDummySongs(): Song[] {
@@ -28,7 +28,7 @@ export function createDummySong(input: SongInput): Song {
     id: created.id,
     name: created.name,
     singers: created.singers,
-    status: "OK",
+    tags: [...created.tags],
   };
   dummySongs.push(song);
   return clone(song);
@@ -42,7 +42,7 @@ export function updateDummySong(id: string, patch: SongInput): Song | null {
     id: updated.id,
     name: updated.name,
     singers: updated.singers,
-    status: updated.status === "HIDDEN" ? "HIDDEN" : "OK",
+    tags: [...updated.tags],
   };
   dummySongs[index] = song;
   return clone(song);

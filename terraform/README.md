@@ -125,7 +125,7 @@ CDN scope: **仅中国内地**. Static origin: `huhansen-web.oss-cn-shanghai.ali
 
 ### Public personal site — `www.huhansen.cn`
 
-Static cyberpunk intro page plus the song list at `/songs/`. Source: `public-site/` → OSS `huhansen-www` → CDN `www.huhansen.cn`. `GET /api/songs` on that CDN is a separate FC function `www-songs` (`minInstances` 0) that reads OTS table `www_songs` (PK `song_id`, no search index). The signed-in dashboard edits that table at `pd.huhansen.cn/songs/`. `scripts/www-songs.mjs` can still import rows. The playlist is not checked into git.
+Static cyberpunk intro page plus the song list at `/songs/`. Source: `public-site/` → OSS `huhansen-www` → CDN `www.huhansen.cn`. `GET /api/songs` on that CDN is a separate FC function `www-songs` (`minInstances` 0) that reads OTS table `www_songs` (PK `song_id`, no search index). The signed-in dashboard edits that table at `pd.huhansen.cn/songs/`. Each row stores `tags` as a JSON array; an empty array is public, and `hidden` or `learning` keeps the song off the public page. `scripts/www-songs.mjs` can still import rows. The playlist is not checked into git.
 
 1. **Terraform apply** (stack `cn-shanghai`, `create_www_site = true` in tfvars) creates bucket + CDN
 2. Alibaba DNS for `huhansen.cn`:

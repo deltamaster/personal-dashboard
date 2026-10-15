@@ -3,6 +3,7 @@ import { otsCall, TableStore } from "@/lib/ots-client";
 import {
   createSongRecord,
   rowToSong,
+  storedStatus,
   updateSongRecord,
   type SongRecord,
 } from "../../functions/www-songs/song-record.js";
@@ -15,7 +16,7 @@ function asSong(record: SongRecord): Song {
     id: record.id,
     name: record.name,
     singers: record.singers,
-    status: record.status === "HIDDEN" ? "HIDDEN" : "OK",
+    tags: record.tags,
   };
 }
 
@@ -67,7 +68,9 @@ async function putSong(song: Song): Promise<void> {
     attributeColumns: toAttributeColumns({
       name: song.name,
       singers: JSON.stringify(song.singers),
-      status: song.status,
+      tags: JSON.stringify(song.tags),
+      // Derived so an older public function, which only reads status, still hides tagged songs.
+      status: storedStatus(song),
     }),
   });
 }
