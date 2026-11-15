@@ -312,6 +312,78 @@ main {
   text-indent: 0;
 }
 
+.fellow-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 1.15rem 0 0;
+  padding: 0.35rem 1.05rem 0.35rem 0.35rem;
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(252, 238, 10, 0.62);
+  background:
+    linear-gradient(105deg, rgba(252, 238, 10, 0.16), rgba(252, 238, 10, 0.04) 46%, rgba(0, 240, 255, 0.08)),
+    rgba(5, 5, 8, 0.55);
+  box-shadow:
+    0 0 22px rgba(252, 238, 10, 0.18),
+    inset 0 0 0 1px rgba(255, 246, 168, 0.14);
+  clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+}
+
+.fellow-badge::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 28%,
+    rgba(255, 246, 168, 0.28) 48%,
+    transparent 68%
+  );
+  transform: translateX(-130%);
+  animation: fellow-shine 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.fellow-seal {
+  width: 3.15rem;
+  height: 3.15rem;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 0 6px rgba(252, 238, 10, 0.5));
+}
+
+.fellow-badge-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.fellow-badge-kicker {
+  font-family: var(--font-ui-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.28em;
+  color: var(--yellow);
+}
+
+.fellow-badge-title {
+  font-family: var(--font-display);
+  font-size: clamp(0.92rem, 1.2vw, 1.12rem);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #fff8c4;
+  text-shadow: 0 0 12px rgba(252, 238, 10, 0.45);
+}
+
+.fellow-badge-date {
+  margin-top: 0.18rem;
+  font-family: var(--font-ui-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.18em;
+  color: var(--cyan);
+}
+
 .hero-name-zh {
   margin: 0.5rem 0 0;
   font-size: var(--text-md);
@@ -1027,6 +1099,17 @@ button.link-card-trigger {
   }
 }
 
+@keyframes fellow-shine {
+  0%,
+  58% {
+    transform: translateX(-130%);
+  }
+  82%,
+  100% {
+    transform: translateX(130%);
+  }
+}
+
 @keyframes glitch-anim {
   0% {
     transform: translate(0);
@@ -1181,6 +1264,22 @@ button.link-card-trigger {
     letter-spacing: 0.12em;
   }
 
+  .fellow-badge {
+    margin-top: 0.7rem;
+    gap: 0.5rem;
+    padding-right: 0.8rem;
+  }
+
+  .fellow-seal {
+    width: 2.6rem;
+    height: 2.6rem;
+  }
+
+  .fellow-badge-kicker,
+  .fellow-badge-date {
+    letter-spacing: 0.14em;
+  }
+
   .hero-image {
     object-position: 74% 32%;
   }
@@ -1236,6 +1335,10 @@ button.link-card-trigger {
   .hero-name-zh {
     margin-top: 0.2rem;
     letter-spacing: 0.12em;
+  }
+
+  .fellow-badge {
+    margin-top: 0.7rem;
   }
 }
 
@@ -1300,6 +1403,17 @@ button.link-card-trigger {
 
   .hero-name-zh {
     margin-top: 0.25rem;
+  }
+
+  .fellow-badge {
+    margin-top: 0.45rem;
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+  }
+
+  .fellow-seal {
+    width: 2.35rem;
+    height: 2.35rem;
   }
 
   .hero-banner-shade {
